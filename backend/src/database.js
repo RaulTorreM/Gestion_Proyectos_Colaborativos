@@ -1,9 +1,9 @@
 const mongoose = require('mongoose');
 
 // console.log("Environment variables:\n", process.env);
-console.log("\nMONGODB_URI:", process.env.MONGODB_URI || 'mongodb://localhost/gestionproyectoscolaborativos');
+console.log("\nMONGODB_URI:", process.env.MONGODB_URI || 'mongodb://localhost:27017/gestionproyectoscolaborativos');
 
-const URI = process.env.MONGODB_URI || 'mongodb://localhost/gestionproyectoscolaborativos';
+const URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/gestionproyectoscolaborativos';
 
 if (!URI) {
 	console.error('MONGODB_URI is not defined in environment variables');
