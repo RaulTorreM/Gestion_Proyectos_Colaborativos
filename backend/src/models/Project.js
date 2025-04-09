@@ -25,13 +25,13 @@ const projectSchema = new Schema({
         required: true,
     },
     teamMembers: [
-      {
-        userId: { type: Schema.Types.ObjectId, ref: 'User' },
-        role: String
-      }
+        {
+            userId: { type: Schema.Types.ObjectId, ref: 'User' },
+            role: String
+        }
     ],
     projectType: String,
-    createdBy: { type: Schema.Types.ObjectId, ref: 'User' },
+    authorUserId: { type: Schema.Types.ObjectId, ref: 'User' },
 }, {
     timestamps: true,
 });

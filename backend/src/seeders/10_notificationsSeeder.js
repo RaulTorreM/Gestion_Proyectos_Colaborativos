@@ -18,28 +18,27 @@ module.exports = async function seedNotifications() {
       {
         type: 'info',
         description: 'Esta es una notificación informativa.',
-        user: users[0]._id,  // Asigna el primer usuario
+        userId: users[0]._id,  // Asigna el primer usuario
       },
       {
         type: 'warning',
         description: 'Esto es un mensaje de advertencia.',
-        user: users[1]._id,  // Asigna el segundo usuario
+        userId: users[1]._id,  // Asigna el segundo usuario
       },
       {
         type: 'success',
         description: 'Operación exitosa.',
-        user: users[2]._id,  // Asigna el tercer usuario
+        userId: users[2]._id,  // Asigna el tercer usuario
       },
       {
         type: 'error',
         description: 'Ocurrió un error inesperado.',
-        user: users[0]._id,  // Asigna el primer usuario
+        userId: users[0]._id,  // Asigna el primer usuario
       },
     ];
 
     // Inserta las notificaciones en la base de datos
     await Notification.insertMany(notifications);
-    console.log('✅ Notificaciones insertadas correctamente.');
 
   } catch (error) {
     console.error('❌ Error al insertar notificaciones:', error);

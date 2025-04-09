@@ -28,8 +28,10 @@ module.exports = async function seedUserStories() {
 			startDate: new Date('2025-05-01'),
 			endDate: new Date('2025-05-15'),
 			dueDate: new Date('2025-05-10'),
-			assignedTo: [users[0]._id],  // Asigna el primer usuario
-			createdBy: users[0]._id,  // El usuario que crea la UserStory
+			teamMembers: [
+				{ userId: users[0]._id, role: 'Líder de Proyecto' },
+			],
+			authorUserId: users[0]._id,  // El usuario que crea la UserStory
 		},
 		{
 			epic: epics[1]._id,  // Asigna la segunda épica
@@ -40,8 +42,10 @@ module.exports = async function seedUserStories() {
 			startDate: new Date('2025-05-10'),
 			endDate: new Date('2025-05-20'),
 			dueDate: new Date('2025-05-15'),
-			assignedTo: [users[1]._id],  // Asigna el segundo usuario
-			createdBy: users[1]._id,  // El usuario que crea la UserStory
+			teamMembers: [
+				{ userId: users[1]._id, role: 'Asistente' },
+			],
+			authorUserId: users[1]._id,  // El usuario que crea la UserStory
 		},
 		{
 			epic: epics[0]._id,  // Asigna la primera épica
@@ -52,14 +56,15 @@ module.exports = async function seedUserStories() {
 			startDate: new Date('2025-04-01'),
 			endDate: new Date('2025-04-10'),
 			dueDate: new Date('2025-04-05'),
-			assignedTo: [users[2]._id],  // Asigna el tercer usuario
-			createdBy: users[2]._id,  // El usuario que crea la UserStory
+			teamMembers: [
+				{ userId: users[2]._id, role: 'Desarrollador' },
+			],
+			authorUserId: users[2]._id,  // El usuario que crea la UserStory
 		},
 		];
 
 		// Inserta las User Stories en la base de datos
 		await UserStory.insertMany(userStories);
-		console.log('✅ User Stories insertadas correctamente.');
 
 	} catch (error) {
 		console.error('❌ Error al insertar User Stories:', error);

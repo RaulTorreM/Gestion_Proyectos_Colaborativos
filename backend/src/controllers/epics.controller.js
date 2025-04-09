@@ -14,15 +14,14 @@ epicControllers.getEpic = async (req, res) => {
 }
 
 epicControllers.createEpic = async (req, res) => {
-	const { title, description, startDate, endDate, status, teamMembers, EpicType, authorUserId} = req.body 
+	const { project, title, description, startDate, endDate, authorUserId } = req.body 
+	
 	const newEpic = new Epic({
+		project,
 		title,
 		description,
 		startDate,
 		endDate,
-		status,
-		teamMembers,
-		EpicType,
 		authorUserId
 	})
 
@@ -32,10 +31,16 @@ epicControllers.createEpic = async (req, res) => {
 }
 
 epicControllers.updateEpic = async (req, res) => {
-	const { title } = req.body 
+	const { project, title, description, status, startDate, endDate, authorUserId } = req.body 
 
 	await Epic.findByIdAndUpdate(req.params.id, {
+		project,
 		title,
+		description,
+		status,
+		startDate,
+		endDate,
+		authorUserId
 	})
 
 	res.json({message: 'Epic updated'})

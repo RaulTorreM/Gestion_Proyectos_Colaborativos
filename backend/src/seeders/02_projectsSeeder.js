@@ -25,7 +25,7 @@ module.exports = async function seedProjects() {
                     { userId: users[1]._id, role: 'Desarrollador' }
                 ],
                 projectType: 'Tecnología',
-                createdBy: users[0]._id,  // El creador del proyecto es el primer usuario
+                authorUserId: users[0]._id,  // El creador del proyecto es el primer usuario
             },
             {
                 title: 'Desarrollo de Aplicación Móvil',
@@ -38,13 +38,12 @@ module.exports = async function seedProjects() {
                     { userId: users[0]._id, role: 'Desarrollador de Android' }
                 ],
                 projectType: 'Desarrollo de software',
-                createdBy: users[1]._id,  // El creador del proyecto es el segundo usuario
+                authorUserId: users[1]._id,  // El creador del proyecto es el segundo usuario
             }
         ];
 
         // Inserta los proyectos en la base de datos
         await Project.insertMany(projects);
-        console.log('✅ Proyectos insertados correctamente');
     } catch (error) {
         console.error('❌ Error al insertar los proyectos:', error);
     }

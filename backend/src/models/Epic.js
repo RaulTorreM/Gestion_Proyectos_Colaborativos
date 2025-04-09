@@ -7,26 +7,26 @@ const epicSchema = new Schema({
 		required: true
 	},
 	title: {
-			type: String,
-			required: true,
-			trim: true
+		type: String,
+		required: true,
+		trim: true
 	},
 	description: {
-			type: String,
-			trim: true
+		type: String,
+		trim: true
 	},
 	status: {
-			type: String,
-			enum: ['Pendiente', 'En Progreso', 'Completado'],
-			default: 'Pendiente'
+		type: String,
+		enum: ['Pendiente', 'En Progreso', 'Completado'],
+		default: 'Pendiente'
 	},
 	startDate: {
-			type: Date
+		type: Date
 	},
 	endDate: {
-			type: Date
+		type: Date
 	},
-	createdBy: { type: Schema.Types.ObjectId, ref: 'User' },
+	authorUserId: { type: Schema.Types.ObjectId, ref: 'User' },
 }, {
 	timestamps: true,
 });

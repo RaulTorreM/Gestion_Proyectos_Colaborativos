@@ -30,7 +30,7 @@ module.exports = async function seedEpics() {
                 startDate: new Date('2025-01-15'),
                 endDate: new Date('2025-03-01'),
                 status: 'En Progreso',
-                createdBy: users[0]._id,  // Usuario 1 como creador de la épica
+                authorUserId: users[0]._id,  // Usuario 1 como creador de la épica
             },
             {
                 project: projects[1]._id, // Relacionar con el primer proyecto
@@ -39,7 +39,7 @@ module.exports = async function seedEpics() {
                 startDate: new Date('2025-02-01'),
                 endDate: new Date('2025-05-30'),
                 status: 'Pendiente',
-                createdBy: users[1]._id,  // Usuario 2 como creador de la épica
+                authorUserId: users[1]._id,  // Usuario 2 como creador de la épica
             },
             {
                 project: projects[0]._id, // Relacionar con el primer proyecto
@@ -48,13 +48,12 @@ module.exports = async function seedEpics() {
                 startDate: new Date('2025-03-01'),
                 endDate: new Date('2025-06-01'),
                 status: 'Pendiente',
-                createdBy: users[0]._id,  // Usuario 1 como creador de la épica
+                authorUserId: users[0]._id,  // Usuario 1 como creador de la épica
             }
         ];
 
         // Insertar las épicas en la base de datos
         const insertedEpics = await Epic.insertMany(epics);
-        console.log('✅ Épicas insertadas correctamente');
 
         // Ahora, actualizamos los proyectos para que tengan referencias a las épicas
         await Project.updateMany(

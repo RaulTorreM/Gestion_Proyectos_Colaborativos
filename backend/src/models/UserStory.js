@@ -33,11 +33,13 @@ const userStorySchema = new Schema({
 	dueDate: {
 		type: Date
 	},
-	assignedTo: [{
-		type: Schema.Types.ObjectId,
-		ref: 'User'
-	}],
-	createdBy: { type: Schema.Types.ObjectId, ref: 'User' },
+	teamMembers: [
+        {
+            userId: { type: Schema.Types.ObjectId, ref: 'User' },
+            role: String
+        }
+    ],
+	authorUserId: { type: Schema.Types.ObjectId, ref: 'User' },
 }, {
 	timestamps: true,
 });

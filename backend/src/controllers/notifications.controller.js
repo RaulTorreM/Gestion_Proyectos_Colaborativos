@@ -13,12 +13,12 @@ notificationControllers.getNotification = async (req, res) => {
 }
 
 notificationControllers.createNotification = async (req, res) => {
-	const { type, description, user} = req.body 
+	const { type, description, userId} = req.body 
 	
 	const newNotification = new Notification({
 		type,
 		description,
-		user,
+		userId,
 	})
 
 	await newNotification.save();
@@ -27,12 +27,12 @@ notificationControllers.createNotification = async (req, res) => {
 }
 
 notificationControllers.updateNotification = async (req, res) => {
-	const { type, description, user } = req.body 
+	const { type, description, userId } = req.body 
 
 	await Notification.findByIdAndUpdate(req.params.id, {
 		type,
 		description,
-		user,
+		userId,
 	})
 
 	res.json({message: 'Notification updated'})

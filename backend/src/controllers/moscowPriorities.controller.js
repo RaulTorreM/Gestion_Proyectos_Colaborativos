@@ -28,7 +28,7 @@ moscowPriorityControllers.createMoscowPriority = async (req, res) => {
 moscowPriorityControllers.updateMoscowPriority = async (req, res) => {
 	const { description } = req.body 
 
-	await MoscowPriority.findOneAndUpdate({ moscowPriorityId: req.params.id }, {
+	await MoscowPriority.findOneAndUpdate({ moscowPriorityId: req.params.moscowPriorityId }, {
 		description,
 	})
 
@@ -36,7 +36,7 @@ moscowPriorityControllers.updateMoscowPriority = async (req, res) => {
 }
 
 moscowPriorityControllers.deleteMoscowPriority = async (req, res) => {
-	await MoscowPriority.findOneAndDelete({ moscowPriorityId: req.params.id })
+	await MoscowPriority.findOneAndDelete({ moscowPriorityId: req.params.moscowPriorityId })
 	res.json({message: 'Moscow Priority deleted'})
 }
 

@@ -61,6 +61,8 @@ async function runSeeders() {
             .filter(file => file.endsWith('.js'))
             .sort();
 
+        console.log('\n');
+
         // Ejecuta cada seeder
         for (const file of seederFiles) {
             try {
