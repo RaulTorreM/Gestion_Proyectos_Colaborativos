@@ -15,7 +15,7 @@ module.exports = async function seedProjects() {
 		// Inicialmente el campo "epics" de cada proycto está vacío pero se llenará en 03_epicsSeeder.js
         const projects = [
             {
-                title: 'Proyecto de Migración de Base de Datos',
+                name: 'Proyecto de Migración de Base de Datos',
                 description: 'Migración completa de la base de datos de la empresa a un nuevo sistema.',
                 startDate: new Date('2025-01-01'),
                 endDate: new Date('2025-06-30'),
@@ -28,7 +28,7 @@ module.exports = async function seedProjects() {
                 authorUserId: users[0]._id,  // El creador del proyecto es el primer usuario
             },
             {
-                title: 'Desarrollo de Aplicación Móvil',
+                name: 'Desarrollo de Aplicación Móvil',
                 description: 'Desarrollo de una nueva aplicación móvil para la gestión de tareas.',
                 startDate: new Date('2025-02-01'),
                 endDate: new Date('2025-12-31'),

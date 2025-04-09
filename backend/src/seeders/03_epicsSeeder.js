@@ -24,29 +24,32 @@ module.exports = async function seedEpics() {
         // Crear épicas de ejemplo
         const epics = [
             {
-                project: projects[0]._id, // Relacionar con el primer proyecto
-                title: 'Migración de la base de datos',
+                projectId: projects[0]._id, // Relacionar con el primer proyecto
+                name: 'Migración de la base de datos',
                 description: 'Migrar la base de datos de MySQL a MongoDB.',
                 startDate: new Date('2025-01-15'),
                 endDate: new Date('2025-03-01'),
+                dueDate: new Date('2025-04-01'),
                 status: 'En Progreso',
                 authorUserId: users[0]._id,  // Usuario 1 como creador de la épica
             },
             {
-                project: projects[1]._id, // Relacionar con el primer proyecto
-                title: 'Desarrollo de la interfaz de usuario',
+                projectId: projects[1]._id, // Relacionar con el primer proyecto
+                name: 'Desarrollo de la interfaz de usuario',
                 description: 'Crear la interfaz de usuario para la aplicación móvil.',
                 startDate: new Date('2025-02-01'),
                 endDate: new Date('2025-05-30'),
+                dueDate: new Date('2025-06-01'),
                 status: 'Pendiente',
                 authorUserId: users[1]._id,  // Usuario 2 como creador de la épica
             },
             {
-                project: projects[0]._id, // Relacionar con el primer proyecto
-                title: 'Integración de la API',
+                projectId: projects[0]._id, // Relacionar con el primer proyecto
+                name: 'Integración de la API',
                 description: 'Integrar la API externa para la sincronización de datos.',
                 startDate: new Date('2025-03-01'),
                 endDate: new Date('2025-06-01'),
+                dueDate: new Date('2025-07-01'),
                 status: 'Pendiente',
                 authorUserId: users[0]._id,  // Usuario 1 como creador de la épica
             }
@@ -56,10 +59,10 @@ module.exports = async function seedEpics() {
         const insertedEpics = await Epic.insertMany(epics);
 
         // Ahora, actualizamos los proyectos para que tengan referencias a las épicas
-        await Project.updateMany(
+       /*  await Project.updateMany(
             { _id: { $in: insertedEpics.map(epic => epic.projectId) } }, 
             { $push: { epics: { $each: insertedEpics.map(epic => ({ epicId: epic._id })) } } }
-        );
+        ); */
 
         console.log('✅ Proyectos actualizados con las épicas');
 

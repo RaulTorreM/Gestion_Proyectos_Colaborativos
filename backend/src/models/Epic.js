@@ -1,12 +1,12 @@
 const { Schema, model } = require('mongoose');
 
 const epicSchema = new Schema({
-	project: {
+	projectId: {
 		type: Schema.Types.ObjectId,
 		ref: 'Project',
 		required: true
 	},
-	title: {
+	name: {
 		type: String,
 		required: true,
 		trim: true
@@ -24,6 +24,9 @@ const epicSchema = new Schema({
 		type: Date
 	},
 	endDate: {
+		type: Date
+	},
+	dueDate: {
 		type: Date
 	},
 	authorUserId: { type: Schema.Types.ObjectId, ref: 'User' },

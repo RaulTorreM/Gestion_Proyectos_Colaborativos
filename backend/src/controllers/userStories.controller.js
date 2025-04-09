@@ -13,12 +13,12 @@ userStoryControllers.getUserStory = async (req, res) => {
 }
 
 userStoryControllers.createUserStory = async (req, res) => {
-	const { epic, title, description, moscowPriorityId, startDate, 
+	const { epicId, name, description, moscowPriorityId, startDate, 
 			endDate, dueDate, teamMembers, authorUserId} = req.body 
 	
 	const newUserStory = new UserStory({
-		epic,
-		title,
+		epicId,
+		name,
 		description,
 		moscowPriorityId,
 		startDate,
@@ -34,11 +34,11 @@ userStoryControllers.createUserStory = async (req, res) => {
 }
 
 userStoryControllers.updateUserStory = async (req, res) => {
-	const { title, description, moscowPriorityId, startDate, 
+	const { name, description, moscowPriorityId, startDate, 
 			endDate, dueDate, teamMembers} = req.body 
 
 	await UserStory.findByIdAndUpdate(req.params.id, {
-		title,
+		name,
 		description,
 		moscowPriorityId,
 		startDate,

@@ -8,13 +8,17 @@ const notificationSchema = new Schema({
 		required: true,
 		enum: ['info', 'warning', 'success', 'error'],
 	},
-	description: {
+	message: {
 		type: String,
 		required: true,
 	},
 	userId: { 
 		type: Schema.Types.ObjectId, 
 		ref: 'User' 
+	},
+	read: {
+		type: Boolean,
+		default: false,
 	}
 }, {
 	timestamps: true,

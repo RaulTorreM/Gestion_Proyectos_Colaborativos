@@ -20,8 +20,8 @@ module.exports = async function seedUserStories() {
 		// Crear User Stories
 		const userStories = [
 		{
-			epic: epics[0]._id,  // Asigna la primera épica
-			title: 'Desarrollar la página de inicio',
+			epicId: epics[0]._id,  // Asigna la primera épica
+			name: 'Desarrollar la página de inicio',
 			description: 'Implementar la página de inicio con la estructura básica.',
 			moscowPriorityId: priorities[0].moscowPriorityId,  // Asigna la primera prioridad
 			status: 'Pendiente',
@@ -34,8 +34,8 @@ module.exports = async function seedUserStories() {
 			authorUserId: users[0]._id,  // El usuario que crea la UserStory
 		},
 		{
-			epic: epics[1]._id,  // Asigna la segunda épica
-			title: 'Implementar API REST',
+			epicId: epics[1]._id,  // Asigna la segunda épica
+			name: 'Implementar API REST',
 			description: 'Crear la API REST para la comunicación con el frontend.',
 			moscowPriorityId: priorities[1].moscowPriorityId,  // Asigna la segunda prioridad
 			status: 'En Progreso',
@@ -48,8 +48,8 @@ module.exports = async function seedUserStories() {
 			authorUserId: users[1]._id,  // El usuario que crea la UserStory
 		},
 		{
-			epic: epics[0]._id,  // Asigna la primera épica
-			title: 'Desarrollar módulo de autenticación',
+			epicId: epics[0]._id,  // Asigna la primera épica
+			name: 'Desarrollar módulo de autenticación',
 			description: 'Crear el sistema de autenticación de usuarios en la aplicación.',
 			moscowPriorityId: priorities[2].moscowPriorityId,  // Asigna la tercera prioridad
 			status: 'Completado',

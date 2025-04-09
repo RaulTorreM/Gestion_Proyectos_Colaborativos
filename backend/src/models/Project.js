@@ -1,7 +1,7 @@
 const { Schema, model } = require('mongoose');
 
 const projectSchema = new Schema({
-    title: {
+    name: {
         type: String,
         trim: true,
         required: true,

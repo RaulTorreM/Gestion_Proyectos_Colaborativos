@@ -13,11 +13,11 @@ projectControllers.getProject = async (req, res) => {
 }
 
 projectControllers.createProject = async (req, res) => {
-	const { title, description, startDate, endDate, status,
+	const { name, description, startDate, endDate,
 			teamMembers, projectType, authorUserId} = req.body 
 	
 	const newProject = new Project({
-		title,
+		name,
 		description,
 		startDate,
 		endDate,
@@ -32,11 +32,11 @@ projectControllers.createProject = async (req, res) => {
 }
 
 projectControllers.updateProject = async (req, res) => {
-	const { title, description, startDate, endDate, status,
+	const { name, description, startDate, endDate, status,
 			teamMembers, projectType, authorUserId} = req.body 
 
 	await Project.findByIdAndUpdate(req.params.id, {
-		title,
+		name,
 		description,
 		startDate,
 		endDate,

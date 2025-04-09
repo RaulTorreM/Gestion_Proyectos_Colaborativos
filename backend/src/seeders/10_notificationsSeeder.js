@@ -17,22 +17,22 @@ module.exports = async function seedNotifications() {
     const notifications = [
       {
         type: 'info',
-        description: 'Esta es una notificación informativa.',
+        message: 'Esta es una notificación informativa.',
         userId: users[0]._id,  // Asigna el primer usuario
       },
       {
         type: 'warning',
-        description: 'Esto es un mensaje de advertencia.',
+        message: 'Esto es un mensaje de advertencia.',
         userId: users[1]._id,  // Asigna el segundo usuario
       },
       {
         type: 'success',
-        description: 'Operación exitosa.',
+        message: 'Operación exitosa.',
         userId: users[2]._id,  // Asigna el tercer usuario
       },
       {
         type: 'error',
-        description: 'Ocurrió un error inesperado.',
+        message: 'Ocurrió un error inesperado.',
         userId: users[0]._id,  // Asigna el primer usuario
       },
     ];
