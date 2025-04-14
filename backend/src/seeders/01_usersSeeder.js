@@ -4,42 +4,54 @@ const bcrypt = require('bcrypt'); // para encriptar contraseñas
 module.exports = async function seedUsers() {
 	const users = [
 	{
-		username: 'Josué García',
+		name: 'Josué García',
 		email: 'josue@example.com',
 		password: await bcrypt.hash('josue123', 10),
+		avatar: "josue.png",
 		settings: {
-			theme: "dark",
-			language: "es"
+			notifications: {
+				email: false,
+				push: true
+			},
+			theme: "dark"
 		},
 		preferences: {
-			fontSize: "medium",
-			sidebarCollapsed: false
+			language: "es",
+			timezone: "America/Lima"
 		},
 	},
 	{
-		username: 'Raúl Torre',
+		name: 'Raúl Torre',
 		email: 'raul@example.com',
 		password: await bcrypt.hash('raul123', 10),
+		avatar: "raul.png",
 		settings: {
-			theme: "dark",
-			language: "en"
+			notifications: {
+				email: false,
+				push: true
+			},
+			theme: "dark"
 		},
 		preferences: {
-			fontSize: "medium",
-			sidebarCollapsed: false
+			language: "es",
+			timezone: "America/Lima"
 		},
 	},
 	{
-		username: 'David Contreras',
+		name: 'David Contreras',
 		email: 'david@example.com',
 		password: await bcrypt.hash('david123', 10),
+		avatar: "david.png",
 		settings: {
-			theme: "light",
-			language: "es"
+			notifications: {
+				email: true,
+				push: true
+			},
+			theme: "light"
 		},
 		preferences: {
-			fontSize: "small",
-			sidebarCollapsed: false
+			language: "en",
+			timezone: "America/New_York"
 		},
 	}
 	];

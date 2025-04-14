@@ -13,6 +13,10 @@ const moscowPrioritySchema = new Schema({
 	description: {
 		type: String,
 		required: true
+	},
+	color: {
+		type: String, // Código hexadecimal
+		required: true,
 	}
 }, {
 	timestamps: true

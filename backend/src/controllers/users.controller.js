@@ -14,9 +14,9 @@ userControllers.getUser = async (req, res) => {
 }
 
 userControllers.createUser = async (req, res) => {
-	const { username, email, password, settings, preferences} = req.body 
+	const { name, email, password, settings, preferences} = req.body 
 
-	let createData = { username, email, password, settings, preferences};
+	let createData = { name, email, password, avatar, settings, preferences};
 
 	if (password) {
 		const hashedPassword = await bcrypt.hash(password, 10);
@@ -31,9 +31,9 @@ userControllers.createUser = async (req, res) => {
 }
 
 userControllers.updateUser = async (req, res) => {
-	const { username, email, password, settings, preferences} = req.body 
+	const { name, email, password, settings, preferences} = req.body 
 
-	let updateData = { username, email, settings, preferences };
+	let updateData = { name, email, avatar, settings, preferences };
 
 	if (password) {
 		const hashedPassword = await bcrypt.hash(password, 10);

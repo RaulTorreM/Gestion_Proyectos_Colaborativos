@@ -22,6 +22,8 @@ const notificationSchema = new Schema({
 	}
 }, {
 	timestamps: true,
+    toJSON: { virtuals: true },
+	toObject: { virtuals: true }
 });
 
 // Campo virtual "hace x tiempo"
@@ -29,10 +31,6 @@ notificationSchema.virtual('timeAgo').get(function () {
   return DateTime.fromJSDate(this.createdAt)
     .setLocale('es')
     .toRelative(); // Ej: "hace 3 minutos", "hace una hora"
-});
-
-notificationSchema.set('toJSON', {
-    virtuals: true,
 });
 
 module.exports = model('Notification', notificationSchema);

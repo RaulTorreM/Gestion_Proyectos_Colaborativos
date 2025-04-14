@@ -11,11 +11,14 @@ const projectSchema = new Schema({
         required: true,
     },
     startDate: {
-        type: Date,  // Usa Date para las fechas en lugar de String
+        type: Date,
         required: true,
     },
     endDate: {
-        type: Date,  // Usa Date para las fechas en lugar de String
+        type: Date, 
+    },
+    dueDate: {
+        type: Date, 
         required: true,
     },
     status: {
@@ -24,16 +27,20 @@ const projectSchema = new Schema({
         default: 'No iniciado',
         required: true,
     },
-    teamMembers: [
+    members: [
         {
             userId: { type: Schema.Types.ObjectId, ref: 'User' },
-            role: String
+            role: String,
+            joinedAt: Date
         }
     ],
     projectType: String,
+    epics: [{ type: Schema.Types.ObjectId, ref: 'Epic' }],
     authorUserId: { type: Schema.Types.ObjectId, ref: 'User' },
 }, {
     timestamps: true,
+    toJSON: { virtuals: true },
+	toObject: { virtuals: true }
 });
 
 // Calcula la duración del proyecto en días como un campo virtual
@@ -49,9 +56,17 @@ projectSchema.virtual('duration').get(function() {
     return 'Fechas inválidas';
 });
 
-// Asegurarse de que el campo virtual se incluya en el resultado de las consultas
-projectSchema.set('toJSON', {
-    virtuals: true,
+projectSchema.virtual('statusEntrega').get(function () {
+	if (!this.dueDate) return 'Sin fecha límite';
+	if (!this.endDate) return 'Sin finalizar';
+
+	const due = new Date(this.dueDate).setHours(0, 0, 0, 0);
+	const end = new Date(this.endDate).setHours(0, 0, 0, 0);
+
+	if (end < due) return 'Anticipada';
+	if (end === due) return 'Puntual';
+	if (end > due) return 'Tardía';
+	return 'Sin datos';
 });
 
 module.exports = model('Project', projectSchema);

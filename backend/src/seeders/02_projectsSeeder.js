@@ -19,8 +19,9 @@ module.exports = async function seedProjects() {
                 description: 'Migración completa de la base de datos de la empresa a un nuevo sistema.',
                 startDate: new Date('2025-01-01'),
                 endDate: new Date('2025-06-30'),
+                dueDate: new Date('2025-06-30'),
                 status: 'En Progreso',
-                teamMembers: [
+                members: [
                     { userId: users[0]._id, role: 'Líder de Proyecto' },
                     { userId: users[1]._id, role: 'Desarrollador' }
                 ],
@@ -32,8 +33,9 @@ module.exports = async function seedProjects() {
                 description: 'Desarrollo de una nueva aplicación móvil para la gestión de tareas.',
                 startDate: new Date('2025-02-01'),
                 endDate: new Date('2025-12-31'),
+                dueDate: new Date('2025-12-31'),
                 status: 'No iniciado',
-                teamMembers: [
+                members: [
                     { userId: users[1]._id, role: 'Desarrollador de iOS' },
                     { userId: users[0]._id, role: 'Desarrollador de Android' }
                 ],

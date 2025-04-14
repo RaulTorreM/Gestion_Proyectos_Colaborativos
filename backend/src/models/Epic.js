@@ -15,23 +15,28 @@ const epicSchema = new Schema({
 		type: String,
 		trim: true
 	},
-	status: {
-		type: String,
-		enum: ['Pendiente', 'En Progreso', 'Completado'],
-		default: 'Pendiente'
-	},
 	startDate: {
-		type: Date
+		type: Date,
+		required: true,
 	},
 	endDate: {
 		type: Date
 	},
 	dueDate: {
-		type: Date
+		type: Date,
+		required: true,
+	},
+	status: {
+		type: String,
+		enum: ['Pendiente', 'En Progreso', 'Completado'],
+		default: 'Pendiente'
 	},
 	authorUserId: { type: Schema.Types.ObjectId, ref: 'User' },
+	stories: [{ type: Schema.Types.ObjectId, ref: 'UserStory' }], 
 }, {
 	timestamps: true,
+	toJSON: { virtuals: true },
+	toObject: { virtuals: true }
 });
 
 epicSchema.virtual('duration').get(function() {
@@ -43,8 +48,17 @@ epicSchema.virtual('duration').get(function() {
 		return 'Fechas inválidas';
 });
 
-epicSchema.set('toJSON', {
-		virtuals: true,
+epicSchema.virtual('statusEntrega').get(function () {
+	if (!this.dueDate) return 'Sin fecha límite';
+	if (!this.endDate) return 'Sin finalizar';
+
+	const due = new Date(this.dueDate).setHours(0, 0, 0, 0);
+	const end = new Date(this.endDate).setHours(0, 0, 0, 0);
+
+	if (end < due) return 'Anticipada';
+	if (end === due) return 'Puntual';
+	if (end > due) return 'Tardía';
+	return 'Sin datos';
 });
 
 module.exports = model('Epic', epicSchema);

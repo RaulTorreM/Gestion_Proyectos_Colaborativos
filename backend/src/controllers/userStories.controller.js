@@ -14,7 +14,7 @@ userStoryControllers.getUserStory = async (req, res) => {
 
 userStoryControllers.createUserStory = async (req, res) => {
 	const { epicId, name, description, moscowPriorityId, startDate, 
-			endDate, dueDate, teamMembers, authorUserId} = req.body 
+			endDate, dueDate, members, authorUserId} = req.body 
 	
 	const newUserStory = new UserStory({
 		epicId,
@@ -24,7 +24,7 @@ userStoryControllers.createUserStory = async (req, res) => {
 		startDate,
 		endDate,
 		dueDate,
-		teamMembers,
+		members,
 		authorUserId
 	})
 
@@ -35,7 +35,7 @@ userStoryControllers.createUserStory = async (req, res) => {
 
 userStoryControllers.updateUserStory = async (req, res) => {
 	const { name, description, moscowPriorityId, startDate, 
-			endDate, dueDate, teamMembers} = req.body 
+			endDate, dueDate, members} = req.body 
 
 	await UserStory.findByIdAndUpdate(req.params.id, {
 		name,
@@ -44,7 +44,7 @@ userStoryControllers.updateUserStory = async (req, res) => {
 		startDate,
 		endDate,
 		dueDate,
-		teamMembers,
+		members,
 	})
 
 	res.json({message: 'User Story updated'})

@@ -15,7 +15,7 @@ const userStorySchema = new Schema({
 		type: String,
 		trim: true
 	},
-	moscowPriorityId: {
+	moscowPriorityId: {  // Referencia a `moscowPriorityId` de `MoscowPriority`
 		type: Number,
 		required: true
 	},
@@ -33,7 +33,7 @@ const userStorySchema = new Schema({
 	dueDate: {
 		type: Date
 	},
-	teamMembers: [
+	members: [
         {
             userId: { type: Schema.Types.ObjectId, ref: 'User' },
             role: String
@@ -42,6 +42,8 @@ const userStorySchema = new Schema({
 	authorUserId: { type: Schema.Types.ObjectId, ref: 'User' },
 }, {
 	timestamps: true,
+    toJSON: { virtuals: true },
+	toObject: { virtuals: true }
 });
 
 userStorySchema.virtual('duration').get(function() {
@@ -67,10 +69,6 @@ userStorySchema.virtual('remainingTime').get(function () {
 		return `${diffInDays} día${diffInDays === 1 ? '' : 's'}`;
 	}
 	return 'Fechas inválidas';
-});
-
-userStorySchema.set('toJSON', {
-	virtuals: true,
 });
 
 module.exports = model('UserStory', userStorySchema);
