@@ -69,4 +69,20 @@ projectSchema.virtual('statusEntrega').get(function () {
 	return 'Sin datos';
 });
 
+projectSchema.virtual('remainingTime').get(function () {
+	if (this.endDate instanceof Date && !isNaN(this.endDate)) {
+		const now = new Date();
+		// Verifica si la fecha ya expiró
+		if (this.endDate < now) {
+			return 'Tiempo expirado';
+		}
+		// Diferencia en milisegundos
+		const diffInTime = this.endDate.getTime() - now.getTime();
+		// Cálculo de días restantes, redondeando hacia arriba
+		const diffInDays = Math.ceil(diffInTime / (1000 * 60 * 60 * 24));
+		return `${diffInDays} día${diffInDays === 1 ? '' : 's'}`;
+	}
+	return 'Fechas inválidas';
+});
+
 module.exports = model('Project', projectSchema);

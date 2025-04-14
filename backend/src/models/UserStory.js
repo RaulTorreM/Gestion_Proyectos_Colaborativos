@@ -6,6 +6,10 @@ const userStorySchema = new Schema({
 		ref: 'Epic',
 		required: true
 	},
+	versionId: {
+		type: Schema.Types.ObjectId,
+		ref: 'Version',
+	},
 	name: {
 		type: String,
 		required: true,
@@ -51,6 +55,22 @@ userStorySchema.virtual('duration').get(function() {
 		const diffInTime = this.endDate.getTime() - this.startDate.getTime();
 		const diffInDays = diffInTime / (1000 * 3600 * 24);
 		return `${diffInDays} días`;
+	}
+	return 'Fechas inválidas';
+});
+
+userStorySchema.virtual('remainingTime').get(function () {
+	if (this.endDate instanceof Date && !isNaN(this.endDate)) {
+		const now = new Date();
+		// Verifica si la fecha ya expiró
+		if (this.endDate < now) {
+			return 'Tiempo expirado';
+		}
+		// Diferencia en milisegundos
+		const diffInTime = this.endDate.getTime() - now.getTime();
+		// Cálculo de días restantes, redondeando hacia arriba
+		const diffInDays = Math.ceil(diffInTime / (1000 * 60 * 60 * 24));
+		return `${diffInDays} día${diffInDays === 1 ? '' : 's'}`;
 	}
 	return 'Fechas inválidas';
 });

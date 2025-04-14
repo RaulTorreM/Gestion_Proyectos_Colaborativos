@@ -13,10 +13,10 @@ app.use(express.json());
 app.use('/api/users', require('./routes/users'))
 app.use('/api/projects', require('./routes/projects'))
 app.use('/api/epics', require('./routes/epics'))
-app.use('/api/userStories', require('./routes/userStories'))
 app.use('/api/moscowPriorities', require('./routes/moscowPriorities'))
-app.use('/api/notifications', require('./routes/notifications'))
+app.use('/api/userStories', require('./routes/userStories'))
 app.use('/api/comments', require('./routes/comments'))
-
+app.use('/api/versions', require('./routes/versions'))
+app.use('/api/notifications', require('./routes/notifications'))
 
 module.exports = app;

@@ -58,11 +58,15 @@ module.exports = async function seedEpics() {
         // Insertar las épicas en la base de datos
         const insertedEpics = await Epic.insertMany(epics);
 
-        // Ahora, actualizamos los proyectos para que tengan referencias a las épicas
-       /*  await Project.updateMany(
-            { _id: { $in: insertedEpics.map(epic => epic.projectId) } }, 
-            { $push: { epics: { $each: insertedEpics.map(epic => ({ epicId: epic._id })) } } }
-        ); */
+		// Actualizar epics en Projects relacionados
+        for (let i = 0; i < insertedEpics.length; i++) {
+            const epic = insertedEpics[i];
+
+            await Project.findByIdAndUpdate(
+                epic.projectId, // ID del proyecto relacionado
+                { $push: { epics: epic._id } } // Asumiendo que el campo es un array llamado `epics`
+            );
+        }
 
         console.log('✅ Proyectos actualizados con las épicas');
 

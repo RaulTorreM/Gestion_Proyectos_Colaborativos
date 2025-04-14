@@ -63,8 +63,17 @@ module.exports = async function seedUserStories() {
 		];
 
 		// Inserta las User Stories en la base de datos
-		await UserStory.insertMany(userStories);
+		const insertedUserStories = await UserStory.insertMany(userStories);
 
+		// Actualizar userStories en Epics relacionados
+        for (let i = 0; i < insertedUserStories.length; i++) {
+            const userStory = insertedUserStories[i];
+
+            await Epic.findByIdAndUpdate(
+                userStory.epicId,
+                { $push: { userStories: userStory._id } }
+            );
+        }
 	} catch (error) {
 		console.error('❌ Error al insertar User Stories:', error);
 	}

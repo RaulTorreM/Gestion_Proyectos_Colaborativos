@@ -3,7 +3,6 @@ const epicControllers = {};
 const Epic = require('../models/Epic');
 
 epicControllers.getEpics = async (req, res) => {
-	// Consulta a la BD
 	const epics = await Epic.find(); 
 	res.json(epics)
 }
