@@ -1,6 +1,6 @@
-const UserStory = require('../models/UserStory');
-const User = require('../models/User');
-const Comment = require('../models/Comment');
+const UserStory = require('../models/UserStories');
+const User = require('../models/Users');
+const Comment = require('../models/Comments');
 
 module.exports = async function seedComments() {
 	try {

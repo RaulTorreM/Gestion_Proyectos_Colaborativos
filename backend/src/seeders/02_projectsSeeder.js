@@ -1,5 +1,5 @@
-const User = require('../models/User');
-const Project = require('../models/Project');
+const User = require('../models/Users');
+const Project = require('../models/Projects');
 
 module.exports = async function seedProjects() {
     try {
@@ -22,8 +22,8 @@ module.exports = async function seedProjects() {
                 dueDate: new Date('2025-06-30'),
                 status: 'En Progreso',
                 members: [
-                    { userId: users[0]._id, role: 'Líder de Proyecto' },
-                    { userId: users[1]._id, role: 'Desarrollador' }
+                    { userId: users[0]._id, role: 'Líder de Proyecto',joinedAt: new Date() },
+                    { userId: users[1]._id, role: 'Desarrollador',joinedAt: new Date() }
                 ],
                 projectType: 'Tecnología',
                 authorUserId: users[0]._id,  // El creador del proyecto es el primer usuario
@@ -36,8 +36,8 @@ module.exports = async function seedProjects() {
                 dueDate: new Date('2025-12-31'),
                 status: 'No iniciado',
                 members: [
-                    { userId: users[1]._id, role: 'Desarrollador de iOS' },
-                    { userId: users[0]._id, role: 'Desarrollador de Android' }
+                    { userId: users[1]._id, role: 'Desarrollador de iOS', joinedAt: new Date()},
+                    { userId: users[0]._id, role: 'Desarrollador de Android', joinedAt: new Date() }
                 ],
                 projectType: 'Desarrollo de software',
                 authorUserId: users[1]._id,  // El creador del proyecto es el segundo usuario

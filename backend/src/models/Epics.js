@@ -1,9 +1,9 @@
 const { Schema, model } = require('mongoose');
 
-const epicSchema = new Schema({
+const epicsSchema = new Schema({
 	projectId: {
 		type: Schema.Types.ObjectId,
-		ref: 'Project',
+		ref: 'Projects',
 		required: true
 	},
 	name: {
@@ -15,6 +15,7 @@ const epicSchema = new Schema({
 		type: String,
 		trim: true
 	},
+	////////////////////////////////////////////////////
 	startDate: {
 		type: Date,
 		required: true,
@@ -31,15 +32,16 @@ const epicSchema = new Schema({
 		enum: ['Pendiente', 'En Progreso', 'Completado'],
 		default: 'Pendiente'
 	},
-	authorUserId: { type: Schema.Types.ObjectId, ref: 'User' },
-	userStories: [{ type: Schema.Types.ObjectId, ref: 'UserStory' }], 
+	authorUserId: { type: Schema.Types.ObjectId, ref: 'Users' },
+	userStories: [{ type: Schema.Types.ObjectId, ref: 'UserStories' }], 
 }, {
 	timestamps: true,
 	toJSON: { virtuals: true },
 	toObject: { virtuals: true }
 });
 
-epicSchema.virtual('duration').get(function() {
+//crear funcion aparte
+epicsSchema.virtual('duration').get(function() {
 		if (this.startDate && this.endDate) {
 			const diffInTime = this.endDate.getTime() - this.startDate.getTime();
 			const diffInDays = diffInTime / (1000 * 3600 * 24);
@@ -48,7 +50,7 @@ epicSchema.virtual('duration').get(function() {
 		return 'Fechas inválidas';
 });
 
-epicSchema.virtual('statusEntrega').get(function () {
+epicsSchema.virtual('statusEntrega').get(function () {
 	if (!this.dueDate) return 'Sin fecha límite';
 	if (!this.endDate) return 'Sin finalizar';
 
@@ -61,7 +63,7 @@ epicSchema.virtual('statusEntrega').get(function () {
 	return 'Sin datos';
 });
 
-epicSchema.virtual('remainingTime').get(function () {
+epicsSchema.virtual('remainingTime').get(function () {
 	if (this.endDate instanceof Date && !isNaN(this.endDate)) {
 		const now = new Date();
 		// Verifica si la fecha ya expiró
@@ -77,4 +79,4 @@ epicSchema.virtual('remainingTime').get(function () {
 	return 'Fechas inválidas';
 });
 
-module.exports = model('Epic', epicSchema);
+module.exports = model('Epics', epicsSchema);

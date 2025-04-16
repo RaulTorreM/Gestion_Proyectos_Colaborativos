@@ -1,6 +1,6 @@
 const { Schema, model } = require('mongoose');
 
-const projectSchema = new Schema({
+const projectsSchema = new Schema({
     name: {
         type: String,
         trim: true,
@@ -19,7 +19,7 @@ const projectSchema = new Schema({
     },
     dueDate: {
         type: Date, 
-        required: true,
+
     },
     status: {
         type: String,
@@ -29,14 +29,14 @@ const projectSchema = new Schema({
     },
     members: [
         {
-            userId: { type: Schema.Types.ObjectId, ref: 'User' },
+            userId: { type: Schema.Types.ObjectId, ref: 'Users' },
             role: String,
             joinedAt: Date
         }
     ],
     projectType: String,
-    epics: [{ type: Schema.Types.ObjectId, ref: 'Epic' }],
-    authorUserId: { type: Schema.Types.ObjectId, ref: 'User' },
+    epics: [{ type: Schema.Types.ObjectId, ref: 'Epics' }],
+    authorUserId: { type: Schema.Types.ObjectId, ref: 'Users' },
 }, {
     timestamps: true,
     toJSON: { virtuals: true },
@@ -44,7 +44,7 @@ const projectSchema = new Schema({
 });
 
 // Calcula la duración del proyecto en días como un campo virtual
-projectSchema.virtual('duration').get(function() {
+projectsSchema.virtual('duration').get(function() {
     // Si las fechas de inicio y fin están correctamente definidas
     if (this.startDate && this.endDate) {
       // Calcula la diferencia en milisegundos
@@ -53,10 +53,10 @@ projectSchema.virtual('duration').get(function() {
       const diffInDays = diffInTime / (1000 * 3600 * 24);
       return `${diffInDays} días`;
     }
-    return 'Fechas inválidas';
+    return 'Proyecto en Progreso';
 });
 
-projectSchema.virtual('statusEntrega').get(function () {
+projectsSchema.virtual('statusEntrega').get(function () {
 	if (!this.dueDate) return 'Sin fecha límite';
 	if (!this.endDate) return 'Sin finalizar';
 
@@ -69,7 +69,7 @@ projectSchema.virtual('statusEntrega').get(function () {
 	return 'Sin datos';
 });
 
-projectSchema.virtual('remainingTime').get(function () {
+projectsSchema.virtual('remainingTime').get(function () {
 	if (this.endDate instanceof Date && !isNaN(this.endDate)) {
 		const now = new Date();
 		// Verifica si la fecha ya expiró
@@ -85,4 +85,4 @@ projectSchema.virtual('remainingTime').get(function () {
 	return 'Fechas inválidas';
 });
 
-module.exports = model('Project', projectSchema);
+module.exports = model('Projects', projectsSchema);

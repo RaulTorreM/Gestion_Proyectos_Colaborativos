@@ -1,4 +1,4 @@
-const User = require('../models/User');
+const User = require('../models/Users');
 const bcrypt = require('bcrypt'); // para encriptar contraseñas
 
 module.exports = async function seedUsers() {
@@ -8,6 +8,7 @@ module.exports = async function seedUsers() {
 		email: 'josue@example.com',
 		password: await bcrypt.hash('josue123', 10),
 		avatar: "josue.png",
+		projects: [],
 		settings: {
 			notifications: {
 				email: false,
@@ -25,6 +26,7 @@ module.exports = async function seedUsers() {
 		email: 'raul@example.com',
 		password: await bcrypt.hash('raul123', 10),
 		avatar: "raul.png",
+		projects: [],
 		settings: {
 			notifications: {
 				email: false,
@@ -42,6 +44,7 @@ module.exports = async function seedUsers() {
 		email: 'david@example.com',
 		password: await bcrypt.hash('david123', 10),
 		avatar: "david.png",
+		projects: [],
 		settings: {
 			notifications: {
 				email: true,

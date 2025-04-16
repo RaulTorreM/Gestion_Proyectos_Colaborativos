@@ -1,7 +1,7 @@
-const UserStory = require('../models/UserStory');
-const Epic = require('../models/Epic');
-const User = require('../models/User');
-const MoscowPriority = require('../models/MoscowPriority');
+const UserStory = require('../models/UserStories');
+const Epic = require('../models/Epics');
+const User = require('../models/Users');
+const MoscowPriority = require('../models/Priority');
 
 module.exports = async function seedUserStories() {
 	try {
@@ -22,27 +22,25 @@ module.exports = async function seedUserStories() {
 				epicId: epics[0]._id,  // Asigna la primera épica
 				name: 'Desarrollar la página de inicio',
 				description: 'Implementar la página de inicio con la estructura básica.',
-				moscowPriorityId: priorities[0].moscowPriorityId,  // Asigna la primera prioridad
+				priorityId: priorities[0]._id,  
 				status: 'Pendiente',
 				startDate: new Date('2025-05-01'),
 				endDate: new Date('2025-05-15'),
 				dueDate: new Date('2025-05-10'),
-				members: [
-					{ userId: users[0]._id, role: 'Líder de Proyecto' },
-				],
+				assignedTo: [users[0]._id],
 				authorUserId: users[0]._id,  // El usuario que crea la UserStory
 			},
 			{
 				epicId: epics[1]._id,  // Asigna la segunda épica
 				name: 'Implementar API REST',
 				description: 'Crear la API REST para la comunicación con el frontend.',
-				moscowPriorityId: priorities[1].moscowPriorityId,  // Asigna la segunda prioridad
+				priorityId: priorities[1]._id,
 				status: 'En Progreso',
 				startDate: new Date('2025-05-10'),
 				endDate: new Date('2025-05-20'),
 				dueDate: new Date('2025-05-15'),
-				members: [
-					{ userId: users[1]._id, role: 'Asistente' },
+				assignedTo: [
+					{ userId: users[1]._id},
 				],
 				authorUserId: users[1]._id,  // El usuario que crea la UserStory
 			},
@@ -50,13 +48,13 @@ module.exports = async function seedUserStories() {
 				epicId: epics[0]._id,  // Asigna la primera épica
 				name: 'Desarrollar módulo de autenticación',
 				description: 'Crear el sistema de autenticación de usuarios en la aplicación.',
-				moscowPriorityId: priorities[2].moscowPriorityId,  // Asigna la tercera prioridad
+				priorityId: priorities[2]._id,
 				status: 'Completado',
 				startDate: new Date('2025-04-01'),
 				endDate: new Date('2025-04-10'),
 				dueDate: new Date('2025-04-05'),
-				members: [
-					{ userId: users[2]._id, role: 'Desarrollador' },
+				assignedTo: [
+					{ userId: users[2]._id},
 				],
 				authorUserId: users[2]._id,  // El usuario que crea la UserStory
 			},

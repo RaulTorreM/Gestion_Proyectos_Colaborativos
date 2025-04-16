@@ -1,14 +1,14 @@
 const { Schema, model } = require('mongoose');
 
-const userStorySchema = new Schema({
+const userStoriesSchema = new Schema({
 	epicId: {
 		type: Schema.Types.ObjectId,
-		ref: 'Epic',
+		ref: 'Epics',
 		required: true
 	},
 	versionId: {
 		type: Schema.Types.ObjectId,
-		ref: 'Version',
+		ref: 'Versions',
 	},
 	name: {
 		type: String,
@@ -19,15 +19,16 @@ const userStorySchema = new Schema({
 		type: String,
 		trim: true
 	},
-	moscowPriorityId: {  // Referencia a `moscowPriorityId` de `MoscowPriority`
-		type: Number,
-		required: true
+	priorityId: {  // Referencia a `moscowPriorityId` de `MoscowPriority`
+		type: Schema.Types.ObjectId, 
+		ref: 'Priorities'
 	},
 	status: {
 		type: String,
 		enum: ['Pendiente', 'En Progreso', 'Completado'],
 		default: 'Pendiente'
 	},
+	// POR CONFIRMAR
 	startDate: {
 		type: Date
 	},
@@ -37,20 +38,20 @@ const userStorySchema = new Schema({
 	dueDate: {
 		type: Date
 	},
-	members: [
+	//////////////////
+	assignedTo: [
         {
-            userId: { type: Schema.Types.ObjectId, ref: 'User' },
-            role: String
+            userId: { type: Schema.Types.ObjectId, ref: 'Users' },
         }
     ],
-	authorUserId: { type: Schema.Types.ObjectId, ref: 'User' },
+	authorUserId: { type: Schema.Types.ObjectId, ref: 'Users' },
 }, {
 	timestamps: true,
     toJSON: { virtuals: true },
 	toObject: { virtuals: true }
 });
 
-userStorySchema.virtual('duration').get(function() {
+userStoriesSchema.virtual('duration').get(function() {
 	if (this.startDate && this.endDate) {
 		const diffInTime = this.endDate.getTime() - this.startDate.getTime();
 		const diffInDays = diffInTime / (1000 * 3600 * 24);
@@ -59,7 +60,7 @@ userStorySchema.virtual('duration').get(function() {
 	return 'Fechas inválidas';
 });
 
-userStorySchema.virtual('remainingTime').get(function () {
+userStoriesSchema.virtual('remainingTime').get(function () {
 	if (this.endDate instanceof Date && !isNaN(this.endDate)) {
 		const now = new Date();
 		// Verifica si la fecha ya expiró
@@ -75,7 +76,7 @@ userStorySchema.virtual('remainingTime').get(function () {
 	return 'Fechas inválidas';
 });
 
-userStorySchema.virtual('remainingTime').get(function () {
+userStoriesSchema.virtual('remainingTime').get(function () {
 	if (this.endDate instanceof Date && !isNaN(this.endDate)) {
 		const now = new Date();
 		// Verifica si la fecha ya expiró
@@ -91,4 +92,4 @@ userStorySchema.virtual('remainingTime').get(function () {
 	return 'Fechas inválidas';
 });
 
-module.exports = model('UserStory', userStorySchema);
+module.exports = model('UserStories', userStoriesSchema);
