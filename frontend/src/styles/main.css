@@ -1,0 +1,51 @@
+@import "tailwindcss";
+/* src/styles/main.css */
+/* src/styles/main.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Estilos base para modo oscuro */
+body {
+  @apply bg-black text-white;
+}
+
+/* Eliminar cualquier fondo azul residual */
+.bg-blue-50, .bg-blue-100, .bg-blue-200, 
+.bg-blue-300, .bg-blue-400, .bg-blue-500,
+.bg-blue-600, .bg-blue-700, .bg-blue-800,
+.bg-blue-900 {
+  @apply bg-black;
+}
+
+/* Asegurar gráficos en modo oscuro */
+.chartjs-render-monitor {
+  background-color: #000000 !important;
+}
+
+/* Scrollbar personalizada */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  @apply bg-gray-900;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-700 rounded-full;
+}
+
+/* Eliminar cualquier fondo azul residual */
+.bg-blue-*, .bg-indigo-*, .bg-sky-*, .bg-primary, .bg-secondary {
+  background-color: #000000 !important;
+}
+
+/* Asegurar el footer */
+footer, .footer, #footer {
+  background-color: #000000 !important;
+  border-top: 1px solid #333 !important;
+}
+
+/* Gráficos */
+.chart-container, .chart-wrapper {
+  background-color: #000000 !important;
+}
