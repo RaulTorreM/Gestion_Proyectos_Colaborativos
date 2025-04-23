@@ -19,7 +19,7 @@ module.exports = async function seedNotifications() {
       {
         userId: users[0]._id,  // Asigna el primer usuario
         type: 'mention',
-        title: 'TEST1',
+        title: 'Nueva mención',
         message: 'Esta es una notificación informativa.',
         entityType: "Comments",
         entityId: comments[0]._id,
@@ -27,7 +27,7 @@ module.exports = async function seedNotifications() {
       {
         userId: users[1]._id,  // Asigna el segundo usuario
         type: 'assignment',
-        title: 'TEST2',
+        title: 'Se asignó una nueva actividad.',
         message: 'Esto es un mensaje de advertencia.',
         entityType: "Comments",
         entityId: comments[0]._id,
@@ -35,7 +35,7 @@ module.exports = async function seedNotifications() {
       {
         userId: users[2]._id,  // Asigna el tercer usuario
         type: 'status_change',
-        title: 'TEST3',
+        title: 'Se completó con éxito una actividad',
         message: 'Operación exitosa.',
         entityType: "Comments",
         entityId: comments[0]._id,
@@ -43,7 +43,7 @@ module.exports = async function seedNotifications() {
       {
         userId: users[0]._id,  // Asigna el primer usuario
         type: 'comment',
-        title: 'TEST4',
+        title: 'Hubo un problema en las actividades',
         message: 'Ocurrió un error inesperado.',
         entityType: "Comments",
         entityId: comments[0]._id,
