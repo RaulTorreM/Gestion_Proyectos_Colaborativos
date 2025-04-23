@@ -1,6 +1,6 @@
-const UserStory = require('../models/UserStories');
-const Epic = require('../models/Epics');
-const User = require('../models/Users');
+const UserStory = require('../models/UserStory');
+const Epic = require('../models/Epic');
+const User = require('../models/User');
 const MoscowPriority = require('../models/Priority');
 
 module.exports = async function seedUserStories() {

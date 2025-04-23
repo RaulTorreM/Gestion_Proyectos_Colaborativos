@@ -1,7 +1,6 @@
-const Notification = require('../models/Notifications');
-const User = require('../models/Users');
-const mongoose = require('mongoose');
-const Comment = require('../models/Comments');
+const Notification = require('../models/Notification');
+const User = require('../models/User');
+const Comment = require('../models/Comment');
 
 module.exports = async function seedNotifications() {
   try {
@@ -18,34 +17,34 @@ module.exports = async function seedNotifications() {
     // Crear notificaciones
     const notifications = [
       {
+        userId: users[0]._id,  // Asigna el primer usuario
         type: 'mention',
         title: 'TEST1',
         message: 'Esta es una notificación informativa.',
-        userId: users[0]._id,  // Asigna el primer usuario
         entityType: "Comments",
         entityId: comments[0]._id,
       },
       {
+        userId: users[1]._id,  // Asigna el segundo usuario
         type: 'assignment',
         title: 'TEST2',
         message: 'Esto es un mensaje de advertencia.',
-        userId: users[1]._id,  // Asigna el segundo usuario
         entityType: "Comments",
         entityId: comments[0]._id,
       },
       {
-        title: 'TEST3',
-        type: 'status_change',
-        message: 'Operación exitosa.',
         userId: users[2]._id,  // Asigna el tercer usuario
+        type: 'status_change',
+        title: 'TEST3',
+        message: 'Operación exitosa.',
         entityType: "Comments",
         entityId: comments[0]._id,
       },
       {
+        userId: users[0]._id,  // Asigna el primer usuario
         type: 'comment',
         title: 'TEST4',
         message: 'Ocurrió un error inesperado.',
-        userId: users[0]._id,  // Asigna el primer usuario
         entityType: "Comments",
         entityId: comments[0]._id,
       },

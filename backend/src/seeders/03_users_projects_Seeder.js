@@ -1,5 +1,5 @@
-const User = require('../models/Users');
-const Project = require('../models/Projects');
+const User = require('../models/User');
+const Project = require('../models/Project');
 
 module.exports = async function seedUsersProjects() {
     try {

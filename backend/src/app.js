@@ -13,7 +13,7 @@ app.use(express.json());
 app.use('/api/users', require('./routes/users'))
 app.use('/api/projects', require('./routes/projects'))
 app.use('/api/epics', require('./routes/epics'))
-app.use('/api/moscowPriorities', require('./routes/moscowPriorities'))
+app.use('/api/priorities', require('./routes/priorities'))
 app.use('/api/userStories', require('./routes/userStories'))
 app.use('/api/comments', require('./routes/comments'))
 app.use('/api/versions', require('./routes/versions'))

@@ -1,4 +1,4 @@
-const User = require('../models/Users');
+const User = require('../models/User');
 const bcrypt = require('bcrypt'); // para encriptar contraseñas
 
 module.exports = async function seedUsers() {

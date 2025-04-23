@@ -1,6 +1,6 @@
-const User = require('../models/Users');
-const Project = require('../models/Projects');
-const Epic = require('../models/Epics');
+const User = require('../models/User');
+const Project = require('../models/Project');
+const Epic = require('../models/Epic');
 
 module.exports = async function seedEpics() {
     try {

@@ -1,18 +1,18 @@
-const projectControllers = {};
+const projectsController = {};
 
 const Project = require('../models/Project');
 
-projectControllers.getProjects = async (req, res) => {
+projectsController.getProjects = async (req, res) => {
 	const projects = await Project.find(); 
 	res.json(projects)
 }
 
-projectControllers.getProject = async (req, res) => {
+projectsController.getProject = async (req, res) => {
 	const project = await Project.findById(req.params.id)
 	res.json(project)
 }
 
-projectControllers.createProject = async (req, res) => {
+projectsController.createProject = async (req, res) => {
 	const { name, description, startDate, endDate,
 			members, projectType, authorUserId} = req.body 
 	
@@ -31,7 +31,7 @@ projectControllers.createProject = async (req, res) => {
 	res.json({message: 'Project Saved'});
 }
 
-projectControllers.updateProject = async (req, res) => {
+projectsController.updateProject = async (req, res) => {
 	const { name, description, startDate, endDate, status,
 			members, projectType, authorUserId} = req.body 
 
@@ -49,9 +49,9 @@ projectControllers.updateProject = async (req, res) => {
 	res.json({message: 'Project updated'})
 }
 
-projectControllers.deleteProject = async (req, res) => {
+projectsController.deleteProject = async (req, res) => {
 	await Project.findByIdAndDelete(req.params.id)
 	res.json({message: 'Project deleted'})
 }
 
-module.exports = projectControllers;
+module.exports = projectsController;

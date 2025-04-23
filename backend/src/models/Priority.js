@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
 const AutoIncrement = require('mongoose-sequence');
 
 const prioritySchema = new Schema({
+	moscowPriority: Number,
 	name: {
 		type: String,
 		required: true,
@@ -16,7 +17,6 @@ const prioritySchema = new Schema({
 		type: String, // Código hexadecimal
 		required: true,
 	},
-	moscowPriority: Number,
 }, {
 	timestamps: true
 });
