@@ -5,10 +5,13 @@ const usersSchema = new Schema({
 		type: String,
 		trim: true,
 		required: true,
+		unique: true,
 	},
 	email: {
 		type: String,
+		trim: true,
 		required: true,
+		unique: true,
 	},
 	password: {
 		type: String,
@@ -16,26 +19,36 @@ const usersSchema = new Schema({
 	},
 	avatar: {
 		type: String, //URL de la foto de usuario, src\assets\users\avatars\
+		required: false,
+		default: 'default_avatar.png'
 	},
-	projects: [
-        {
-            type: Schema.Types.ObjectId, ref: 'Projects',
-        }
-    ],
+	projects: [{ type: Schema.Types.ObjectId, ref: 'Projects' }],
 	settings: {
 		notifications: {
-			email: Boolean,
-			push: Boolean
+			email: { type: Boolean, default: true },
+			push: { type: Boolean, default: true },
 		},
-		theme: String
+		theme: {
+			type: String,
+			enum: ['light', 'dark'],
+			default: 'dark'
+		},
+	},
+	preferences: {
+		language: {
+			type: String,
+			enum: ['es', 'en'],
+			default: 'es'
+		},
+		timezone: { 
+			type: String,
+			required: true,
+			default: 'America/Lima'
+		}
 	},
 	lastLogin: {
 		type: Date,
 	},
-	preferences: {
-		language: String,
-    	timezone: String
-	}
 }, {
 	timestamps: true,
 });

@@ -1,6 +1,7 @@
 const projectsController = {};
 
 const Project = require('../models/Project');
+const BaseController = require('./base.controller');
 
 projectsController.getProjects = async (req, res) => {
 	const projects = await Project.find(); 
