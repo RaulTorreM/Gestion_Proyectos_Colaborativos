@@ -4,55 +4,88 @@ const Project = require('../models/Project');
 const BaseController = require('./base.controller');
 
 projectsController.getProjects = async (req, res) => {
-	const projects = await Project.find(); 
-	res.json(projects)
+	try {
+		const projects = await Project.find({ deletedAt: null }); 
+
+		if (!projects) {
+			return res.status(404).json({ message: 'Projects not found' });
+		}
+
+		res.json(projects);
+	} catch (error) {
+		console.error(error);
+		res.status(500).json({ message: 'Server Error', error: error.message });
+	}
 }
 
 projectsController.getProject = async (req, res) => {
-	const project = await Project.findById(req.params.id)
-	res.json(project)
+	try {
+		const project = await Project.findOne({ _id: req.params.id, deletedAt: null });
+
+		if (!project) {
+			return res.status(404).json({ message: 'Project not found' });
+		}
+
+		res.json(project);
+	} catch (error) {
+		console.error(error);
+		res.status(500).json({ message: 'Server Error', error: error.message });
+	}
 }
 
 projectsController.createProject = async (req, res) => {
-	const { name, description, startDate, endDate,
-			members, projectType, authorUserId} = req.body 
-	
-	const newProject = new Project({
-		name,
-		description,
-		startDate,
-		endDate,
-		members,
-		projectType,
-		authorUserId
-	})
+	try {
+		// Limpiar campos null o undefined para que usen sus valores por default en el modelo
+		const createData = BaseController.cleanAndAssignDefaults(req.body);
 
-	await newProject.save();
+		const newProject = new Project(createData);
+		await newProject.save();
 
-	res.json({message: 'Project Saved'});
+		res.status(201).json({message: 'Project Saved', project: newProject});
+	} catch (error) {
+		console.error(error);
+		res.status(500).json({ message: 'Server Error', error: error.message });
+	}
 }
 
 projectsController.updateProject = async (req, res) => {
-	const { name, description, startDate, endDate, status,
-			members, projectType, authorUserId} = req.body 
-
-	await Project.findByIdAndUpdate(req.params.id, {
-		name,
-		description,
-		startDate,
-		endDate,
-		status,
-		members,
-		projectType,
-		authorUserId
-	})
-
-	res.json({message: 'Project updated'})
+	try {
+		// Limpiar y asignar defaults donde sea necesario
+		const updateData = BaseController.cleanAndAssignDefaults(req.body);
+	
+		const projectUpdated = await Project.findByIdAndUpdate(req.params.id, updateData, { new: true });
+	
+		if (!projectUpdated) {
+			return res.status(404).json({ message: 'Project not found' });
+		}
+	
+		const projectObject = projectUpdated.toObject();
+	
+		res.status(200).json({ message: 'Project Updated', user: projectObject });
+	} catch (error) {
+		console.error(error);
+		res.status(500).json({ message: 'Server Error', error: error.message });
+	}
 }
 
 projectsController.deleteProject = async (req, res) => {
-	await Project.findByIdAndDelete(req.params.id)
-	res.json({message: 'Project deleted'})
-}
+	try {
+		const project = await Project.findByIdAndUpdate(
+			req.params.id,
+			{ deletedAt: new Date() },
+			{ new: true }
+		);
+	
+		if (!project) {
+			return res.status(404).json({ message: 'Project not found' });
+		}
+	
+		res.json({ message: 'Project Disabled', project });
+	} catch (error) {
+		console.error(error);
+		res.status(500).json({ message: 'Server Error', error: error.message });
+	}
+};
+  
 
 module.exports = projectsController;

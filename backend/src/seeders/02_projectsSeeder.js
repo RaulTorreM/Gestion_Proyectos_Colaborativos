@@ -34,7 +34,7 @@ module.exports = async function seedProjects() {
                 startDate: new Date('2025-02-01'),
                 endDate: new Date('2025-12-31'),
                 dueDate: new Date('2025-12-31'),
-                status: 'No iniciado',
+                status: 'No Iniciado',
                 members: [
                     { userId: users[1]._id, role: 'Desarrollador de iOS', joinedAt: new Date()},
                     { userId: users[0]._id, role: 'Desarrollador de Android', joinedAt: new Date() }

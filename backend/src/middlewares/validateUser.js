@@ -50,17 +50,6 @@ const validateUpdateUser = [
       return true;
     }),
 
-  /* body('email')
-    .isEmail().withMessage('Valid email is required')
-    .custom(async (value, { req }) => {
-      const userId = req.params.id;
-      const user = await User.findOne({ email: value });
-      if (user && user._id.toString() !== userId.toString()) {  // Ignora el propio usuario
-        throw new Error('Email is already registered');
-      }
-      return true;
-    }), */
-
   body('avatar')
     .optional({ nullable: true })
     .custom((value) => {
@@ -99,6 +88,11 @@ const validateUpdateUser = [
       }
       return true;
     }),
+
+  body('deletedAt')
+    .optional()
+    .isISO8601().withMessage('Invalid date format')
+    .toDate(),
 
   validateResult
 ];
