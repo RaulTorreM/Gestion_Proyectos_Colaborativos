@@ -12,20 +12,23 @@ const projectsSchema = new Schema({
     },
     startDate: {
         type: Date,
-        required: true,
+        required: false,
+        default: new Date()
     },
     endDate: {
         type: Date, 
+        required: false,
+        default: null,
     },
     dueDate: {
         type: Date, 
-
+        required: true,
     },
     status: {
         type: String,
-        enum: ['No iniciado', 'En Progreso', 'Finalizado'],
-        default: 'No iniciado',
-        required: true,
+        enum: ['No Iniciado', 'En Progreso', 'Finalizado'],
+        required: false,
+        default: 'No Iniciado',
     },
     members: [
         {
@@ -34,9 +37,17 @@ const projectsSchema = new Schema({
             joinedAt: Date
         }
     ],
-    projectType: String,
+    projectType: {
+        type: String, 
+        required: true,
+    },
     epics: [{ type: Schema.Types.ObjectId, ref: 'Epics' }],
     authorUserId: { type: Schema.Types.ObjectId, ref: 'Users' },
+    deletedAt: {
+		type: Date,
+        required: false,
+		default: null
+	}
 }, {
     timestamps: true,
     toJSON: { virtuals: true },
@@ -70,7 +81,7 @@ projectsSchema.virtual('statusEntrega').get(function () {
 });
 
 projectsSchema.virtual('remainingTime').get(function () {
-	if (this.endDate instanceof Date && !isNaN(this.endDate)) {
+	if (this.endDate && this.endDate instanceof Date && !isNaN(this.endDate)) {
 		const now = new Date();
 		// Verifica si la fecha ya expiró
 		if (this.endDate < now) {
