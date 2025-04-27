@@ -8,31 +8,41 @@ const epicsSchema = new Schema({
 	},
 	name: {
 		type: String,
-		required: true,
-		trim: true
+		trim: true,
+		required: true
 	},
 	description: {
 		type: String,
-		trim: true
+		trim: true,
+		required: true
 	},
 	startDate: {
 		type: Date,
 		required: true,
 	},
 	endDate: {
-		type: Date
+		type: Date,
+		required: false,
+        default: null
 	},
 	dueDate: {
 		type: Date,
-		required: true,
+		required: false,
+        default: null
 	},
 	status: {
 		type: String,
 		enum: ['Pendiente', 'En Progreso', 'Completado'],
+        required: false,
 		default: 'Pendiente'
 	},
-	authorUserId: { type: Schema.Types.ObjectId, ref: 'Users' },
 	userStories: [{ type: Schema.Types.ObjectId, ref: 'UserStories' }], 
+	authorUserId: { type: Schema.Types.ObjectId, ref: 'Users' },
+	deletedAt: {
+		type: Date,
+        required: false,
+		default: null
+	}
 }, {
 	timestamps: true,
 	toJSON: { virtuals: true },
