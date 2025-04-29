@@ -33,7 +33,7 @@ const projectsSchema = new Schema({
     },
     members: [
         {
-            userId: { type: Schema.Types.ObjectId, ref: 'Users' },
+            userId: { type: Schema.Types.ObjectId, ref: 'User' },
             role: String,
             joinedAt: Date
         }
@@ -42,8 +42,13 @@ const projectsSchema = new Schema({
         type: String, 
         required: true,
     },
-    epics: [{ type: Schema.Types.ObjectId, ref: 'Epics' }],
-    authorUserId: { type: Schema.Types.ObjectId, ref: 'Users' },
+    versions: {
+        type: [{ type: Schema.Types.ObjectId, ref: 'Version' }],
+        required: false,
+        default: []
+    },
+    epics: [{ type: Schema.Types.ObjectId, ref: 'Epic' }],
+    authorUserId: { type: Schema.Types.ObjectId, ref: 'User' },
     deletedAt: {
 		type: Date,
         required: false,

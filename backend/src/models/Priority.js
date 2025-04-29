@@ -1,22 +1,30 @@
 const { Schema, model } = require('mongoose');
-const mongoose = require('mongoose');
-
-const AutoIncrement = require('mongoose-sequence');
 
 const prioritySchema = new Schema({
-	moscowPriority: Number,
+	moscowPriority: {
+		type: Number,
+		required: false,
+		default: null
+	},
 	name: {
 		type: String,
 		required: true,
 	},
 	description: {
 		type: String,
-		required: true
+		required: false,
+		default: "Sin descripción"
 	},
 	color: {
 		type: String, // Código hexadecimal
-		required: true,
+		required: false,
+		default: null
 	},
+	deletedAt: {
+		type: Date,
+        required: false,
+		default: null
+	}
 }, {
 	timestamps: true
 });

@@ -22,7 +22,7 @@ module.exports = async function seedUserStories() {
 				epicId: epics[0]._id,  // Asigna la primera épica
 				name: 'Desarrollar la página de inicio',
 				description: 'Implementar la página de inicio con la estructura básica.',
-				priorityId: priorities[0]._id,  
+				moscowPriority: 1,  
 				status: 'Pendiente',
 				startDate: new Date('2025-05-01'),
 				endDate: new Date('2025-05-15'),
@@ -34,28 +34,24 @@ module.exports = async function seedUserStories() {
 				epicId: epics[1]._id,  // Asigna la segunda épica
 				name: 'Implementar API REST',
 				description: 'Crear la API REST para la comunicación con el frontend.',
-				priorityId: priorities[1]._id,
+				moscowPriority: 2,
 				status: 'En Progreso',
 				startDate: new Date('2025-05-10'),
 				endDate: new Date('2025-05-20'),
 				dueDate: new Date('2025-05-15'),
-				assignedTo: [
-					{ userId: users[1]._id},
-				],
+				assignedTo: [users[1]._id],
 				authorUserId: users[1]._id,  // El usuario que crea la UserStory
 			},
 			{
 				epicId: epics[0]._id,  // Asigna la primera épica
 				name: 'Desarrollar módulo de autenticación',
 				description: 'Crear el sistema de autenticación de usuarios en la aplicación.',
-				priorityId: priorities[2]._id,
+				moscowPriority: 3,
 				status: 'Completado',
 				startDate: new Date('2025-04-01'),
 				endDate: new Date('2025-04-10'),
 				dueDate: new Date('2025-04-05'),
-				assignedTo: [
-					{ userId: users[2]._id},
-				],
+				assignedTo: [users[2]._id],
 				authorUserId: users[2]._id,  // El usuario que crea la UserStory
 			},
 		];

@@ -168,7 +168,7 @@ const validateUpdateEpic = [
       const project = await Project.findOne({ 'epics': epicId });
 
       if (!project) {
-        throw new Error('Project not found for this name');
+        throw new Error('Project not found for this epicId');
       }
 
       // Verificar si el nombre del epic ya existe en ese proyecto

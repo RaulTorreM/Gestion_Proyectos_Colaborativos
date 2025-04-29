@@ -36,8 +36,8 @@ const epicsSchema = new Schema({
         required: false,
 		default: 'Pendiente'
 	},
-	userStories: [{ type: Schema.Types.ObjectId, ref: 'UserStories' }], 
-	authorUserId: { type: Schema.Types.ObjectId, ref: 'Users' },
+	userStories: [{ type: Schema.Types.ObjectId, ref: 'UserStory' }], 
+	authorUserId: { type: Schema.Types.ObjectId, ref: 'User' },
 	deletedAt: {
 		type: Date,
         required: false,

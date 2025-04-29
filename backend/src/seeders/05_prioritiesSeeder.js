@@ -1,7 +1,7 @@
-const MoscowPriority = require('../models/Priority');
+const Priority = require('../models/Priority');
 
 module.exports = async function seedPriorities() {
-    const moscowData = [
+    const data = [
         {
             moscowPriority: 1,
             name: 'Debe tener',
@@ -25,16 +25,20 @@ module.exports = async function seedPriorities() {
             name: 'No se va a hacer',
             description: 'Estas características no se implementarán en este momento; podrían considerarse en el futuro.',
             color: '#BD392F',
-        }
+        },
+        {
+            name: 'Nueva Prioridad',
+            description: 'Descripción de Nueva Prioridad.',
+        },
     ];
 
     try {
         const inserted = [];
-        for (const item of moscowData) {
-            const doc = await MoscowPriority.create(item);
+        for (const item of data) {
+            const doc = await Priority.create(item);
             inserted.push(doc);
         }
     } catch (error) {
-        console.error('❌ Error al insertar las prioridades MoSCoW:', error);
+        console.error('❌ Error al insertar las prioridades MoSCoW y otras:', error);
     }
 };

@@ -3,6 +3,8 @@ const mongoose = require('mongoose');
 const validateResult = require('./validateResult');
 const User = require('../models/User');
 const Project = require('../models/Project');
+const Version = require('../models/Version');
+const Epic = require('../models/Epic');
 
 const validateCreateProject = [
   body('name')
@@ -208,6 +210,28 @@ const validateUpdateProject = [
     .optional()
     .isString().withMessage('Project type must be a string'),
  
+  body('versions')
+    .optional({ nullable: true })
+    .isArray().withMessage('Versions must be an array')
+    .custom(async (value) => {
+      if (value) {
+        const versionValidationPromises = value.map(async (versionId) => {
+          if (!mongoose.Types.ObjectId.isValid(versionId)) {
+            throw new Error('Each version must have a valid id');
+          }
+  
+          const version = await Version.findById(versionId);
+          if (!version) {
+            throw new Error(`Version with ID ${versionId} does not exist`);
+          }
+        });
+  
+        // Esperar que todas las validaciones se resuelvan
+        await Promise.all(versionValidationPromises);
+      }
+      return true;
+    }),
+
   body('epics')
     .optional({ nullable: true })
     .isArray().withMessage('Epics must be an array')
