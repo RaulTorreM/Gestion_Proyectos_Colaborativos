@@ -34,6 +34,7 @@ epicsController.getEpic = async (req, res) => {
 	}
 }
 
+//Obtener las epicas por proyecto (Corregir para que el output sea solo las ids)
 epicsController.getEpicsByProjects = async (req, res) => {
 	try {
 		const epic = await Epic.find({ projectId: req.params.id, deletedAt: null });
@@ -48,6 +49,31 @@ epicsController.getEpicsByProjects = async (req, res) => {
 		res.status(500).json({ message: 'Server Error', error: error.message });
 	}
 }
+
+//Obtener los detalles de epics varias a la vez
+epicsController.getEpicsBulk = async (req, res) => {
+	try {
+	  const { ids } = req.body;
+	  
+	  if (!ids || !Array.isArray(ids)) {
+		return res.status(400).json({ message: 'Se requiere un array de IDs en el cuerpo de la solicitud' });
+	  }
+  
+	  const epics = await Epic.find({ 
+		_id: { $in: ids },
+		deletedAt: null 
+	  });
+  
+	  if (!epics) {
+		return res.status(404).json({ message: 'Épicas no encontradas' });
+	  }
+  
+	  res.json(epics);
+	} catch (error) {
+	  console.error(error);
+	  res.status(500).json({ message: 'Error del servidor', error: error.message });
+	}
+  };
 
 epicsController.createEpic = async (req, res) => {
 	try {

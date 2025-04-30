@@ -35,6 +35,31 @@ versionsController.getVersion = async (req, res) => {
 	}
 }
 
+//Obtener datos de muchas versiones a la vez
+versionsController.getVersionsBulk = async (req, res) => {
+	try {
+	  const { ids } = req.body;
+	  
+	  if (!ids || !Array.isArray(ids)) {
+		return res.status(400).json({ message: 'Se requiere un array de IDs en el cuerpo de la solicitud' });
+	  }
+  
+	  const versions = await Version.find({ 
+		_id: { $in: ids },
+		deletedAt: null 
+	  });
+  
+	  if (!versions) {
+		return res.status(404).json({ message: 'Versiones no encontradas' });
+	  }
+  
+	  res.json(versions);
+	} catch (error) {
+	  console.error(error);
+	  res.status(500).json({ message: 'Error del servidor', error: error.message });
+	}
+  };
+
 versionsController.createVersion = async (req, res) => {
 	try {
 	  // Limpiar campos null o undefined para que usen sus valores por default en el modelo
