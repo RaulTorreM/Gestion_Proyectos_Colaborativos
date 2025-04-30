@@ -1,20 +1,19 @@
+// src/context/ThemeContext.jsx
 import { createContext, useContext, useState } from 'react';
 
 const ThemeContext = createContext();
 
 export const ThemeProvider = ({ children }) => {
-  const [darkMode, setDarkMode] = useState(true);
+  const [theme, setTheme] = useState('light');
 
   const toggleTheme = () => {
-    setDarkMode(prev => !prev);
+    setTheme(prevTheme => prevTheme === 'light' ? 'dark' : 'light');
   };
 
   return (
-    <ThemeContext.Provider value={{ darkMode, toggleTheme }}>
-      <div className={`${darkMode ? 'dark' : ''}`}>
-        <div className="min-h-screen bg-gray-900 text-white">
-          {children}
-        </div>
+    <ThemeContext.Provider value={{ theme, toggleTheme }}>
+      <div className={`${theme}`}>
+        {children}
       </div>
     </ThemeContext.Provider>
   );

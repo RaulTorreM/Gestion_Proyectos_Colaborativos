@@ -34,6 +34,21 @@ userStoriesController.getUserStory = async (req, res) => {
 	}
 }
 
+userStoriesController.getUserStoryByEpic = async (req, res) => {
+	try {
+		const userStory = await UserStory.find({ epicId: req.params.id, deletedAt: null });
+
+		if (!userStory) {
+			return res.json({ userStories: [] });
+		}
+
+		res.json(userStory);
+	} catch (error) {
+		console.error(error);
+		res.status(500).json({ message: 'Server Error', error: error.message });
+	}
+}
+
 userStoriesController.createUserStory = async (req, res) => {
 	try {
 		// Limpiar campos null o undefined para que usen sus valores por default en el modelo

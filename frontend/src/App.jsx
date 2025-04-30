@@ -1,52 +1,40 @@
 // src/App.jsx
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
-import { lazy, Suspense } from 'react'
-import MainLayout from './components/layout/MainLayout'
-import LoadingSpinner from './components/common/LoadingSpinner'
-import { ThemeProvider } from './context/ThemeContext'
-import { ProjectsProvider } from './context/ProjectsContext'
+import { ThemeProvider } from './context/ThemeContext';
+import Sidebar from './components/layout/Sidebar';
+import { Routes, Route } from 'react-router-dom';
+import Dashboard from './pages/Dashboard';
+import Projects from './pages/Projects';
+import Chat from './pages/Chat';
+import Analytics from './pages/Analytics';
+import Users from './pages/Users';
+import Administration from './pages/Administration';
+import Settings from './pages/Settings';
+import ProjectDetails from './pages/projects/ProjectDetails';
+import ProjectVersions from './pages/projects/ProjectVersions';
+import ProjectKanban from './pages/projects/ProjectKanban';
 
-// Importaciones regulares en lugar de lazy para depuración
-import DashboardPage from './pages/DashboardPage'
-import ProjectsPage from './pages/ProjectsPage'
-import TasksPage from './pages/TasksPage'
-import ChatPage from './pages/ChatPage'
-import AnalyticsPage from './pages/AnalyticsPage'
-import UsersPage from './pages/UsersPage'
-import SettingsPage from './pages/SettingsPage'
-
-// Comenta las importaciones lazy temporalmente
-// const DashboardPage = lazy(() => import('./pages/DashboardPage'))
-// const ProjectsPage = lazy(() => import('./pages/ProjectsPage'))
-// const TasksPage = lazy(() => import('./pages/TasksPage'))
-// const ChatPage = lazy(() => import('./pages/ChatPage'))
-// const AnalyticsPage = lazy(() => import('./pages/AnalyticsPage'))
-// const UsersPage = lazy(() => import('./pages/UsersPage'))
-// const SettingsPage = lazy(() => import('./pages/SettingsPage'))
-
-export default function App() {
+const App = () => {
   return (
     <ThemeProvider>
-      <ProjectsProvider>
-        <Router>
-          <MainLayout>
-            {/* Remueve Suspense temporalmente */}
-            {/* <Suspense fallback={<LoadingSpinner fullScreen />}> */}
-              <Routes>
-                <Route path="/" element={<DashboardPage />} />
-                <Route path="/dashboard" element={<DashboardPage />} />
-                <Route path="/projects" element={<ProjectsPage />} />
-                <Route path="/tasks" element={<TasksPage />} />
-                <Route path="/chat" element={<ChatPage />} />
-                <Route path="/analytics" element={<AnalyticsPage />} />
-                <Route path="/users" element={<UsersPage />} />
-                <Route path="/settings" element={<SettingsPage />} />
-                <Route path="*" element={<DashboardPage />} />
-              </Routes>
-            {/* </Suspense> */}
-          </MainLayout>
-        </Router>
-      </ProjectsProvider>
+      <div className="flex h-screen bg-gray-100 dark:bg-black">
+        <Sidebar />
+        <main className="flex-1 overflow-y-auto">
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/projects" element={<Projects />} />
+            <Route path="/projects/:id/details" element={<ProjectDetails />} />
+            <Route path="/projects/:id/versions" element={<ProjectVersions />} />
+            <Route path="/projects/:id/kanban" element={<ProjectKanban />} />
+            <Route path="/chat" element={<Chat />} />
+            <Route path="/analytics" element={<Analytics />} />
+            <Route path="/users" element={<Users />} />
+            <Route path="/admin" element={<Administration />} />
+            <Route path="/settings" element={<Settings />} />
+          </Routes>
+        </main>
+      </div>
     </ThemeProvider>
-  )
-}
+  );
+};
+
+export default App;
