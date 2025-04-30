@@ -61,7 +61,7 @@ userStoriesController.createUserStory = async (req, res) => {
 		epic.userStories.push(newUserStory._id);
 		await epic.save();
 		
-		res.status(201).json({message: 'UserStory Saved', userStory: newUserStory});
+		res.status(201).json({message: 'UserStory Saved', data: newUserStory});
 	} catch (error) {
 		console.error(error);
 		res.status(500).json({ message: 'Server Error', error: error.message });

@@ -95,7 +95,7 @@ versionsController.updateVersion = async (req, res) => {
 	  // Ejecutar todas las actualizaciones en batch
 	  await UserStory.bulkWrite([...unsetOperations, ...setOperations]);
   
-	  res.status(200).json({ message: 'Version Updated', version: versionUpdated });
+	  res.status(200).json({ message: 'Version Updated', data: versionUpdated });
 	} catch (error) {
 	  console.error(error);
 	  res.status(500).json({ message: 'Server Error', error: error.message });

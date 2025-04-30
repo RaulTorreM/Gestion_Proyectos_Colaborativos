@@ -62,7 +62,7 @@ epicsController.createEpic = async (req, res) => {
 		project.epics.push(newEpic._id);
 		await project.save();
 
-		res.status(201).json({message: 'Epic Saved', project: newEpic});
+		res.status(201).json({message: 'Epic Saved', data: newEpic});
 	} catch (error) {
 		console.error(error);
 		res.status(500).json({ message: 'Server Error', error: error.message });

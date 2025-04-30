@@ -47,7 +47,7 @@ usersController.createUser = async (req, res) => {
 		const newUser = new User(createData);
 		await newUser.save();
 
-		res.status(201).json({ message: 'User Saved', user: newUser });
+		res.status(201).json({ message: 'User Saved', data: newUser });
 	} catch (error) {
 		console.error(error);
 		res.status(500).json({ message: 'Server Error', error: error.message });

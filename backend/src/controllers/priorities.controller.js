@@ -76,7 +76,7 @@ prioritiesController.updatePriority = async (req, res) => {
 	
 		const priorityObject = priorityUpdated.toObject();
 	
-		res.status(200).json({ message: 'Priority Updated', user: priorityObject });
+		res.status(200).json({ message: 'Priority Updated', data: priorityObject });
 	} catch (error) {
 		console.error(error);
 		res.status(500).json({ message: 'Server Error', error: error.message });
