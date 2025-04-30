@@ -2,6 +2,7 @@ const versionsController = {};
 
 const Project = require('../models/Project');
 const Version = require('../models/Version');
+const UserStory = require('../models/UserStory');
 const BaseController = require('./base.controller');
 
 versionsController.getVersions = async (req, res) => {
@@ -36,44 +37,71 @@ versionsController.getVersion = async (req, res) => {
 
 versionsController.createVersion = async (req, res) => {
 	try {
-		// Limpiar campos null o undefined para que usen sus valores por default en el modelo
-		const createData = BaseController.cleanAndAssignDefaults(req.body);
-		
-		const newVersion = new Version(createData);
-		await newVersion.save();
-
-		// Agregar el id de la nueva version al campo versions del Project 
-		const project = await Project.findById(createData.projectId);
-		project.versions.push(newVersion._id);
-		await project.save();
-
-		res.status(201).json({message: 'Version Saved', version: newVersion});
+	  // Limpiar campos null o undefined para que usen sus valores por default en el modelo
+	  const createData = BaseController.cleanAndAssignDefaults(req.body);
+	  
+	  // Crear y guardar la nueva versión
+	  const newVersion = new Version(createData);
+	  await newVersion.save();
+  
+	  // Agregar la nueva versión al proyecto relacionado
+	  const project = await Project.findById(createData.projectId);
+	  project.versions.push(newVersion._id);
+	  await project.save();
+  
+	  // Actualizar las UserStories relacionadas
+	  const userStoriesPromises = createData.userStories.map(async (userStoryId) => {
+		await UserStory.findByIdAndUpdate(userStoryId, { versionId: newVersion._id });
+	  });
+  
+	  await Promise.all(userStoriesPromises);
+  
+	  res.status(201).json({ message: 'Version Saved', version: newVersion });
 	} catch (error) {
-		console.error(error);
-		res.status(500).json({ message: 'Server Error', error: error.message });
+	  console.error(error);
+	  res.status(500).json({ message: 'Server Error', error: error.message });
 	}
-}
+};
 
 versionsController.updateVersion = async (req, res) => {
 	try {
-		// Limpiar y asignar defaults donde sea necesario
-		const updateData = BaseController.cleanAndAssignDefaults(req.body);
-	
-		const versionUpdated = await Version.findByIdAndUpdate(req.params.id, updateData, { new: true });
-	
-		if (!versionUpdated) {
-			return res.status(404).json({ message: 'Version not found' });
+	  // Limpiar y asignar defaults donde sea necesario
+	  const updateData = BaseController.cleanAndAssignDefaults(req.body);
+  
+	  // Obtener las UserStories asociadas antes de actualizar la versión
+	  const { userStories: userStoriesOld } = await Version.findById(req.params.id).select('userStories');
+  
+	  // Actualizar la versión y obtener la versión actualizada
+	  const versionUpdated = await Version.findByIdAndUpdate(req.params.id, updateData, { new: true });
+  
+	  const userStoriesUpdated = versionUpdated.userStories;
+  
+	  // Crear operaciones para desvincular las antiguas UserStories
+	  const unsetOperations = userStoriesOld.map(userStoryId => ({
+		updateOne: {
+		  filter: { _id: userStoryId },
+		  update: { $unset: { versionId: null } }
 		}
-	
-		const versionObject = versionUpdated.toObject();
-	
-		res.status(200).json({ message: 'Version Updated', user: versionObject });
+	  }));
+  
+	  // Crear operaciones para vincular las nuevas UserStories
+	  const setOperations = userStoriesUpdated.map(userStoryId => ({
+		updateOne: {
+		  filter: { _id: userStoryId },
+		  update: { $set: { versionId: versionUpdated._id } }
+		}
+	  }));
+  
+	  // Ejecutar todas las actualizaciones en batch
+	  await UserStory.bulkWrite([...unsetOperations, ...setOperations]);
+  
+	  res.status(200).json({ message: 'Version Updated', version: versionUpdated });
 	} catch (error) {
-		console.error(error);
-		res.status(500).json({ message: 'Server Error', error: error.message });
+	  console.error(error);
+	  res.status(500).json({ message: 'Server Error', error: error.message });
 	}
-}
-
+};
+  
 versionsController.deleteVersion = async (req, res) => {
 	try {
 		const version = await Version.findByIdAndUpdate(

@@ -1,5 +1,6 @@
 const epicsController = {};
 
+const Project = require('../models/Project');
 const Epic = require('../models/Epic');
 const BaseController = require('./base.controller');
 
@@ -40,6 +41,11 @@ epicsController.createEpic = async (req, res) => {
 
 		const newEpic = new Epic(createData);
 		await newEpic.save();
+
+		// Agregar el id de la nueva epic al campo epics del Project 
+		const project = await Project.findById(newEpic.projectId);
+		project.epics.push(newEpic._id);
+		await project.save();
 
 		res.status(201).json({message: 'Epic Saved', project: newEpic});
 	} catch (error) {
