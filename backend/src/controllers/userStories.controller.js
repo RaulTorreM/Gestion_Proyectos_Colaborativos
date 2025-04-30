@@ -9,13 +9,13 @@ userStoriesController.getUserStories = async (req, res) => {
 		const userStories = await UserStory.find({ deletedAt: null }); 
 
 		if (!userStories) {
-			return res.status(404).json({ message: 'UserStories not found' });
+			return res.status(404).json({ error: 'UserStories not found' });
 		}
 
 		res.json(userStories);
 	} catch (error) {
 		console.error(error);
-		res.status(500).json({ message: 'Server Error', error: error.message });
+		res.status(500).json({ error: 'Server Error: ' + error.message });
 	}
 }
 
@@ -24,13 +24,13 @@ userStoriesController.getUserStory = async (req, res) => {
 		const userStory = await UserStory.findOne({ _id: req.params.id, deletedAt: null });
 
 		if (!userStory) {
-			return res.status(404).json({ message: 'UserStory not found' });
+			return res.status(404).json({ error: 'UserStory not found' });
 		}
 
 		res.json(userStory);
 	} catch (error) {
 		console.error(error);
-		res.status(500).json({ message: 'Server Error', error: error.message });
+		res.status(500).json({ error: 'Server Error: ' + error.message });
 	}
 }
 
@@ -45,7 +45,7 @@ userStoriesController.getUserStoryByEpic = async (req, res) => {
 		res.json(userStory);
 	} catch (error) {
 		console.error(error);
-		res.status(500).json({ message: 'Server Error', error: error.message });
+		res.status(500).json({ error: 'Server Error: ' + error.message });
 	}
 }
 
@@ -64,7 +64,7 @@ userStoriesController.createUserStory = async (req, res) => {
 		res.status(201).json({message: 'UserStory Saved', data: newUserStory});
 	} catch (error) {
 		console.error(error);
-		res.status(500).json({ message: 'Server Error', error: error.message });
+		res.status(500).json({ error: 'Server Error: ' + error.message });
 	}
 }
 
@@ -76,7 +76,7 @@ userStoriesController.updateUserStory = async (req, res) => {
 		const userStoryUpdated = await UserStory.findByIdAndUpdate(req.params.id, updateData, { new: true });
 	
 		if (!userStoryUpdated) {
-			return res.status(404).json({ message: 'UserStory not found' });
+			return res.status(404).json({ error: 'UserStory not found' });
 		}
 	
 		const userStoryObject = userStoryUpdated.toObject();
@@ -84,7 +84,7 @@ userStoriesController.updateUserStory = async (req, res) => {
 		res.status(200).json({ message: 'UserStory Updated', user: userStoryObject });
 	} catch (error) {
 		console.error(error);
-		res.status(500).json({ message: 'Server Error', error: error.message });
+		res.status(500).json({ error: 'Server Error: ' + error.message });
 	}
 }
 
@@ -97,13 +97,13 @@ userStoriesController.deleteUserStory = async (req, res) => {
 		);
 	
 		if (!userStory) {
-			return res.status(404).json({ message: 'UserStory not found' });
+			return res.status(404).json({ error: 'UserStory not found' });
 		}
 	
 		res.json({ message: 'UserStory Disabled', userStory });
 	} catch (error) {
 		console.error(error);
-		res.status(500).json({ message: 'Server Error', error: error.message });
+		res.status(500).json({ error: 'Server Error: ' + error.message });
 	}
 }
 
