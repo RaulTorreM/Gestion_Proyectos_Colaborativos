@@ -1,79 +1,43 @@
 // src/pages/Projects.jsx
-import { useState } from 'react';
 import { useTheme } from '../context/ThemeContext';
 import ProjectFilter from '../components/projects/ProjectFilter';
 import ProjectCard from '../components/projects/ProjectCard';
+import { useState, useEffect } from 'react'; 
+import ProjectsService from '../api/services/projectsService';
 
-const mockTeamMembers = [
-  "Ana López (Diseñador UX/UI)",
-  "Carlos Ruiz (Desarrollador Backend)",
-  "María García (Desarrollador Frontend)",
-  "Pedro Sánchez (QA Tester)",
-  "Laura Martínez (Project Manager)",
-  "Javier Moreno (Desarrollador Full Stack)"
-];
-
-const mockProjects = [
-  {
-    id: 1,
-    title: "Sistema de Gestión",
-    version: "v1.2.5",
-    description: "Desarrollo de sistema para gestión interna de la empresa",
-    startDate: "2023-05-15",
-    endDate: "2023-11-30",
-    manager: "Carlos Pérez",
-    progress: 65,
-    status: "En progreso"
-  },
-  {
-    id: 2,
-    title: "Portal Clientes",
-    version: "v2.1.0",
-    description: "Nuevo portal para clientes con autenticación mejorada",
-    startDate: "2023-07-01",
-    endDate: "2023-12-15",
-    manager: "Ana Gómez",
-    progress: 32,
-    status: "En progreso"
-  },
-  {
-    id: 3,
-    title: "App Móvil",
-    version: "v0.9.1",
-    description: "Aplicación móvil para iOS y Android",
-    startDate: "2023-09-10",
-    endDate: "2024-02-28",
-    manager: "David López",
-    progress: 15,
-    status: "Planificado"
-  },
-  {
-    id: 4,
-    title: "Migración BD",
-    version: "v3.0.0",
-    description: "Migración a nueva base de datos en la nube",
-    startDate: "2023-04-01",
-    endDate: "2023-08-30",
-    manager: "María Rodríguez",
-    progress: 100,
-    status: "Completado"
-  }
-];
 
 const Projects = () => {
   const { theme } = useTheme();
   const [filter, setFilter] = useState('');
-  const [projects, setProjects] = useState(mockProjects);
+  const [projects, setProjects] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [newProject, setNewProject] = useState({
-    title: '',
+    name: '',
     description: '',
     startDate: '',
     endDate: '',
-    status: 'Activo',
-    manager: '',
-    teamMembers: []
+    status: 'En Progreso',
+    authorUserId: '',
+    members: []
   });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+
+  //UseEffect para poder los proyectos del service api
+  useEffect(() => {
+    const loadProjects = async () => {
+      try {
+        const data = await ProjectsService.getProjects();
+        setProjects(data);
+      } catch (err) {
+        setError(err.message || 'Error al cargar proyectos');
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadProjects();
+  }, []);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -83,40 +47,47 @@ const Projects = () => {
   const handleCheckboxChange = (member) => {
     setNewProject(prev => ({
       ...prev,
-      teamMembers: prev.teamMembers.includes(member)
-        ? prev.teamMembers.filter(m => m !== member)
-        : [...prev.teamMembers, member]
+      members: prev.members.includes(member)
+        ? prev.members.filter(m => m !== member)
+        : [...prev.members, { userId: member, role: 'Miembro' }] 
     }));
   };
 
-  const handleCreateProject = () => {
-    const projectToAdd = {
-      ...newProject,
-      id: projects.length + 1,
-      version: "v1.0.0",
-      progress: 0,
-    };
-    setProjects(prev => [...prev, projectToAdd]);
-    setShowForm(false);
-    setNewProject({
-      title: '',
-      description: '',
-      startDate: '',
-      endDate: '',
-      status: 'Activo',
-      manager: '',
-      teamMembers: []
-    });
+  const handleCreateProject = async () => {
+    try {
+      const projectToAdd = {
+        ...newProject,
+        dueDate: newProject.endDate, // La API requiere dueDate
+        projectType: "Desarrollo de software" // Valor por defecto temporal
+      };
+      
+      const createdProject = await ProjectsService.createProject(projectToAdd);
+      setProjects(prev => [...prev, createdProject]);
+      setShowForm(false);
+      setNewProject({
+        name: '',
+        description: '',
+        startDate: '',
+        endDate: '',
+        status: 'En Progreso',
+        authorUserId: '',
+        members: []
+      });
+    } catch (error) {
+      console.error('Error creating project:', error);
+      setError('Error al crear el proyecto');
+    }
   };
 
   const filteredProjects = projects.filter(project =>
-    project.title.toLowerCase().includes(filter.toLowerCase()) ||
+    project.name.toLowerCase().includes(filter.toLowerCase()) || 
     project.description.toLowerCase().includes(filter.toLowerCase())
   );
 
-  // Lista de miembros disponibles (sin el que fue elegido como manager)
-  const availableTeamMembers = mockTeamMembers.filter(member => member !== newProject.manager);
+  if (loading) return <div>Cargando proyectos...</div>;
+  if (error) return <div>Error: {error}</div>;
 
+  
   return (
     <div className="relative p-4 md:p-6 space-y-4 md:space-y-6">
       {/* Header */}
@@ -143,7 +114,13 @@ const Projects = () => {
       {/* Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-4">
         {filteredProjects.map(project => (
-          <ProjectCard key={project.id} project={project} theme={theme} />
+          <ProjectCard 
+            key={project._id} 
+            project={{
+              ...project,
+              title: project.name, 
+            }} 
+            theme={theme} />
         ))}
       </div>
 
@@ -158,9 +135,9 @@ const Projects = () => {
             <div className="space-y-3">
               <input
                 type="text"
-                name="title"
+                name="name" 
                 placeholder="Nombre del proyecto"
-                value={newProject.title}
+                value={newProject.name}
                 onChange={handleInputChange}
                 className="w-full p-2 border rounded-lg text-gray-700 dark:bg-zinc-800 dark:text-white"
               />
@@ -185,15 +162,22 @@ const Projects = () => {
                 onChange={handleInputChange}
                 className="w-full p-2 border rounded-lg text-gray-700 dark:bg-zinc-800 dark:text-white"
               />
+              <input
+                type="text"
+                name="authorUserId"
+                placeholder="ID del autor"
+                value={newProject.authorUserId}
+                onChange={handleInputChange}
+              />
               <select
                 name="status"
                 value={newProject.status}
                 onChange={handleInputChange}
                 className="w-full p-2 border rounded-lg bg-white dark:bg-zinc-800 text-gray-700 dark:text-white"
               >
-                <option value="Activo">Activo</option>
-                <option value="Planificado">Planificado</option>
-                <option value="En Pausa">En Pausa</option>
+                <option value="En Progreso">En Progreso</option>
+                <option value="No Iniciado">No Iniciado</option>
+                <option value="Completado">Completado</option>
               </select>
 
               {/* Selección de Administrador */}
