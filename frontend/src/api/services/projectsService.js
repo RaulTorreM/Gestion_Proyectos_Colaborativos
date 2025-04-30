@@ -4,7 +4,8 @@ const ProjectsService = {
   // Obtener todos los proyectos USAR SOLO PARA TESTS
   getProjects: async () => {
     try {
-      return await api.get('/projects');
+      const response = await api.get('/projects');
+      return response;
     } catch (error) {
       console.error('Error fetching projects:', error);
       throw error;
@@ -14,14 +15,24 @@ const ProjectsService = {
   // Obtener un proyecto por ID
   getProjectById: async (projectId) => {
     try {
-      return await api.get(`/projects/${projectId}`);
+      const response = await api.get(`/projects/${projectId}`);
+      return response.data;
     } catch (error) {
       console.error(`Error fetching project ${projectId}:`, error);
       throw error;
     }
-  }
+  },
 
-  // Aquí puedes agregar más métodos para crear, actualizar o eliminar proyectos
+  // Crear un proyecto
+  createProject: async (projectData) => {
+    try {
+      const response = await api.post('/projects', projectData);
+      return response.data;
+    } catch (error) {
+      console.error('Error creating project:', error);
+      throw error;
+    }
+  },
 };
 
 export default ProjectsService;
