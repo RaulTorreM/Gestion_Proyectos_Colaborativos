@@ -1,5 +1,6 @@
 const projectsController = {};
 
+const User = require('../models/User');
 const Project = require('../models/Project');
 const BaseController = require('./base.controller');
 
@@ -41,6 +42,11 @@ projectsController.createProject = async (req, res) => {
 		const newProject = new Project(createData);
 		await newProject.save();
 
+		// Agregar el id del nuevo project al campo projects del User 
+		const user = await User.findById(newProject.authorUserId);
+		user.projects.push(newProject._id);
+		await user.save();
+		
 		res.status(201).json({message: 'Project Saved', project: newProject});
 	} catch (error) {
 		console.error(error);

@@ -39,15 +39,27 @@ module.exports = async function seedUserStories() {
 
 		const insertedVersions = await Version.insertMany(versions);
 
-		// Actualiza versionId en las User Stories relacionadas
-		for (let i = 0; i < insertedVersions.length; i++) {
-			const version = insertedVersions[i];
-
+		// Actualizar versionId en UserStories y versions en Projects relacionados
+		const updates = insertedVersions.map(async (version, i) => {
+			// Actualizar UserStories relacionadas
 			await UserStory.updateMany(
-				{ _id: { $in: versions[i].userStories } },
-				{ $set: { versionId: version._id } }
+			  { _id: { $in: versions[i].userStories } },
+			  { $set: { versionId: version._id } }
 			);
-		}
+			
+			// Actualizar Project relacionado
+			const project = await Project.findById(versions[i].projectId);
+			if (!project) {
+			  console.warn(`⚠️ Proyecto con ID ${versions[i].projectId} no encontrado`);
+			  return;
+			}
+		  
+			project.versions.push(version._id);
+			await project.save();
+		});
+		
+		// Ejecutar todo en paralelo
+		await Promise.all(updates);
 
 		console.log('✅ Seed de versiones y actualización de userStories completado.');
 

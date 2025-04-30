@@ -9,36 +9,52 @@ const userStoriesSchema = new Schema({
 	versionId: {
 		type: Schema.Types.ObjectId,
 		ref: 'Versions',
+		required: false,
+		default: null
 	},
 	name: {
 		type: String,
-		required: true,
-		trim: true
+		trim: true,
+		required: true
 	},
 	description: {
 		type: String,
-		trim: true
+		trim: true,
+		required: true,
 	},
-	priorityId: {
-		type: Schema.Types.ObjectId, 
-		ref: 'Priorities'
+	moscowPriority: {
+		type: Number,
+		required: false,
+		default: null
 	},
 	startDate: {
-		type: Date
-	},
-	endDate: {
-		type: Date
-	},
-	dueDate: {
-		type: Date
-	},
+        type: Date,
+        required: false,
+        default: new Date()
+    },
+    endDate: {
+        type: Date, 
+        required: false,
+        default: null
+    },
+    dueDate: {
+        type: Date, 
+        required: false,
+        default: null
+    },
 	status: {
 		type: String,
 		enum: ['Pendiente', 'En Progreso', 'Completado'],
+		required: false,
 		default: 'Pendiente'
 	},
-	assignedTo: [{ userId: { type: Schema.Types.ObjectId, ref: 'Users' }}],
+	assignedTo: [{ type: Schema.Types.ObjectId, ref: 'Users' }],
 	authorUserId: { type: Schema.Types.ObjectId, ref: 'Users' },
+	deletedAt: {
+		type: Date,
+        required: false,
+		default: null
+	}
 }, {
 	timestamps: true,
     toJSON: { virtuals: true },

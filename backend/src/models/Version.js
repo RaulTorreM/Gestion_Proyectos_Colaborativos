@@ -1,4 +1,5 @@
 const { Schema, model } = require('mongoose');
+const { DateTime } = require('luxon');
 
 const versionsSchema = new Schema({
 	name: {
@@ -8,23 +9,31 @@ const versionsSchema = new Schema({
 	},
 	description: {
 		type: String,
-		trim: true
+		required: true,
 	},
 	startDate: {
-		type: Date
+		type: Date,
+		required: false,
+        default: new Date(),
 	},
 	status: {
 		type: String,
 		enum: ['Planeado', 'En Progreso', 'Lanzado'],
+		required: false,
 		default: 'Planeado',
-		required: true,
 	},
 	releaseDate: {
-		type: Date
+		type: Date,
+		required: true,
 	},
-	projectId: { type: Schema.Types.ObjectId, ref: 'Projects' },
-	userStories: [{ type: Schema.Types.ObjectId, ref: 'UserStories' }],
-	authorUserId: { type: Schema.Types.ObjectId, ref: 'Users' },
+	projectId: { type: Schema.Types.ObjectId, ref: 'Project' },
+	userStories: [{ type: Schema.Types.ObjectId, ref: 'UserStory' }],
+	authorUserId: { type: Schema.Types.ObjectId, ref: 'User' },
+	deletedAt: {
+		type: Date,
+        required: false,
+		default: null
+	}
 }, {
 	timestamps: true,
     toJSON: { virtuals: true },

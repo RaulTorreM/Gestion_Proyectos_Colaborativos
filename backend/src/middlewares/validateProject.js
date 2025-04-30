@@ -1,8 +1,10 @@
 const { body } = require('express-validator');
 const mongoose = require('mongoose');
 const validateResult = require('./validateResult');
-const Project = require('../models/Project');
 const User = require('../models/User');
+const Project = require('../models/Project');
+const Version = require('../models/Version');
+const Epic = require('../models/Epic');
 
 const validateCreateProject = [
   body('name')
@@ -10,9 +12,11 @@ const validateCreateProject = [
     .isString().withMessage('Name must be a string')
     .custom(async (value) => {
       const project = await Project.findOne({ name: value });
+
       if (project) {
         throw new Error('Name is already taken');
       }
+
       return true;
     }),
 
@@ -30,7 +34,7 @@ const validateCreateProject = [
     .isISO8601().withMessage('Invalid dueDate format')
     .toDate()
     .custom((value, { req }) => {
-      const startDate = req.body.startDate ? new Date(req.body.startDate) : null;
+      const startDate = req.body.startDate ? new Date(req.body.startDate) : new Date();
       const dueDate = new Date(value);
 
       // Si startDate existe
@@ -130,9 +134,33 @@ const validateUpdateProject = [
     .toDate(),
   
   body('dueDate')
-    .optional()
+    .optional({ nullable: true })
     .isISO8601().withMessage('Invalid dueDate format')
-    .toDate(),
+    .toDate()
+    .custom(async (value, { req }) => {
+      const project = await Project.findById(req.params.id);
+
+      if (!project) {
+        throw new Error('Project not found for this dueDate');
+      }
+      
+      const startDate = req.body.startDate ? new Date(req.body.startDate) : project.startDate;
+      const dueDate = new Date(value);
+
+      // Si startDate existe
+      if (startDate) {
+        // Diferencia en milisegundos
+        const diffTime = dueDate.getTime() - startDate.getTime();
+        const oneDayInMs = 24 * 60 * 60 * 1000;
+
+        if (diffTime < oneDayInMs) {
+          throw new Error('Due date must be at least 1 day after start date');
+        }
+      }
+
+      // Si no hay startDate, no valida la diferencia
+      return true;
+    }),
   
   body('status')
     .optional()
@@ -144,49 +172,87 @@ const validateUpdateProject = [
     .isArray().withMessage('Members must be an array')
     .custom(async (value) => {
       const uniqueMembers = new Set();
-
-      for (const member of value) {
+  
+      // Crear un array de Promesas para las consultas User.findById
+      const userPromises = value.map(async (member) => {
         if (!member.userId || !mongoose.Types.ObjectId.isValid(member.userId)) {
           throw new Error('Each member must have a valid userId');
         }
-
+  
         const user = await User.findById(member.userId);
         if (!user) {
           throw new Error(`User with ID ${member.userId} does not exist`);
         }
-
+  
         if (!member.role) {
           throw new Error('Each member must have a role');
         }
-
+  
         if (!member.joinedAt || isNaN(new Date(member.joinedAt))) {
           throw new Error('Each member must have a valid joinedAt date');
         }
-
+  
         // Evitar duplicados userId + role
         const key = `${member.userId}-${member.role}`;
         if (uniqueMembers.has(key)) {
           throw new Error(`User ${member.userId} is already assigned as ${member.role}`);
         }
         uniqueMembers.add(key);
-      }
-
+      });
+  
+      // Ejecutar todas las promesas en paralelo
+      await Promise.all(userPromises);
+  
       return true;
-  }),
+    }),
 
   body('projectType')
     .optional()
     .isString().withMessage('Project type must be a string'),
  
+  body('versions')
+    .optional({ nullable: true })
+    .isArray().withMessage('Versions must be an array')
+    .custom(async (value) => {
+      if (value) {
+        const versionValidationPromises = value.map(async (versionId) => {
+          if (!mongoose.Types.ObjectId.isValid(versionId)) {
+            throw new Error('Each version must have a valid id');
+          }
+  
+          const version = await Version.findById(versionId);
+          if (!version) {
+            throw new Error(`Version with ID ${versionId} does not exist`);
+          }
+        });
+  
+        // Esperar que todas las validaciones se resuelvan
+        await Promise.all(versionValidationPromises);
+      }
+      return true;
+    }),
+
   body('epics')
     .optional({ nullable: true })
-    .isArray().withMessage('Epics must be an array') 
-    .custom((value) => {
-      value.forEach((epicId) => {
-        if (!mongoose.Types.ObjectId.isValid(epicId)) {
-          throw new Error('Each epic must have a valid ID');
-        }
-      });
+    .isArray().withMessage('Epics must be an array')
+    .custom(async (value) => {
+      if (value) {
+        const epicValidationPromises = value.map(async (epicId) => {
+          // Verificar que el id de epic sea válido
+          if (!mongoose.Types.ObjectId.isValid(epicId)) {
+            throw new Error('Each epic must have a valid id');
+          }
+  
+          // Buscar el Epic por el ObjectId
+          const epic = await Epic.findById(epicId);
+          if (!epic) {
+            throw new Error(`Epic with ID ${epicId} does not exist`);
+          }
+        });
+  
+        // Esperar que todas las validaciones se resuelvan
+        await Promise.all(epicValidationPromises);
+      }
       return true;
     }),
   
