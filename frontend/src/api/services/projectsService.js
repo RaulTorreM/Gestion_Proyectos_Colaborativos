@@ -16,7 +16,7 @@ const ProjectsService = {
   getProjectById: async (projectId) => {
     try {
       const response = await api.get(`/projects/${projectId}`);
-      return response.data;
+      return response;
     } catch (error) {
       console.error(`Error fetching project ${projectId}:`, error);
       throw error;

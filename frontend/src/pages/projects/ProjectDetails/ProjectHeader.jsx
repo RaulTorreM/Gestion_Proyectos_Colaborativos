@@ -21,6 +21,7 @@ const ProjectHeader = ({ project = {}, theme = 'light' }) => {
   const end = safeProject.endDate ? new Date(safeProject.endDate) : new Date();
   const duration = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
 
+  console.log(safeProject);
   // Calcular progreso de forma segura
   const progressPercentage = safeProject.tasks.total > 0 
     ? Math.round((safeProject.tasks.completed / safeProject.tasks.total) * 100) 
