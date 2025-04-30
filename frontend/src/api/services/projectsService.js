@@ -27,7 +27,7 @@ const ProjectsService = {
   createProject: async (projectData) => {
     try {
       const response = await api.post('/projects', projectData);
-      return response.data;
+      return response.project;
     } catch (error) {
       console.error('Error creating project:', error);
       throw error;

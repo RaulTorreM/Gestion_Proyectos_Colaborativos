@@ -9,13 +9,13 @@ epicsController.getEpics = async (req, res) => {
 		const epics = await Epic.find({ deletedAt: null }); 
 
 		if (!epics) {
-			return res.status(404).json({ message: 'Epics not found' });
+			return res.status(404).json({ error: 'Epics not found' });
 		}
 
 		res.json(epics);
 	} catch (error) {
 		console.error(error);
-		res.status(500).json({ message: 'Server Error', error: error.message });
+		res.status(500).json({ error: 'Server Error: ' + error.message });
 	}
 }
 
@@ -24,13 +24,13 @@ epicsController.getEpic = async (req, res) => {
 		const epic = await Epic.findOne({ _id: req.params.id, deletedAt: null });
 
 		if (!epic) {
-			return res.status(404).json({ message: 'Epic not found' });
+			return res.status(404).json({ error: 'Epic not found' });
 		}
 
 		res.json(epic);
 	} catch (error) {
 		console.error(error);
-		res.status(500).json({ message: 'Server Error', error: error.message });
+		res.status(500).json({ error: 'Server Error: ' + error.message });
 	}
 }
 
@@ -40,13 +40,13 @@ epicsController.getEpicsByProjects = async (req, res) => {
 		const epic = await Epic.find({ projectId: req.params.id, deletedAt: null });
 
 		if (!epic) {
-			return res.status(404).json({ message: 'Epics by Project not found' });
+			return res.status(404).json({ error: 'Epics by Project not found' });
 		}
 
 		res.json(epic);
 	} catch (error) {
 		console.error(error);
-		res.status(500).json({ message: 'Server Error', error: error.message });
+		res.status(500).json({ error: 'Server Error: ' + error.message });
 	}
 }
 
@@ -88,10 +88,10 @@ epicsController.createEpic = async (req, res) => {
 		project.epics.push(newEpic._id);
 		await project.save();
 
-		res.status(201).json({message: 'Epic Saved', project: newEpic});
+		res.status(201).json({message: 'Epic Saved', data: newEpic});
 	} catch (error) {
 		console.error(error);
-		res.status(500).json({ message: 'Server Error', error: error.message });
+		res.status(500).json({ error: 'Server Error: ' + error.message });
 	}
 }
 
@@ -108,10 +108,10 @@ epicsController.updateEpic = async (req, res) => {
 	
 		const epicObject = epicUpdated.toObject();
 	
-		res.status(200).json({ message: 'Epic Updated', user: epicObject });
+		res.status(200).json({ message: 'Epic Updated', data: epicObject });
 	} catch (error) {
 		console.error(error);
-		res.status(500).json({ message: 'Server Error', error: error.message });
+		res.status(500).json({ error: 'Server Error: ' + error.message });
 	}
 }
 
@@ -124,13 +124,13 @@ epicsController.deleteEpic = async (req, res) => {
 		);
 	
 		if (!epic) {
-			return res.status(404).json({ message: 'Epic not found' });
+			return res.status(404).json({ error: 'Epic not found' });
 		}
 	
-		res.json({ message: 'Epic Disabled', epic });
+		res.json({ message: 'Epic Disabled', data: epic });
 	} catch (error) {
 		console.error(error);
-		res.status(500).json({ message: 'Server Error', error: error.message });
+		res.status(500).json({ error: 'Server Error: ' + error.message });
 	}
 }
 
