@@ -25,49 +25,17 @@ const Projects = () => {
   const [selectedMember, setSelectedMember] = useState('');
   const [selectedRole, setSelectedRole] = useState('Miembro');
 
-/*   useEffect(() => {
-    const loadData = async () => {
-      try {
-        const [projectsData, usersData] = await Promise.all([
-          ProjectsService.getProjects(),
-          UsersService.getAllUsers()
-        ]);
-        
-        // Asegurarse que los proyectos tengan la estructura correcta
-        setProjects(Array.isArray(projectsData) ? projectsData : []);
-        
-        // Asegurarse que los usuarios tengan la estructura correcta
-        const formattedUsers = Array.isArray(usersData) ? usersData : [];
-        setUsers(formattedUsers);
-        
-        // Establecer el primer usuario como miembro seleccionado por defecto si hay usuarios
-        if (formattedUsers.length > 0) {
-          setSelectedMember(formattedUsers[0]._id);
-        }
-      } catch (err) {
-        setError(err.message || 'Error al cargar datos');
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadData();
-  }, []); */
-
   const loadData = async () => {
     try {
       const [projectsData, usersData] = await Promise.all([
         ProjectsService.getProjects(),
         UsersService.getAllUsers()
       ]);
-      
-      // Asegurarse que los proyectos tengan la estructura correcta
+  
       setProjects(Array.isArray(projectsData) ? projectsData : []);
-      
-      // Asegurarse que los usuarios tengan la estructura correcta
       const formattedUsers = Array.isArray(usersData) ? usersData : [];
       setUsers(formattedUsers);
-      
-      // Establecer el primer usuario como miembro seleccionado por defecto si hay usuarios
+  
       if (formattedUsers.length > 0) {
         setSelectedMember(formattedUsers[0]._id);
       }
@@ -77,8 +45,11 @@ const Projects = () => {
       setLoading(false);
     }
   };
-
-  loadData();
+  
+  // useEffect solo llama a loadData una vez al montar
+  useEffect(() => {
+    loadData();
+  }, []);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;

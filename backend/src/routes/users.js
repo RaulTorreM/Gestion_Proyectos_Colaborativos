@@ -15,7 +15,7 @@ const router = Router();
 
 router.route('/')
   .get(getUsers)
-  .post(validateCreateUser, createUser);
+  .post(validateCreateUser, createUser)
 
 router.route('/:id')
   .all(validateObjectId(User))
