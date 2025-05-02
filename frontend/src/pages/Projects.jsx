@@ -168,7 +168,7 @@ const Projects = () => {
   };
   
   if (loading) return <div>Cargando proyectos...</div>;
-  if (error) return <div>Error: {error}</div>;
+  if (error) return <div className='font-semibold text-red-700 dark:text-white'>Error: {error}</div>;
 
   return (
     <div className="relative p-4 md:p-6 space-y-4 md:space-y-6">
