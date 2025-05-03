@@ -3,9 +3,9 @@ import { Navigate } from 'react-router-dom';
 import AuthService from '../api/services/AuthService';
 
 const ProtectedRoute = ({ children }) => {
-  const token = AuthService.getToken();
+  const accessToken = AuthService.getAccessToken();
 
-  if (!token) {
+  if (!accessToken) {
     return <Navigate to="/login" replace />;
   }
 

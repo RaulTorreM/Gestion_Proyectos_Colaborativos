@@ -12,7 +12,6 @@ const api = axios.create({
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('accessToken');
-
     if (token) {
       config.headers['Authorization'] = `${token}`;
     }
@@ -21,10 +20,38 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Interceptor para manejar errores globalmente
+// Interceptor para manejar errores y refresh-token
 api.interceptors.response.use(
   (response) => response.data,
-  (error) => {
+  async (error) => {
+    const originalRequest = error.config;
+
+    // Si es un 401 y no hemos intentado refrescar antes
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+
+      try {
+        const refreshToken = localStorage.getItem('refreshToken');
+        const res = await api.post('/refresh-token', { refreshToken: refreshToken });
+
+        const newAccessToken = res.accessToken;
+        localStorage.setItem('accessToken', newAccessToken);
+
+        // Actualiza el token en la solicitud original
+        originalRequest.headers['Authorization'] = `${newAccessToken}`;
+
+        // Reintenta la solicitud original
+        return api(originalRequest);
+      } catch (refreshError) {
+        // Si falla el refresh, limpia sesión y redirige a login
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
+        window.location.href = '/login';
+        return Promise.reject(refreshError);
+      }
+    }
+
+    // Manejo global de otros errores
     if (error.response) {
       return Promise.reject({
         status: error.response.status,
@@ -32,6 +59,8 @@ api.interceptors.response.use(
         message: error.response.data.message || 'Error en la solicitud'
       });
     }
+
+    // Si el error no tiene respuesta (por ejemplo, error de red)
     return Promise.reject(error);
   }
 );
