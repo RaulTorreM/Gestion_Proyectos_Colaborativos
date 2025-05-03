@@ -1,4 +1,4 @@
-const { body } = require('express-validator');
+const { body, header, param } = require('express-validator');
 const mongoose = require('mongoose');
 const validateResult = require('./validateResult');
 const User = require('../models/User');
@@ -7,6 +7,11 @@ const Version = require('../models/Version');
 const Epic = require('../models/Epic');
 
 const validateCreateProject = [
+  header('Authorization')
+    .exists().withMessage('Authorization header is required')
+    .notEmpty().withMessage('Authorization header cannot be empty')
+    .matches(/^\S.+/).withMessage('Invalid Authorization header format'),
+    
   body('name')
     .notEmpty().withMessage('Name is required')
     .isString().withMessage('Name must be a string')
@@ -90,19 +95,6 @@ const validateCreateProject = [
   body('projectType')
     .notEmpty().withMessage('Project type is required')
     .isString().withMessage('Project type must be a string'),
-  
-  body('authorUserId')
-    .notEmpty().withMessage('AuthorUserId is required')
-    .custom(async (value) => {
-      if (!mongoose.Types.ObjectId.isValid(value)) {
-        throw new Error('Invalid AuthorUserId');
-      }
-      const user = await User.findById(value);
-      if (!user) {
-        throw new Error('Author User not found');
-      }
-      return true;
-    }),
 
   validateResult
 ];
@@ -264,7 +256,32 @@ const validateUpdateProject = [
   validateResult
 ];
 
+const validateDeleteProject = [
+  param('id')
+    .exists().withMessage('ProjectId is required')
+    .custom(async (value) => {
+      if (!mongoose.Types.ObjectId.isValid(value)) {
+        throw new Error('Invalid ProjectId format');
+      }
+
+      const project = await Project.findById(value);
+      if (!project) {
+        throw new Error(`Project with ID ${value} does not exist`);
+      }
+
+      if (project.epics && (Array.isArray(project.epics) && project.epics.length !== 0)) {
+        throw new Error(`Project with ID ${value} has epics`);
+      }
+
+      return true;
+    }),
+
+  validateResult
+];
+
+
 module.exports = {
   validateCreateProject,
-  validateUpdateProject
+  validateUpdateProject,
+  validateDeleteProject
 };

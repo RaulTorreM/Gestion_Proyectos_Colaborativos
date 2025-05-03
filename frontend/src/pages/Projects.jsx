@@ -18,7 +18,6 @@ const Projects = () => {
     dueDate: '',
     members: [],
     projectType: '',
-    authorUserId: '',
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -342,26 +341,6 @@ const Projects = () => {
                       </ul>
                     )}
                   </div>
-                </div>
-                
-                <div>
-                  <h2 className='text-lg text-gray-500 dark:text-gray-300'>Autor:</h2>
-                  <select
-                    name="authorUserId"
-                    value={newProject.authorUserId}
-                    onChange={(e) => {
-                      handleAuthorChange(e);
-                      handleInputChange(e);
-                    }}
-                    className="w-full p-2 border rounded-lg text-gray-700 dark:bg-zinc-800 dark:text-white"
-                  >
-                    <option value="">Seleccione el autor</option>
-                    {users.map(user => (
-                      <option key={user._id} value={user._id}>
-                        {user.name}
-                      </option>
-                    ))}
-                  </select>
                 </div>
               </div>
             </div>
