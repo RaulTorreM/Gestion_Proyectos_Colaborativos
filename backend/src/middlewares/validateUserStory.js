@@ -1,4 +1,4 @@
-const { body } = require('express-validator');
+const { body, header } = require('express-validator');
 const mongoose = require('mongoose');
 const validateResult = require('./validateResult');
 const User = require('../models/User');
@@ -7,6 +7,11 @@ const Version = require('../models/Version');
 const Priority = require('../models/Priority');
 
 const validateCreateUserStory = [
+  header('Authorization')
+    .exists().withMessage('Authorization header is required')
+    .notEmpty().withMessage('Authorization header cannot be empty')
+    .matches(/^\S.+/).withMessage('Invalid Authorization header format'),
+
   body('epicId')
     .notEmpty().withMessage('EpicId is required')
     .custom(async (value) => {
@@ -194,21 +199,6 @@ const validateCreateUserStory = [
         uniqueMembers.add(userId.toString());
       }
   
-      return true;
-    }),
-
-  body('authorUserId')
-    .notEmpty().withMessage('AuthorUserId is required')
-    .custom(async (value) => {
-      if (!mongoose.Types.ObjectId.isValid(value)) {
-        throw new Error('Invalid AuthorUserId');
-      }
-      const user = await User.findById(value);
-
-      if (!user) {
-        throw new Error('Author User not found');
-      }
-
       return true;
     }),
 

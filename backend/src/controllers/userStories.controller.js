@@ -1,8 +1,10 @@
 const userStoriesController = {};
 
+const User = require('../models/User');
 const Epic = require('../models/Epic');
 const UserStory = require('../models/UserStory');
 const BaseController = require('./base.controller');
+const { getUserIdFromToken } = require('../lib/token');
 
 userStoriesController.getUserStories = async (req, res) => {
 	try {
@@ -53,6 +55,15 @@ userStoriesController.createUserStory = async (req, res) => {
 	try {
 		// Limpiar campos null o undefined para que usen sus valores por default en el modelo
 		const createData = BaseController.cleanAndAssignDefaults(req.body);
+		const userId = getUserIdFromToken(req);
+
+		const user = await User.findById(userId);
+		if (!user) {
+		  return res.status(404).json({ error: 'User not found for this access token' });
+		}
+
+		createData.authorUserId = userId;
+
 		const newUserStory = new UserStory(createData);
 		await newUserStory.save();
 
