@@ -3,6 +3,8 @@ const epicsController = {};
 const Project = require('../models/Project');
 const Epic = require('../models/Epic');
 const BaseController = require('./base.controller');
+const User = require('../models/User');
+const { getUserIdFromToken } = require('../lib/token');
 
 epicsController.getEpics = async (req, res) => {
 	try {
@@ -50,13 +52,13 @@ epicsController.getEpicsByProjects = async (req, res) => {
 	}
 }
 
-//Obtener los detalles de epics varias a la vez
+//Obtener los detalles de varias epics a la vez
 epicsController.getEpicsBulk = async (req, res) => {
 	try {
 	  const { ids } = req.body;
 	  
 	  if (!ids || !Array.isArray(ids)) {
-		return res.status(400).json({ message: 'Se requiere un array de IDs en el cuerpo de la solicitud' });
+		return res.status(400).json({ error: 'Se requiere un array de IDs en el cuerpo de la solicitud' });
 	  }
   
 	  const epics = await Epic.find({ 
@@ -65,13 +67,13 @@ epicsController.getEpicsBulk = async (req, res) => {
 	  });
   
 	  if (!epics) {
-		return res.status(404).json({ message: 'Épicas no encontradas' });
+		return res.status(404).json({ error: 'Épicas no encontradas' });
 	  }
   
 	  res.json(epics);
 	} catch (error) {
 	  console.error(error);
-	  res.status(500).json({ message: 'Error del servidor', error: error.message });
+	  res.status(500).json({ error: 'Server Error: ' + error.message });
 	}
   };
 
@@ -79,6 +81,14 @@ epicsController.createEpic = async (req, res) => {
 	try {
 		// Limpiar campos null o undefined para que usen sus valores por default en el modelo
 		const createData = BaseController.cleanAndAssignDefaults(req.body);
+		const userId = getUserIdFromToken(req);
+
+		const user = await User.findById(userId);
+		if (!user) {
+		  return res.status(404).json({ error: 'User not found for this access token' });
+		}
+
+		createData.authorUserId = userId;
 
 		const newEpic = new Epic(createData);
 		await newEpic.save();

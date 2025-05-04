@@ -41,10 +41,9 @@ projectsController.createProject = async (req, res) => {
 		const createData = BaseController.cleanAndAssignDefaults(req.body);
 		const userId = getUserIdFromToken(req);
 
-		// Ahora puedes usar userId para obtener el usuario o realizar otras operaciones
 		const user = await User.findById(userId);
 		if (!user) {
-		  return res.status(404).json({ message: 'User not found for this access token' });
+		  return res.status(404).json({ error: 'User not found for this access token' });
 		}
 
 		createData.authorUserId = userId;
@@ -56,7 +55,7 @@ projectsController.createProject = async (req, res) => {
 		user.projects.push(newProject._id);
 		await user.save();
 		
-		res.status(201).json({message: 'Project Saved', project: newProject});
+		res.status(201).json({message: 'Project Saved', data: newProject});
 	} catch (error) {
 		console.error(error);
 		res.status(500).json({ error: 'Server Error: ' + error.message });
