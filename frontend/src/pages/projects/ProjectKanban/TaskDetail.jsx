@@ -1,33 +1,48 @@
 import { useState } from 'react';
 import UserStoryList from './UserStoryList';
 
-const TaskDetail = ({ task, allMembers, getMemberById, onClose, onSave, theme }) => {
+const TaskDetail = ({ task, priorities = [], onClose, onSave, theme }) => {
   const [editing, setEditing] = useState(false);
-  const [editedTask, setEditedTask] = useState({ ...task });
+  const [editedTask, setEditedTask] = useState({ 
+    ...task,
+    dueDate: task.dueDate || task.endDate,
+    priority: task.priority || (priorities.length > 0 ? priorities[0] : null)
+  });
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setEditedTask(prev => ({ ...prev, [name]: value }));
+    setEditedTask(prev => ({ 
+      ...prev, 
+      [name]: value,
+      ...(name === 'endDate' && { dueDate: value })
+    }));
+  };
+
+  const handlePriorityChange = (priorityId) => {
+    const selectedPriority = priorities.find(p => p._id === priorityId);
+    setEditedTask(prev => ({
+      ...prev,
+      priority: selectedPriority
+    }));
   };
 
   const handleSave = () => {
-    onSave({
+    const taskToSave = {
       ...editedTask,
-      assignee: Number(editedTask.assignee)
-    });
+      priorityId: editedTask.priority?._id
+    };
+    onSave(taskToSave);
   };
 
   const updateUserStories = (updatedUserStories) => {
     setEditedTask(prev => ({ ...prev, userStories: updatedUserStories }));
   };
 
-  const assignedMember = getMemberById(task.assignee);
-
   return (
     <div className={`rounded-xl p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-lg ${theme === 'dark' ? 'bg-zinc-800' : 'bg-white'}`}>
       <div className="flex justify-between items-center mb-4">
         <h2 className={`text-xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>
-          {editing ? 'Editando Tarea' : 'Detalle de Tarea'}
+          {editing ? 'Editando Épica' : 'Detalle de Épica'}
         </h2>
         <button 
           onClick={onClose}
@@ -40,13 +55,14 @@ const TaskDetail = ({ task, allMembers, getMemberById, onClose, onSave, theme })
       {editing ? (
         <div className="space-y-4">
           <div>
-            <label className={`block mb-1 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>Título</label>
+            <label className={`block mb-1 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>Nombre*</label>
             <input
               type="text"
-              name="title"
-              value={editedTask.title}
+              name="name"
+              value={editedTask.name || ''}
               onChange={handleInputChange}
               className={`w-full p-2 rounded border ${theme === 'dark' ? 'bg-zinc-700 border-zinc-600 text-white' : 'bg-white border-gray-300'}`}
+              required
             />
           </div>
 
@@ -54,7 +70,7 @@ const TaskDetail = ({ task, allMembers, getMemberById, onClose, onSave, theme })
             <label className={`block mb-1 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>Descripción</label>
             <textarea
               name="description"
-              value={editedTask.description}
+              value={editedTask.description || ''}
               onChange={handleInputChange}
               rows="3"
               className={`w-full p-2 rounded border ${theme === 'dark' ? 'bg-zinc-700 border-zinc-600 text-white' : 'bg-white border-gray-300'}`}
@@ -67,7 +83,7 @@ const TaskDetail = ({ task, allMembers, getMemberById, onClose, onSave, theme })
               <input
                 type="date"
                 name="startDate"
-                value={editedTask.startDate}
+                value={editedTask.startDate || ''}
                 onChange={handleInputChange}
                 className={`w-full p-2 rounded border ${theme === 'dark' ? 'bg-zinc-700 border-zinc-600 text-white' : 'bg-white border-gray-300'}`}
               />
@@ -77,66 +93,66 @@ const TaskDetail = ({ task, allMembers, getMemberById, onClose, onSave, theme })
               <input
                 type="date"
                 name="endDate"
-                value={editedTask.endDate}
+                value={editedTask.endDate || ''}
                 onChange={handleInputChange}
                 className={`w-full p-2 rounded border ${theme === 'dark' ? 'bg-zinc-700 border-zinc-600 text-white' : 'bg-white border-gray-300'}`}
               />
             </div>
           </div>
 
-          <div>
-            <label className={`block mb-1 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>Asignado a</label>
-            <select
-              name="assignee"
-              value={editedTask.assignee}
-              onChange={handleInputChange}
-              className={`w-full p-2 rounded border ${theme === 'dark' ? 'bg-zinc-700 border-zinc-600 text-white' : 'bg-white border-gray-300'}`}
-            >
-              {allMembers.map(member => (
-                <option key={member.userId} value={member.userId}>
-                  {member.name} ({member.role})
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className={`block mb-1 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>Prioridad</label>
-            <select
-              name="priority"
-              value={editedTask.priority}
-              onChange={handleInputChange}
-              className={`w-full p-2 rounded border ${theme === 'dark' ? 'bg-zinc-700 border-zinc-600 text-white' : 'bg-white border-gray-300'}`}
-            >
-              <option value="Alta">Alta</option>
-              <option value="Media">Media</option>
-              <option value="Baja">Baja</option>
-            </select>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className={`block mb-1 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>Prioridad</label>
+              <select
+                value={editedTask.priority?._id || ''}
+                onChange={(e) => handlePriorityChange(e.target.value)}
+                className={`w-full p-2 rounded border ${theme === 'dark' ? 'bg-zinc-700 border-zinc-600 text-white' : 'bg-white border-gray-300'}`}
+              >
+                {priorities.map(priority => (
+                  <option key={priority._id} value={priority._id}>
+                    {priority.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className={`block mb-1 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>Estado</label>
+              <select
+                name="status"
+                value={editedTask.status || 'Pendiente'}
+                onChange={handleInputChange}
+                className={`w-full p-2 rounded border ${theme === 'dark' ? 'bg-zinc-700 border-zinc-600 text-white' : 'bg-white border-gray-300'}`}
+              >
+                <option value="Pendiente">Pendiente</option>
+                <option value="En Progreso">En Progreso</option>
+                <option value="Completado">Completado</option>
+              </select>
+            </div>
           </div>
         </div>
       ) : (
         <div className="space-y-4">
           <h3 className={`text-lg font-semibold ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>
-            {task.title}
+            {task.name}
           </h3>
           <p className={`${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
-            {task.description}
+            {task.description || 'Sin descripción'}
           </p>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
-                <span className="font-medium">Fecha Inicio:</span> {task.startDate}
+                <span className="font-medium">Fecha Inicio:</span> {task.startDate || 'No definida'}
               </p>
               <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
-                <span className="font-medium">Fecha Fin:</span> {task.endDate}
+                <span className="font-medium">Fecha Fin:</span> {task.endDate || 'No definida'}
               </p>
             </div>
             <div>
               <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
-                <span className="font-medium">Asignado a:</span> {assignedMember.name} ({assignedMember.role})
+                <span className="font-medium">Prioridad:</span> {task.priority?.name || 'No definida'}
               </p>
               <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
-                <span className="font-medium">Prioridad:</span> {task.priority}
+                <span className="font-medium">Estado:</span> {task.status || 'Pendiente'}
               </p>
             </div>
           </div>
@@ -145,14 +161,13 @@ const TaskDetail = ({ task, allMembers, getMemberById, onClose, onSave, theme })
 
       <div className="mt-6">
         <h3 className={`text-lg font-semibold mb-3 ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>
-          Historias de Usuario
+          Historias de Usuario ({task.userStories?.length || 0})
         </h3>
         <UserStoryList 
-          userStories={editing ? editedTask.userStories : task.userStories} 
+          userStories={editing ? editedTask.userStories || [] : task.userStories || []} 
           editing={editing}
           onUpdate={updateUserStories}
           theme={theme}
-          allMembers={allMembers}
         />
       </div>
 
@@ -184,7 +199,7 @@ const TaskDetail = ({ task, allMembers, getMemberById, onClose, onSave, theme })
               onClick={() => setEditing(true)}
               className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
             >
-              Editar Tarea
+              Editar Épica
             </button>
           </>
         )}
