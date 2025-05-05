@@ -7,6 +7,8 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
+import axios from 'axios';
+import { useEffect, useState } from 'react';
 
 ChartJS.register(
   ArcElement,
@@ -16,27 +18,48 @@ ChartJS.register(
 
 const TaskDistribution = () => {
   const { theme } = useTheme();
+  const [taskData, setTaskData] = useState({
+    labels: ['Pendiente', 'En Progreso', 'Completado'],
+    datasets: [{
+      data: [0, 0, 0]
+    }]
+  });
 
-  const data = {
-    labels: ['Completadas', 'En progreso', 'Pendientes'],
-    datasets: [
-      {
-        label: 'Tareas',
-        data: [128, 42, 56],
-        backgroundColor: [
-          'rgba(75, 192, 192, 0.7)',
-          'rgba(255, 206, 86, 0.7)',
-          'rgba(255, 99, 132, 0.7)',
-        ],
-        borderColor: [
-          'rgba(75, 192, 192, 1)',
-          'rgba(255, 206, 86, 1)',
-          'rgba(255, 99, 132, 1)',
-        ],
-        borderWidth: 1,
-      },
-    ],
-  };
+  useEffect(() => {
+    const fetchTaskData = async () => {
+      try {
+        const response = await axios.get('/api/user-stories/count-by-status');
+        const statusCounts = response.data;
+        
+        setTaskData({
+          labels: ['Pendiente', 'En Progreso', 'Completado'],
+          datasets: [{
+            label: 'Tareas',
+            data: [
+              statusCounts['Pendiente'] || 0,
+              statusCounts['En Progreso'] || 0,
+              statusCounts['Completado'] || 0
+            ],
+            backgroundColor: [
+              'rgba(255, 99, 132, 0.7)',  // Pendiente
+              'rgba(255, 206, 86, 0.7)',   // En Progreso
+              'rgba(75, 192, 192, 0.7)'    // Completado
+            ],
+            borderColor: [
+              'rgba(255, 99, 132, 1)',
+              'rgba(255, 206, 86, 1)',
+              'rgba(75, 192, 192, 1)'
+            ],
+            borderWidth: 1,
+          }]
+        });
+      } catch (error) {
+        console.error('Error al obtener datos de distribución de tareas:', error);
+      }
+    };
+
+    fetchTaskData();
+  }, []);
 
   const options = {
     responsive: true,
@@ -55,7 +78,7 @@ const TaskDistribution = () => {
       },
       title: {
         display: true,
-        text: 'Distribución de Tareas',
+        text: 'Distribución de Historias de Usuario',
         color: theme === 'dark' ? '#fff' : '#333',
         font: {
           size: 14
@@ -69,7 +92,7 @@ const TaskDistribution = () => {
       rounded-xl p-4 shadow-sm h-full
       ${theme === 'dark' ? 'bg-zinc-900' : 'bg-white'}
     `}>
-      <Pie data={data} options={options} />
+      <Pie data={taskData} options={options} />
     </div>
   );
 };

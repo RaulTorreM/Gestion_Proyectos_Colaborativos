@@ -10,6 +10,8 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
+import axios from 'axios';
+import { useEffect, useState } from 'react';
 
 ChartJS.register(
   CategoryScale,
@@ -22,31 +24,46 @@ ChartJS.register(
 
 const ProjectProgress = () => {
   const { theme } = useTheme();
+  const [projectData, setProjectData] = useState({
+    labels: ['No iniciado', 'En Progreso', 'Finalizado'],
+    datasets: [{ data: [0, 0, 0] }]
+  });
 
-  const data = {
-    labels: ['Activo', 'En pausa', 'Completado', 'Planificado', 'Cancelado'],
-    datasets: [
-      {
-        label: 'Proyectos',
-        data: [10, 8, 4, 2, 0],
-        backgroundColor: [
-          'rgba(54, 162, 235, 0.7)',
-          'rgba(255, 206, 86, 0.7)',
-          'rgba(75, 192, 192, 0.7)',
-          'rgba(153, 102, 255, 0.7)',
-          'rgba(255, 99, 132, 0.7)',
-        ],
-        borderColor: [
-          'rgba(54, 162, 235, 1)',
-          'rgba(255, 206, 86, 1)',
-          'rgba(75, 192, 192, 1)',
-          'rgba(153, 102, 255, 1)',
-          'rgba(255, 99, 132, 1)',
-        ],
-        borderWidth: 1,
-      },
-    ],
-  };
+  useEffect(() => {
+    const fetchProjectData = async () => {
+      try {
+        const response = await axios.get('/api/projects/status-count');
+        const statusCounts = response.data;
+        
+        setProjectData({
+          labels: ['No iniciado', 'En Progreso', 'Finalizado'],
+          datasets: [{
+            label: 'Proyectos',
+            data: [
+              statusCounts['No iniciado'] || 0,
+              statusCounts['En Progreso'] || 0,
+              statusCounts['Finalizado'] || 0
+            ],
+            backgroundColor: [
+              'rgba(153, 102, 255, 0.7)', // No iniciado
+              'rgba(255, 206, 86, 0.7)',   // En Progreso
+              'rgba(75, 192, 192, 0.7)'    // Finalizado
+            ],
+            borderColor: [
+              'rgba(153, 102, 255, 1)',
+              'rgba(255, 206, 86, 1)',
+              'rgba(75, 192, 192, 1)'
+            ],
+            borderWidth: 1,
+          }]
+        });
+      } catch (error) {
+        console.error('Error fetching project status data:', error);
+      }
+    };
+
+    fetchProjectData();
+  }, []);
 
   const options = {
     responsive: true,
@@ -60,7 +77,7 @@ const ProjectProgress = () => {
       },
       title: {
         display: true,
-        text: 'Progreso de Proyectos',
+        text: 'Estado de Proyectos',
         color: theme === 'dark' ? '#fff' : '#333',
         font: {
           size: 14
@@ -72,7 +89,7 @@ const ProjectProgress = () => {
         beginAtZero: true,
         ticks: {
           color: theme === 'dark' ? '#fff' : '#333',
-          stepSize: 2
+          stepSize: 1
         },
         grid: {
           color: theme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
@@ -94,9 +111,9 @@ const ProjectProgress = () => {
       rounded-xl p-4 shadow-sm h-full
       ${theme === 'dark' ? 'bg-zinc-900' : 'bg-white'}
     `}>
-      <Bar data={data} options={options} />
+      <Bar data={projectData} options={options} />
     </div>
   );
 };
 
-export default ProjectProgress;
+export default ProjectProgress; 
