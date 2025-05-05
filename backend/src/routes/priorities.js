@@ -15,10 +15,10 @@ const validateNotToBeMoscowPriority = () => {
 			const priority = await Priority.findById(id);
 			
 			if (priority.moscowPriority !== null) {
-				return res.status(404).json({ message: 'Cannot update or delete a moscow priority.' });
+				return res.status(404).json({ error: 'Cannot update or delete a moscow priority.' });
 			}
 		} catch (err) {
-			return res.status(500).json({ message: 'Server error during validation.' });
+			return res.status(500).json({ error: 'Server error during validation.' });
 		}
 
 		next();
@@ -31,10 +31,10 @@ const validateMoscowPriority = () => {
 	
 		try {
 			if (![1, 2, 3, 4].includes(moscowPriority)) {
-				return res.status(400).json({ message: 'Invalid moscowPriority.' });
+				return res.status(400).json({ error: 'Invalid moscowPriority.' });
 			}
 		} catch (err) {
-			return res.status(500).json({ message: 'Server error during validation.' });
+			return res.status(500).json({ error: 'Server error during validation.' });
 		}
 	
 		next();

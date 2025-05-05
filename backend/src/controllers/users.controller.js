@@ -9,13 +9,13 @@ usersController.getUsers = async (req, res) => {
 		const users = await User.find({ deletedAt: null }).select('-password'); 
 	
 		if (!users) {
-			return res.status(404).json({ message: 'Users not found' });
+			return res.status(404).json({ error: 'Users not found' });
 		}
 
 		res.json(users);
 	} catch (error) {
 		console.error(error);
-		res.status(500).json({ message: 'Server Error', error: error.message });
+		res.status(500).json({ error: 'Server Error: ' + error.message });
 	}
 }
 
@@ -24,13 +24,13 @@ usersController.getUser = async (req, res) => {
 		const user = await User.findOne({ _id: req.params.id, deletedAt: null }).select('-password');
   
 		if (!user) {
-			return res.status(404).json({ message: 'User not found' });
+			return res.status(404).json({ error: 'User not found' });
 		}
 
 		res.json(user);
 	} catch (error) {
 	  console.error(error);
-	  res.status(500).json({ message: 'Server Error', error: error.message });
+	  res.status(500).json({ error: 'Server Error: ' + error.message });
 	}
 }
 
@@ -47,10 +47,10 @@ usersController.createUser = async (req, res) => {
 		const newUser = new User(createData);
 		await newUser.save();
 
-		res.status(201).json({ message: 'User Saved', user: newUser });
+		res.status(201).json({ message: 'User Saved', data: newUser });
 	} catch (error) {
 		console.error(error);
-		res.status(500).json({ message: 'Server Error', error: error.message });
+		res.status(500).json({ error: 'Server Error: ' + error.message });
 	}
 };
 
@@ -75,17 +75,17 @@ usersController.updateUser = async (req, res) => {
   
 	  // Validar si se encontró el usuario
 	  if (!userUpdated) {
-		return res.status(404).json({ message: 'User not found' });
+		return res.status(404).json({ error: 'User not found' });
 	  }
   
 	  // Convertir a objeto plano y eliminar password
 	  const userObject = userUpdated.toObject();
 	  delete userObject.password;
   
-	  res.status(200).json({ message: 'User Updated', user: userObject });
+	  res.status(200).json({ message: 'User Updated', data: userObject });
 	} catch (error) {
 	  console.error(error);
-	  res.status(500).json({ message: 'Server Error', error: error.message });
+	  res.status(500).json({ error: 'Server Error: ' + error.message });
 	}
 };
 
@@ -98,13 +98,13 @@ usersController.deleteUser = async (req, res) => {
 		);
 	
 		if (!user) {
-			return res.status(404).json({ message: 'User not found' });
+			return res.status(404).json({ error: 'User not found' });
 		}
 	
 		res.json({ message: 'User Disabled', user });
 	} catch (error) {
 		console.error(error);
-		res.status(500).json({ message: 'Server Error', error: error.message });
+		res.status(500).json({ error: 'Server Error: ' + error.message });
 	}
 };
   

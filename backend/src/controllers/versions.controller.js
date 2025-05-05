@@ -10,13 +10,13 @@ versionsController.getVersions = async (req, res) => {
 		const versions = await Version.find({ deletedAt: null }); 
 
 		if (!versions) {
-			return res.status(404).json({ message: 'Versions not found' });
+			return res.status(404).json({ error: 'Versions not found' });
 		}
 
 		res.json(versions);
 	} catch (error) {
 		console.error(error);
-		res.status(500).json({ message: 'Server Error', error: error.message });
+		res.status(500).json({ error: 'Server Error: ' + error.message });
 	}
 }
 
@@ -25,15 +25,40 @@ versionsController.getVersion = async (req, res) => {
 		const version = await Version.findOne({ _id: req.params.id, deletedAt: null });
 
 		if (!version) {
-			return res.status(404).json({ message: 'Version not found' });
+			return res.status(404).json({ error: 'Version not found' });
 		}
 
 		res.json(version);
 	} catch (error) {
 		console.error(error);
-		res.status(500).json({ message: 'Server Error', error: error.message });
+		res.status(500).json({ error: 'Server Error: ' + error.message });
 	}
 }
+
+//Obtener datos de muchas versiones a la vez
+versionsController.getVersionsBulk = async (req, res) => {
+	try {
+	  const { ids } = req.body;
+	  
+	  if (!ids || !Array.isArray(ids)) {
+		return res.status(400).json({ message: 'Se requiere un array de IDs en el cuerpo de la solicitud' });
+	  }
+  
+	  const versions = await Version.find({ 
+		_id: { $in: ids },
+		deletedAt: null 
+	  });
+  
+	  if (!versions) {
+		return res.status(404).json({ message: 'Versiones no encontradas' });
+	  }
+  
+	  res.json(versions);
+	} catch (error) {
+	  console.error(error);
+	  res.status(500).json({ message: 'Error del servidor', error: error.message });
+	}
+  };
 
 versionsController.createVersion = async (req, res) => {
 	try {
@@ -59,7 +84,7 @@ versionsController.createVersion = async (req, res) => {
 	  res.status(201).json({ message: 'Version Saved', version: newVersion });
 	} catch (error) {
 	  console.error(error);
-	  res.status(500).json({ message: 'Server Error', error: error.message });
+	  res.status(500).json({ error: 'Server Error: ' + error.message });
 	}
 };
 
@@ -95,10 +120,10 @@ versionsController.updateVersion = async (req, res) => {
 	  // Ejecutar todas las actualizaciones en batch
 	  await UserStory.bulkWrite([...unsetOperations, ...setOperations]);
   
-	  res.status(200).json({ message: 'Version Updated', version: versionUpdated });
+	  res.status(200).json({ message: 'Version Updated', data: versionUpdated });
 	} catch (error) {
 	  console.error(error);
-	  res.status(500).json({ message: 'Server Error', error: error.message });
+	  res.status(500).json({ error: 'Server Error: ' + error.message });
 	}
 };
   
@@ -111,13 +136,13 @@ versionsController.deleteVersion = async (req, res) => {
 		);
 	
 		if (!version) {
-			return res.status(404).json({ message: 'Version not found' });
+			return res.status(404).json({ error: 'Version not found' });
 		}
 	
 		res.json({ message: 'Version Disabled', version });
 	} catch (error) {
 		console.error(error);
-		res.status(500).json({ message: 'Server Error', error: error.message });
+		res.status(500).json({ error: 'Server Error: ' + error.message });
 	}
 }
 

@@ -16,41 +16,37 @@ const Projects = () => {
     description: '',
     startDate: '',
     dueDate: '',
-    status: 'En Progreso',
     members: [],
     projectType: '',
-    authorUserId: '',
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedMember, setSelectedMember] = useState('');
   const [selectedRole, setSelectedRole] = useState('Miembro');
 
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        const [projectsData, usersData] = await Promise.all([
-          ProjectsService.getProjects(),
-          UsersService.getAllUsers()
-        ]);
-        
-        // Asegurarse que los proyectos tengan la estructura correcta
-        setProjects(Array.isArray(projectsData) ? projectsData : []);
-        
-        // Asegurarse que los usuarios tengan la estructura correcta
-        const formattedUsers = Array.isArray(usersData) ? usersData : [];
-        setUsers(formattedUsers);
-        
-        // Establecer el primer usuario como miembro seleccionado por defecto si hay usuarios
-        if (formattedUsers.length > 0) {
-          setSelectedMember(formattedUsers[0]._id);
-        }
-      } catch (err) {
-        setError(err.message || 'Error al cargar datos');
-      } finally {
-        setLoading(false);
+  const loadData = async () => {
+    try {
+      const [projectsData, usersData] = await Promise.all([
+        ProjectsService.getProjects(),
+        UsersService.getAllUsers()
+      ]);
+  
+      setProjects(Array.isArray(projectsData) ? projectsData : []);
+      const formattedUsers = Array.isArray(usersData) ? usersData : [];
+      setUsers(formattedUsers);
+  
+      if (formattedUsers.length > 0) {
+        setSelectedMember(formattedUsers[0]._id);
       }
-    };
+    } catch (err) {
+      setError(err.message || 'Error al cargar datos');
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  // useEffect solo llama a loadData una vez al montar
+  useEffect(() => {
     loadData();
   }, []);
 
@@ -115,31 +111,43 @@ const Projects = () => {
         ...newProject,
         startDate: new Date(newProject.startDate).toISOString(),
         dueDate: new Date(newProject.dueDate).toISOString(),
-        projectType: newProject.projectType || "Desarrollo de software"
+        projectType: newProject.projectType || "Desarrollo de software",
       };
-      
+
       // Enviamos el objeto formateado según el esquema requerido
-      const createdProject = await ProjectsService.createProject(formattedProject);
-      setProjects(prev => [...prev, createdProject]);
+      await ProjectsService.createProject(formattedProject);
+      await loadData();  
       setShowForm(false);
-      setNewProject({
-        name: '',
-        description: '',
-        startDate: '',
-        dueDate: '',
-        authorUserId: '',
-        members: [],
-        projectType: ''
-      });
     } catch (error) {
       console.error('Error creating project:', error);
-      setError('Error al crear el proyecto');
+    
+      if (error.response) {
+        const { data } = error.response;
+        console.error('Error response data:', data);
+    
+        if (data.errors && Array.isArray(data.errors)) {
+          // Extraer mensajes de error
+          const messages = data.errors.map(err => `${err.path}: ${err.msg}`);
+          // Unir todos los mensajes en un solo string separado por salto de línea
+          setError(messages.join('\n'));
+        } else if (data.message) {
+          setError(data.message);
+        } else {
+          setError('Error desconocido al crear el proyecto');
+        }
+      } else if (error.request) {
+        console.error('No se recibió respuesta del servidor:', error.request);
+        setError('No se recibió respuesta del servidor');
+      } else {
+        setError(error.message || 'Error desconocido');
+      }
     }
   };
 
-  const filteredProjects = projects.filter(project =>
-    project.name.toLowerCase().includes(filter.toLowerCase()) ||
-    project.description.toLowerCase().includes(filter.toLowerCase())
+  const filteredProjects = projects.filter(project => project) 
+    .filter(project =>
+      project.name.toLowerCase().includes(filter.toLowerCase()) ||
+      project.description.toLowerCase().includes(filter.toLowerCase())
   );
 
   // Función auxiliar para obtener el nombre del usuario por ID
@@ -148,8 +156,18 @@ const Projects = () => {
     return user ? user.name : 'Usuario desconocido';
   };
 
+  const handleAuthorChange = (e) => {
+    /* const { value } = e.target;
+    setNewProject(prev => {
+      const updatedProject = { ...prev, authorUserId: value };
+      
+      // Imprimir la data completa que se enviará al backend
+      console.log('Proyecto actualizado:', updatedProject);
+    }); */
+  };
+  
   if (loading) return <div>Cargando proyectos...</div>;
-  if (error) return <div>Error: {error}</div>;
+  if (error) return <div className='font-semibold text-red-700 dark:text-white'>Error: {error}</div>;
 
   return (
     <div className="relative p-4 md:p-6 space-y-4 md:space-y-6">
@@ -279,7 +297,7 @@ const Projects = () => {
                     
                     <button
                       onClick={handleAddMember}
-                      className="p-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg"
+                      className="p-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg cursor-pointer"
                     >
                       Añadir
                     </button>
@@ -313,7 +331,7 @@ const Projects = () => {
                               
                               <button
                                 onClick={() => handleRemoveMember(member.userId)}
-                                className="text-red-500 hover:text-red-700 p-1"
+                                className="text-red-500 hover:text-red-700 p-1 cursor-pointer"
                               >
                                 ✕
                               </button>
@@ -324,23 +342,6 @@ const Projects = () => {
                     )}
                   </div>
                 </div>
-                
-                <div>
-                  <h2 className='text-lg text-gray-500 dark:text-gray-300'>Autor:</h2>
-                  <select
-                    name="authorUserId"
-                    value={newProject.authorUserId}
-                    onChange={handleInputChange}
-                    className="w-full p-2 border rounded-lg text-gray-700 dark:bg-zinc-800 dark:text-white"
-                  >
-                    <option value="">Seleccione el autor</option>
-                    {users.map(user => (
-                      <option key={user._id} value={user._id}>
-                        {user.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
               </div>
             </div>
 
@@ -348,13 +349,17 @@ const Projects = () => {
             <div className="flex justify-end gap-3 p-4 border-t dark:border-zinc-700">
               <button
                 onClick={() => setShowForm(false)}
-                className="px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-lg"
+                className="px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-lg cursor-pointer"
               >
                 Cerrar
               </button>
               <button
-                onClick={handleCreateProject}
-                className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg"
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleCreateProject();
+                }}
+                className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
               >
                 Crear Proyecto
               </button>

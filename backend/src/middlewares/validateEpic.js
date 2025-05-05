@@ -1,4 +1,4 @@
-const { body } = require('express-validator');
+const { header, body } = require('express-validator');
 const mongoose = require('mongoose');
 const validateResult = require('./validateResult');
 const User = require('../models/User');
@@ -6,13 +6,19 @@ const Project = require('../models/Project');
 const UserStory = require('../models/UserStory');
 
 const validateCreateEpic = [
+  header('Authorization')
+    .exists().withMessage('Authorization header is required')
+    .notEmpty().withMessage('Authorization header cannot be empty')
+    .matches(/^\S.+/).withMessage('Invalid Authorization header format'),
+
   body('projectId')
     .notEmpty().withMessage('ProjectId is required')
     .custom(async (value) => {
       if (!mongoose.Types.ObjectId.isValid(value)) {
         throw new Error('Invalid projectId');
       }
-      const project = await Project.findById(value);
+
+      const project = await Project.findOne({ _id: value, deletedAt: null });
       if (!project) {
         throw new Error('Project not found for this projectId');
       }
@@ -136,20 +142,7 @@ const validateCreateEpic = [
       return true;
     }),
 
-  body('authorUserId')
-    .notEmpty().withMessage('AuthorUserId is required')
-    .custom(async (value) => {
-      if (!mongoose.Types.ObjectId.isValid(value)) {
-        throw new Error('Invalid AuthorUserId');
-      }
-      const user = await User.findById(value);
-      if (!user) {
-        throw new Error('Author User not found');
-      }
-      return true;
-    }),
-
-  validateResult
+    validateResult
 ];
 
 const validateUpdateEpic = [

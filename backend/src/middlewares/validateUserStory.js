@@ -1,20 +1,25 @@
-const { body } = require('express-validator');
+const { body, header } = require('express-validator');
 const mongoose = require('mongoose');
 const validateResult = require('./validateResult');
 const User = require('../models/User');
 const Epic = require('../models/Epic');
 const Version = require('../models/Version');
 const Priority = require('../models/Priority');
-const UserStory = require('../models/UserStory');
 
 const validateCreateUserStory = [
+  header('Authorization')
+    .exists().withMessage('Authorization header is required')
+    .notEmpty().withMessage('Authorization header cannot be empty')
+    .matches(/^\S.+/).withMessage('Invalid Authorization header format'),
+
   body('epicId')
     .notEmpty().withMessage('EpicId is required')
     .custom(async (value) => {
       if (!mongoose.Types.ObjectId.isValid(value)) {
         throw new Error('Invalid epicId');
       }
-      const epic = await Epic.findById(value);
+
+      const epic = await Epic.findOne({ _id: value, deletedAt: null });
       if (!epic) {
         throw new Error('Epic not found for this epicId');
       }
@@ -27,7 +32,8 @@ const validateCreateUserStory = [
       if (!mongoose.Types.ObjectId.isValid(value)) {
         throw new Error('Invalid versionId');
       }
-      const version = await Version.findById(value);
+
+      const version = await Version.findOne({ _id: value, deletedAt: null });
       if (!version) {
         throw new Error('Version not found for this versionId');
       }
@@ -71,8 +77,8 @@ const validateCreateUserStory = [
         throw new Error('Invalid moscowPriority or must be an integer between 1 y 4.');
       }
       
-      const priority = await Priority.findOne({ moscowPriority: intValue });
-  
+      const priority = await Priority.findOne({ moscowPriority: intValue, deletedAt: null});
+
       if (!priority) {
         throw new Error(`Priority not found for moscowPriority ${intValue}`);
       }
@@ -193,21 +199,6 @@ const validateCreateUserStory = [
         uniqueMembers.add(userId.toString());
       }
   
-      return true;
-    }),
-
-  body('authorUserId')
-    .notEmpty().withMessage('AuthorUserId is required')
-    .custom(async (value) => {
-      if (!mongoose.Types.ObjectId.isValid(value)) {
-        throw new Error('Invalid AuthorUserId');
-      }
-      const user = await User.findById(value);
-
-      if (!user) {
-        throw new Error('Author User not found');
-      }
-
       return true;
     }),
 

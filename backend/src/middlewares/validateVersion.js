@@ -138,7 +138,7 @@ const validateCreateVersion = [
         throw new Error('Invalid projectId');
       }
 
-      const project = await Project.findById(value);
+      const project = await Project.findOne({ _id: value, deletedAt: null });
       if (!project) {
         throw new Error('Project not found for this projectId');
       }

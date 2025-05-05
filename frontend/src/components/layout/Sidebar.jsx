@@ -15,7 +15,8 @@ import {
   import { useState } from 'react';
   import { useTheme } from '../../context/ThemeContext';
   import { NavLink } from 'react-router-dom';
-  
+  import AuthService from '../../api/services/AuthService';
+
   const Sidebar = () => {
     const { theme, toggleTheme } = useTheme();
     const [collapsed, setCollapsed] = useState(false);
@@ -40,9 +41,8 @@ import {
     };
   
     const handleLogout = () => {
-      // Aquí iría la lógica para cerrar sesión
-      console.log('Cerrando sesión...');
-      // Ejemplo: auth.logout();
+      AuthService.logout();
+      window.location.href = '/login';
     };
   
     return (
