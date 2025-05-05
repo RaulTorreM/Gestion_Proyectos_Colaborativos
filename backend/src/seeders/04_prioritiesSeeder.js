@@ -27,9 +27,20 @@ module.exports = async function seedPriorities() {
             color: '#BD392F',
         },
         {
-            name: 'Nueva Prioridad',
-            description: 'Descripción de Nueva Prioridad.',
+            name: 'Alta',
+            description: 'Requiere atención inmediata.',
+            color: '#E74C3C', // Rojo
         },
+        {
+            name: 'Media',
+            description: 'Importante, pero no crítica.',
+            color: '#F39C12', // Naranja
+        },
+        {
+            name: 'Baja',
+            description: 'De baja urgencia.',
+            color: '#27AE60', // Verde
+        }
     ];
 
     try {

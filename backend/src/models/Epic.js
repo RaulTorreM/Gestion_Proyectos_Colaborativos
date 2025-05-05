@@ -30,6 +30,7 @@ const epicsSchema = new Schema({
 		required: false,
         default: null
 	},
+	priorityId: { type: Schema.Types.ObjectId, ref: 'Priority' },
 	status: {
 		type: String,
 		enum: ['Pendiente', 'En Progreso', 'Completado'],

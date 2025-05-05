@@ -1,6 +1,7 @@
 const User = require('../models/User');
 const Project = require('../models/Project');
 const Epic = require('../models/Epic');
+const Priority = require('../models/Priority');
 
 module.exports = async function seedEpics() {
     try {
@@ -21,6 +22,14 @@ module.exports = async function seedEpics() {
             return;
         }
 
+        // Obtener algunas prioridades para asignar a las épicas
+        const priorities = await Priority.find({});
+
+        if (priorities.length < 3) {
+            console.log('❌ No hay suficientes prioridades normales en la base de datos.');
+            return;
+        }
+
         // Crear épicas de ejemplo
         const epics = [
             {
@@ -30,6 +39,7 @@ module.exports = async function seedEpics() {
                 startDate: new Date('2025-01-15'),
                 endDate: new Date('2025-03-01'),
                 dueDate: new Date('2025-04-01'),
+                priorityId: priorities[4], // Alta
                 status: 'En Progreso',
                 authorUserId: users[0]._id,  // Usuario 1 como creador de la épica
             },
@@ -40,6 +50,7 @@ module.exports = async function seedEpics() {
                 startDate: new Date('2025-02-01'),
                 endDate: new Date('2025-05-30'),
                 dueDate: new Date('2025-06-01'),
+                priorityId: priorities[5], // Media
                 status: 'Pendiente',
                 authorUserId: users[1]._id,  // Usuario 2 como creador de la épica
             },
@@ -50,6 +61,7 @@ module.exports = async function seedEpics() {
                 startDate: new Date('2025-03-01'),
                 endDate: new Date('2025-06-01'),
                 dueDate: new Date('2025-07-01'),
+                priorityId: priorities[6], // Baja
                 status: 'Pendiente',
                 authorUserId: users[0]._id,  // Usuario 1 como creador de la épica
             }

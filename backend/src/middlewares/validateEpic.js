@@ -1,8 +1,8 @@
 const { header, body } = require('express-validator');
 const mongoose = require('mongoose');
 const validateResult = require('./validateResult');
-const User = require('../models/User');
 const Project = require('../models/Project');
+const Priority = require('../models/Priority');
 const UserStory = require('../models/UserStory');
 
 const validateCreateEpic = [
@@ -142,7 +142,21 @@ const validateCreateEpic = [
       return true;
     }),
 
-    validateResult
+  body('priorityId')
+    .notEmpty().withMessage('PriorityId is required')
+    .custom(async (value) => {
+      if (!mongoose.Types.ObjectId.isValid(value)) {
+        throw new Error('Invalid priorityId');
+      }
+
+      const priority = await Priority.findOne({ _id: value, deletedAt: null });
+      if (!priority) {
+        throw new Error('Priority not found for this priorityId');
+      }
+      return true;
+    }),
+
+  validateResult
 ];
 
 const validateUpdateEpic = [
@@ -279,6 +293,20 @@ const validateUpdateEpic = [
         }
       }
   
+      return true;
+    }),
+  
+  body('priorityId')
+    .optional({ nullable: true })
+    .custom(async (value) => {
+      if (!mongoose.Types.ObjectId.isValid(value)) {
+        throw new Error('Invalid priorityId');
+      }
+
+      const priority = await Priority.findOne({ _id: value, deletedAt: null });
+      if (!priority) {
+        throw new Error('Priority not found for this priorityId');
+      }
       return true;
     }),
 
