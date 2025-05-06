@@ -34,6 +34,31 @@ usersController.getUser = async (req, res) => {
 	}
 }
 
+// Obtener Users bulk por ids
+usersController.getUsersBulk = async (req, res) => {
+	try {
+	  const { ids } = req.body;
+	  
+	  if (!ids || !Array.isArray(ids)) {
+		return res.status(400).json({ error: 'Se requiere un array de IDs en el cuerpo de la solicitud' });
+	  }
+  
+	  const users = await User.find({ 
+		_id: { $in: ids },
+		deletedAt: null 
+	  }).select('name email'); // Selecciona solo los campos necesarios
+  
+	  if (!users || users.length === 0) {
+		return res.status(404).json({ error: 'Usuarios no encontrados' });
+	  }
+  
+	  res.json(users);
+	} catch (error) {
+	  console.error(error);
+	  res.status(500).json({ error: 'Error del servidor: ' + error.message });
+	}
+  };
+
 usersController.createUser = async (req, res) => {
 	try {
 		// Hashear password

@@ -21,7 +21,7 @@ const ProjectHeader = ({ project = {}, theme = 'light' }) => {
   const end = safeProject.endDate ? new Date(safeProject.endDate) : new Date();
   const duration = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
 
-  console.log(safeProject);
+  // console.log(safeProject);
   // Calcular progreso de forma segura
   const progressPercentage = safeProject.tasks.total > 0 
     ? Math.round((safeProject.tasks.completed / safeProject.tasks.total) * 100) 
@@ -39,7 +39,7 @@ const ProjectHeader = ({ project = {}, theme = 'light' }) => {
         </h3>
         <div className="flex justify-between items-center mb-1">
           <span className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
-            {safeProject.tasks.completed}/{safeProject.tasks.total} tareas
+            {safeProject.tasks.completed}/{safeProject.tasks.total} Epics
           </span>
           <span className={`text-sm font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
             {progressPercentage}%
@@ -74,7 +74,7 @@ const ProjectHeader = ({ project = {}, theme = 'light' }) => {
           </div>
           <div>
             <p className={`text-xs ${theme === 'dark' ? 'text-gray-500' : 'text-gray-500'}`}>Duración</p>
-            <p className={theme === 'dark' ? 'text-gray-300' : 'text-gray-800'}>{duration} días</p>
+            <p className={theme === 'dark' ? 'text-gray-300' : 'text-gray-800'}>{safeProject.duration}</p>
           </div>
         </div>
       </div>
@@ -94,7 +94,7 @@ const ProjectHeader = ({ project = {}, theme = 'light' }) => {
               'bg-gray-700 hover:bg-gray-600 text-blue-400' : 
               'bg-gray-100 hover:bg-gray-200 text-blue-600'}
           `}>
-            + Añadir
+            {/* + Añadir      // añadir esta funcion al terminar la funcionalidad principal*/} 
           </button>
         </div>
         <div className="space-y-3">
@@ -102,12 +102,12 @@ const ProjectHeader = ({ project = {}, theme = 'light' }) => {
             <div key={member.userId} className="flex items-center">
               <div className={`w-8 h-8 rounded-full mr-3 ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'} flex items-center justify-center`}>
                 <span className={`text-xs ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
-                  {member.name?.charAt(0) || '?'}
+                  {member.userData.name?.charAt(0) || '?'}
                 </span>
               </div>
               <div>
                 <p className={theme === 'dark' ? 'text-gray-300' : 'text-gray-800'}>
-                  {member.name || 'Miembro sin nombre'}
+                  {member.userData.name || 'Miembro sin nombre'}
                 </p>
                 <p className={`text-xs ${theme === 'dark' ? 'text-gray-500' : 'text-gray-500'}`}>
                   {member.role || 'Sin rol definido'}

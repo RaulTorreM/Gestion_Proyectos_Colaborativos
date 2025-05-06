@@ -23,6 +23,7 @@ const ProjectDetails = () => {
   const [manager, setManager] = useState(null);
   const [versions, setVersions] = useState([]);
   const [epics, setEpics] = useState([]);
+  const [members, setMembers] = useState([]);
 
 
   useEffect(() => {
@@ -35,18 +36,30 @@ const ProjectDetails = () => {
             if (!projectData) {
               throw new Error('El proyecto no existe');
             }
-          
-          // Obtener datos adicionales en paralelo
-          const [managerData, versionsData, epicsData] = await Promise.all([
-            UsersService.getUserById(projectData.authorUserId),
-            VersionsService.getVersionsByIds(projectData.versions),
-            EpicsService.getEpicsByIds(projectData.epics)
-          ]);
 
-          setProject(projectData);
-          setManager(managerData);
-          setVersions(versionsData);
-          setEpics(epicsData);
+            // Extraer IDs de miembros
+            const memberIds = projectData.members.map(member => member.userId);
+          
+            // Obtener datos adicionales en paralelo
+            const [managerData, versionsData, epicsData, membersData] = await Promise.all([
+              UsersService.getUserById(projectData.authorUserId),
+              VersionsService.getVersionsByIds(projectData.versions),
+              EpicsService.getEpicsByIds(projectData.epics),
+              UsersService.getUsersByIds(memberIds)
+            ]);
+
+            // Mapear miembros con sus datos
+            const membersWithDetails = projectData.members.map(member => ({
+              ...member,
+              userData: membersData.find(user => user._id === member.userId) || null
+            }));
+
+            setProject(projectData);
+            setManager(managerData);
+            setVersions(versionsData);
+            setEpics(epicsData);
+            setMembers(membersWithDetails);
+
           
         } catch (err) {
           setError(err.message || 'Error al cargar el proyecto');
@@ -68,6 +81,7 @@ const ProjectDetails = () => {
       return new Date(dateString).toLocaleDateString('es-ES', options);
     };
 
+    
     // Estructura de datos para compatibilidad con componentes existentes
     const transformedProject = {
       ...project,
@@ -75,6 +89,10 @@ const ProjectDetails = () => {
       manager: manager?.name || 'Desconocido',
       startDate: formatDate(project.startDate),
       endDate: formatDate(project.endDate),
+      members: members.map(member => ({
+        ...member,
+
+      })),
       tasks: {
         completed: epics.reduce((acc, epic) => acc + (epic.status === 'Completado' ? 1 : 0), 0),
         total: epics.length
@@ -86,6 +104,8 @@ const ProjectDetails = () => {
         progress: version.progress
       }))
     };
+    console.log(transformedProject);
+    
     
   const tabs = [
     { id: 'details', label: 'Detalles' },
@@ -129,6 +149,7 @@ const ProjectDetails = () => {
               </button>
             )}
           </div>
+          
           
           <div className="flex flex-col md:items-end">
             <h1 className={`text-2xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>

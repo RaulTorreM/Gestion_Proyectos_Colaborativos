@@ -18,6 +18,15 @@ const UsersService = {
       console.error('Error fetching users:', error);
       throw error;
     }
+  },
+
+  getUsersByIds: async (userIds) => {
+    try {
+      return await api.post('/users/bulk/ids', { ids: userIds });
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      throw error;
+    }
   }
 };
 
