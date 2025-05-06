@@ -28,13 +28,13 @@ const ProjectMetrics = ({ project = {}, theme = 'light' }) => {
   // Estos son datos simulados específicos para cada proyecto basados en mockProjects
   const getSimulatedMetrics = (projectId) => {
     switch(projectId) {
-      case 1: // Sistema de Gestión
+      case "681a8c77a76349ebccb013d8": // Sistema de Gestión
         return {
           meetings: { actual: 85, target: 90 },
           deliveries: { actual: 78, target: 85 },
           tests: { actual: 92, target: 95 },
           documentation: { actual: 65, target: 80 },
-          weeklyProgress: [5, 8, 6, 10, 7, 6] // Tareas por semana
+          weeklyProgress: [50, 80, 60, 90, 70, 60] // Tareas por semana
         };
       case 2: // Portal Clientes
         return {

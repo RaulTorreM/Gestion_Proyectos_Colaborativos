@@ -5,9 +5,9 @@ const ProjectActivity = ({ projectId, theme }) => {
   const [comments, setComments] = useState([
     {
       id: 1,
-      author: 'Carlos Pérez',
-      avatar: 'CP',
-      date: '2023-06-15 14:30',
+      author: 'David Contreras',
+      avatar: 'DC',
+      date: '2025-04-15 14:30',
       text: 'Hemos completado el módulo de autenticación. Falta revisar los tests.',
       isCurrentUser: false
     },
@@ -15,7 +15,7 @@ const ProjectActivity = ({ projectId, theme }) => {
       id: 2,
       author: 'Tú',
       avatar: 'YO',
-      date: '2023-06-15 15:45',
+      date: '2025-04-15 15:45',
       text: 'He revisado los tests y todo parece estar en orden. Buen trabajo equipo!',
       isCurrentUser: true
     }
