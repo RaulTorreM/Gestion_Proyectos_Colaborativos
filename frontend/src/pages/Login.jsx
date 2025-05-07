@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import AuthService from '../api/services/authService';
+import { useAuth } from '../context/AuthContext';
 
 const Login = () => {
   // 👉 Estados controlados para los inputs
   const [email, setEmail] = useState('josue@example.com');
   const [password, setPassword] = useState('josue123');
+  const auth = useAuth();
 
   // 👉 Estado para mensajes de error
   const [error, setError] = useState('');
@@ -14,14 +16,13 @@ const Login = () => {
     e.preventDefault();
 
     try {
-      // Llama a AuthService con las credenciales
-      await AuthService.login({ email, password });
+      await auth.login({ email, password });
 
       // Si todo sale bien, redirige al dashboard o ruta protegida
       window.location.href = '/dashboard';
     } catch (err) {
       // Si hay error, muestra mensaje
-      setError(err.message || 'Credenciales incorrectas');
+      setError(err.error || 'Credenciales incorrectas');
     }
   };
 

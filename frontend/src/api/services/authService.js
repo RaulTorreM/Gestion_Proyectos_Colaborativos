@@ -4,7 +4,7 @@ const AuthService = {
   // Login: recibe credenciales y maneja respuesta
   login: async (credentials) => {
     try {
-      const { accessToken, refreshToken /*, user */ } = await api.post('/login', credentials);
+      const { accessToken, refreshToken } = await api.post('/login', credentials);
 
       // Guarda los tokens en localStorage
       localStorage.setItem('accessToken', accessToken);
@@ -20,11 +20,15 @@ const AuthService = {
     }
   },
 
+  // Obtiene los datos del usuario autenticado actual usando su accessToken
   getLoggedUser: async () => {
     try {
       const loggedUser = await api.get('/logged');
       return loggedUser;
     } catch (error) {
+      // Usuario no autenticado
+      AuthService.clearSession();
+      window.location.href = '/login';
       console.error(`Error fetching current logged user: `, error);
       throw error;
     }

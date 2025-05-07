@@ -40,7 +40,7 @@ module.exports = async function seedProjects() {
                     { userId: users[0]._id, role: 'Desarrollador de Android', joinedAt: new Date() }
                 ],
                 projectType: 'Desarrollo de software',
-                authorUserId: users[1]._id,  // El creador del proyecto es el segundo usuario
+                authorUserId: users[0]._id,  // El creador del proyecto es el segundo usuario
             }
         ];
 

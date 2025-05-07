@@ -1,4 +1,5 @@
 import api from '../axiosInstance';
+import AuthService from './authService';
 
 const ProjectsService = {
   // Obtener todos los proyectos USAR SOLO PARA TESTS
@@ -8,6 +9,18 @@ const ProjectsService = {
       return response;
     } catch (error) {
       console.error('Error fetching projects:', error);
+      throw error;
+    }
+  },
+
+  getProjectsByLoggedUser: async () => {
+    try {
+      const loggedUser = await AuthService.getLoggedUser();
+      const response = await api.get(`/projects/user/${loggedUser._id}`);
+      
+      return response;
+    } catch (error) {
+      console.error('Error fetching projects by userId:', error);
       throw error;
     }
   },

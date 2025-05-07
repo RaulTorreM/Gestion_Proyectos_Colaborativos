@@ -78,7 +78,7 @@ import {
         <div className="p-2 border-b">
           <button
             onClick={toggleTheme}
-            className={`w-full flex items-center justify-center p-2 rounded-lg
+            className={`w-full flex items-center justify-center p-2 rounded-lg cursor-pointer
               ${theme === 'dark' ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}
             `}
             title={theme === 'dark' ? 'Modo oscuro' : 'Modo claro'}

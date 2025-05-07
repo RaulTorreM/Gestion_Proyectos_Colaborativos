@@ -48,6 +48,19 @@ projectsController.getProjectByEpic = async (req, res) => {
 	}
 }
 
+projectsController.getProjectsByUser = async (req, res) => {
+	try {
+		const project = await Project.find({ authorUserId: req.params.id, deletedAt: null });
+
+		if (!project) return res.status(404).json({ error: 'Project by User not found' });
+
+		res.json(project);
+	} catch (error) {
+		console.error(error);
+		res.status(500).json({ error: 'Server Error: ' + error.message });
+	}
+};
+
 projectsController.createProject = async (req, res) => {
 	try {
 		// Limpiar campos null o undefined para que usen sus valores por default en el modelo
@@ -73,7 +86,7 @@ projectsController.createProject = async (req, res) => {
 		console.error(error);
 		res.status(500).json({ error: 'Server Error: ' + error.message });
 	}
-}
+};
 
 projectsController.updateProject = async (req, res) => {
 	try {

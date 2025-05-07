@@ -3,7 +3,6 @@ import KanbanEpic from './KanbanEpic';
 const KanbanColumn = ({ column, theme, onDragStart, onDrop, onDragOver, onClickEpic, loggedUser }) => {
   // Ensure epics exist before trying to map or count them
   const epics = column.epics || [];
-  console.log(column.epics);
 
   return (
     <div

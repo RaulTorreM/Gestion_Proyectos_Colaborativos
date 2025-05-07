@@ -29,7 +29,7 @@ const Projects = () => {
   const loadData = async () => {
     try {
       const [projectsData, usersData] = await Promise.all([
-        ProjectsService.getProjects(),
+        ProjectsService.getProjectsByLoggedUser(),
         UsersService.getAllUsers()
       ]);
   
