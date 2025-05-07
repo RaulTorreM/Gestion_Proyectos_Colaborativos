@@ -48,6 +48,32 @@ prioritiesController.getPriorityByMoscowPriority = async (req, res) => {
 	}
 }
 
+//Obtener los detalles de varias priorities a la vez
+prioritiesController.getPrioritiesBulk = async (req, res) => {
+	try {
+	  const { ids } = req.body;
+	  
+	  if (!ids || !Array.isArray(ids)) {
+		return res.status(400).json({ error: 'Se requiere un array de IDs en el cuerpo de la solicitud' });
+	  }
+  
+	  const priorities = await Priority.find({ 
+		_id: { $in: ids },
+		deletedAt: null 
+	  });
+  
+	  if (!priorities) {
+		return res.status(404).json({ error: 'Prioridades no encontradas' });
+	  }
+  
+	  res.json(priorities);
+	} catch (error) {
+	  console.error(error);
+	  res.status(500).json({ error: 'Server Error: ' + error.message });
+	}
+};
+
+
 prioritiesController.createPriority = async (req, res) => {
 	try {
 		// Limpiar campos null o undefined para que usen sus valores por default en el modelo

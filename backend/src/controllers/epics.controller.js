@@ -4,6 +4,7 @@ const Project = require('../models/Project');
 const Epic = require('../models/Epic');
 const BaseController = require('./base.controller');
 const User = require('../models/User');
+const Priority = require('../models/Priority');
 const { getUserIdFromToken } = require('../lib/token');
 
 epicsController.getEpics = async (req, res) => {
@@ -52,21 +53,20 @@ epicsController.getEpicsByProjects = async (req, res) => {
 	}
 }
 
-//Obtener los detalles de varias epics a la vez
 epicsController.getEpicsBulk = async (req, res) => {
 	try {
 	  const { ids } = req.body;
-	  
+  
 	  if (!ids || !Array.isArray(ids)) {
 		return res.status(400).json({ error: 'Se requiere un array de IDs en el cuerpo de la solicitud' });
 	  }
   
-	  const epics = await Epic.find({ 
+	  const epics = await Epic.find({
 		_id: { $in: ids },
-		deletedAt: null 
-	  });
-  
-	  if (!epics) {
+		deletedAt: null
+	  }).populate('priorityId');
+
+	  if (!epics.length) {
 		return res.status(404).json({ error: 'Épicas no encontradas' });
 	  }
   
@@ -75,7 +75,7 @@ epicsController.getEpicsBulk = async (req, res) => {
 	  console.error(error);
 	  res.status(500).json({ error: 'Server Error: ' + error.message });
 	}
-  };
+};
 
 epicsController.createEpic = async (req, res) => {
 	try {

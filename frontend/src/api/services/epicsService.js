@@ -10,18 +10,18 @@ const EpicsService = {
     }
   },
 
-  getEpicById: async (EpicId) => {
+  getEpicById: async (epicId) => {
     try {
-      return await api.get(`/epics/${EpicId}`);
+      return await api.get(`/epics/${epicId}`);
     } catch (error) {
       console.error('Error fetching epic:', error);
       throw error;
     }
   },
 
-  getEpicsByIds: async (EpicIds) => {
+  getEpicsByIds: async (epicIds) => {
     try {
-      return await api.post('/epics/bulk/ids', { ids: EpicIds });
+      return await api.post('/epics/bulk/ids', { ids: epicIds });
     } catch (error) {
       console.error('Error fetching versions:', error);
       throw error;

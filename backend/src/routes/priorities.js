@@ -1,11 +1,12 @@
 const { Router } = require('express');
 const validateObjectId = require('../middlewares/validateObjectId');
+const validateObjectIdArray = require('../middlewares/validateObjectIdArray');
 const { validateCreatePriority, validateUpdatePriority } = require('../middlewares/validatePriority');
 const Priority = require('../models/Priority');
 const router = Router();
 
-const { getPriorities, getPriority, getPriorityByMoscowPriority, createPriority,
-		updatePriority, deletePriority } = require('../controllers/priorities.controller');
+const { getPriorities, getPriority, getPriorityByMoscowPriority, getPrioritiesBulk, 
+		createPriority, updatePriority, deletePriority } = require('../controllers/priorities.controller');
 
 const validateNotToBeMoscowPriority = () => {
 	return async (req, res, next) => {
@@ -53,5 +54,7 @@ router.route('/:id')
 
 router.route('/moscowPriority/:moscowPriority')
 	.get(validateMoscowPriority(), getPriorityByMoscowPriority);
+
+router.post('/bulk/ids', validateObjectIdArray(Priority), getPrioritiesBulk);
 
 module.exports = router;

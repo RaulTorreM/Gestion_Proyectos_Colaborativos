@@ -1,6 +1,6 @@
-import KanbanTask from './KanbanTask';
+import KanbanEpic from './KanbanEpic';
 
-const KanbanColumn = ({ column, theme, onDragStart, onDrop, onDragOver, onClickTask, getPriorityColor }) => {
+const KanbanColumn = ({ column, theme, onDragStart, onDrop, onDragOver, onClickTask, loggedUser }) => {
   return (
     <div
       onDrop={onDrop}
@@ -10,19 +10,19 @@ const KanbanColumn = ({ column, theme, onDragStart, onDrop, onDragOver, onClickT
       <h2 className={`font-semibold mb-4 flex justify-between items-center ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>
         <span>{column.title}</span>
         <span className={`text-sm px-2 py-1 rounded ${theme === 'dark' ? 'bg-zinc-700 text-gray-300' : 'bg-white text-gray-600'}`}>
-          {column.tasks.length}
+          {column.epics.length}
         </span>
       </h2>
 
       <div className="space-y-3">
-        {column.tasks.map((task) => (
-          <KanbanTask
-            key={task.id}
-            task={task}
+        {column.epics.map((epic) => (
+          <KanbanEpic
+            key={epic.id}
+            epic={epic}
             theme={theme}
-            onDragStart={(e) => onDragStart(e, task.id, column.id)}
-            onClick={onClickTask}
-            getPriorityColor={getPriorityColor}
+            onDragStart={(e) => onDragStart(e, epic.id, column.id)}
+            onClick={() => onClickTask(epic)}
+            loggedUser={loggedUser}
           />
         ))}
       </div>

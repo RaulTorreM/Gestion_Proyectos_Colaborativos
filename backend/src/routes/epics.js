@@ -20,9 +20,6 @@ router.route('/:id')
 router.route('/project/:id')
 	.get(getEpicsByProjects)
 
-router.post('/bulk/ids',
-	validateObjectIdArray(Epic), 
-	getEpicsBulk
-	);
+router.post('/bulk/ids', validateObjectIdArray(Epic), getEpicsBulk);
 
 module.exports = router;

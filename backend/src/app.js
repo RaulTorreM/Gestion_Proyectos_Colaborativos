@@ -15,13 +15,13 @@ app.use(express.json());
 // routes 
 const authRoutes = require('./routes/auth');
 app.use('/api', authRoutes);
-app.use('/api/users', require('./routes/users'))
-app.use('/api/projects', require('./routes/projects'))
-app.use('/api/epics', require('./routes/epics'))
-app.use('/api/priorities', require('./routes/priorities'))
-app.use('/api/userStories', require('./routes/userStories'))
-app.use('/api/comments', require('./routes/comments'))
-app.use('/api/versions', require('./routes/versions'))
+app.use('/api/users', validateToken, require('./routes/users'))
+app.use('/api/projects', validateToken, require('./routes/projects'))
+app.use('/api/epics', validateToken, require('./routes/epics'))
+app.use('/api/priorities', validateToken, require('./routes/priorities'))
+app.use('/api/userStories', validateToken, require('./routes/userStories'))
+app.use('/api/comments', validateToken, require('./routes/comments'))
+app.use('/api/versions', validateToken, require('./routes/versions'))
 app.use('/api/notifications', require('./routes/notifications'))
 
 module.exports = app;

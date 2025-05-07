@@ -6,7 +6,7 @@ const validateObjectIdArray = (model) => {
     const { ids } = req.body;
 
     if (!ids || !Array.isArray(ids)) {
-      return res.status(400).json({ message: 'Se requiere un array de IDs en el cuerpo de la solicitud' });
+      return res.status(400).json({ error: 'Se requiere un array de IDs en el cuerpo de la solicitud' });
     }
 
     // Convertir todos los IDs a ObjectId
@@ -14,7 +14,7 @@ const validateObjectIdArray = (model) => {
     try {
       objectIds = ids.map(id => new mongoose.Types.ObjectId(id));
     } catch (err) {
-      return res.status(400).json({ message: 'Formato de ID inválido' });
+      return res.status(400).json({ error: 'Formato de ID inválido' });
     }
 
     try {
@@ -28,7 +28,7 @@ const validateObjectIdArray = (model) => {
         const notFoundIds = ids.filter(id => !foundIds.includes(id));
         
         return res.status(404).json({
-          message: 'Algunos IDs no existen en la base de datos',
+          error: 'Algunos IDs no existen en la base de datos',
           nonExistentIds: notFoundIds
         });
       }
@@ -37,7 +37,7 @@ const validateObjectIdArray = (model) => {
       next();
     } catch (err) {
       console.error('Error en validación bulk:', err);
-      res.status(500).json({ message: 'Error del servidor', error: err.message });
+      res.status(500).json({ error: 'Error del servidor: ' + err.message });
     }
   };
 };

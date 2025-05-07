@@ -20,6 +20,16 @@ const AuthService = {
     }
   },
 
+  getLoggedUser: async () => {
+    try {
+      const loggedUser = await api.get('/logged');
+      return loggedUser;
+    } catch (error) {
+      console.error(`Error fetching current logged user: `, error);
+      throw error;
+    }
+  },
+
   // Logout: envía refresh token, limpia localStorage
   logout: async () => {
     try {
@@ -34,21 +44,15 @@ const AuthService = {
     }
   },
 
-  // Obtiene access token
   getAccessToken: () => localStorage.getItem('accessToken'),
 
-  // Obtiene refresh token
   getRefreshToken: () => localStorage.getItem('refreshToken'),
 
-  // Limpia todos los datos de sesión
   clearSession: () => {
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
     // localStorage.removeItem('user');
   },
-
-  // Si deseas: obtener usuario
-  // getUser: () => JSON.parse(localStorage.getItem('user')),
 };
 
 export default AuthService;
