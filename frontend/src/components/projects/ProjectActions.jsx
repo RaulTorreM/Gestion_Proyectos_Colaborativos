@@ -20,7 +20,7 @@ const ProjectActions = ({ projectId, theme }) => {
   };
 
   const buttonStyle = `
-    flex items-center justify-center p-1 md:p-2 rounded-lg text-xs md:text-sm
+    flex items-center justify-center p-1 md:p-2 rounded-lg text-xs md:text-sm cursor-pointer
     ${theme === 'dark' ? 'bg-gray-700 hover:bg-gray-600 text-gray-300' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'}
     transition-colors
   `;

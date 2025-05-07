@@ -248,7 +248,7 @@ const ProjectKanban = () => {
           <p>{error}</p>
           <button 
             onClick={() => navigate('/projects')}
-            className={`mt-4 px-4 py-2 rounded-lg 
+            className={`mt-4 px-4 py-2 rounded-lg cursor-pointer
               ${theme === 'dark' ? 'bg-zinc-700 hover:bg-zinc-600 text-white' : 'bg-gray-200 hover:bg-gray-300 text-gray-800'}`}
           >
             Volver a Proyectos
@@ -263,13 +263,13 @@ const ProjectKanban = () => {
       <div className="flex justify-between items-center mb-4">
         <button 
           onClick={() => navigate('/projects')}
-          className={`px-4 py-2 rounded-lg flex items-center gap-2 transition-colors
+          className={`px-4 py-2 rounded-lg flex items-center gap-2 transition-colors cursor-pointer
             ${theme === 'dark' ? 'bg-zinc-700 hover:bg-zinc-600 text-white' : 'bg-gray-200 hover:bg-gray-300 text-gray-800'}`}
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
             <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
           </svg>
-          Volver a Proyectos
+          Proyectos
         </button>
         
         <button

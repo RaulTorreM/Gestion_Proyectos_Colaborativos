@@ -66,7 +66,7 @@ epicsController.getEpicsBulk = async (req, res) => {
 		deletedAt: null
 	  }).populate('priorityId');
 
-	  if (!epics.length) {
+	  if (!epics) {
 		return res.status(404).json({ error: 'Épicas no encontradas' });
 	  }
   

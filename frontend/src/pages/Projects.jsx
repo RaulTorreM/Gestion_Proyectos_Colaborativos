@@ -11,6 +11,8 @@ const Projects = () => {
   const [projects, setProjects] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [users, setUsers] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filteredUsers, setFilteredUsers] = useState([]);
   const [newProject, setNewProject] = useState({
     name: '',
     description: '',
@@ -44,10 +46,20 @@ const Projects = () => {
       setLoading(false);
     }
   };
+
+  const loadUsers = async () => {
+    try {
+      const usersData = await UsersService.getAllUsers();
+      setUsers(usersData);
+      setFilteredUsers(usersData);
+    } catch (error) {
+      console.error('Error al cargar usuarios:', error);
+    }
+  };
   
-  // useEffect solo llama a loadData una vez al montar
   useEffect(() => {
     loadData();
+    loadUsers();
   }, []);
 
   const handleInputChange = (e) => {
@@ -55,23 +67,30 @@ const Projects = () => {
     setNewProject(prev => ({ ...prev, [name]: value }));
   };
 
+  const handleSearch = (e) => {
+    setSearchTerm(e.target.value);
+    const filtered = users.filter(
+      user =>
+        user.name.toLowerCase().includes(e.target.value.toLowerCase()) ||
+        user.email.toLowerCase().includes(e.target.value.toLowerCase())
+    );
+    setFilteredUsers(filtered);
+  };
+
   const handleAddMember = () => {
     if (!selectedMember) return;
-    
-    // Verificar si el miembro ya existe
+
     const memberExists = newProject.members.some(m => m.userId === selectedMember);
-    
+
     if (!memberExists) {
-      // Crear objeto miembro con exactamente la estructura requerida
       const newMember = {
         userId: selectedMember,
         role: selectedRole,
-        joinedAt: new Date().toISOString()
+        joinedAt: new Date().toISOString(),
       };
-      
       setNewProject(prev => ({
         ...prev,
-        members: [...prev.members, newMember]
+        members: [...prev.members, newMember],
       }));
     }
   };
@@ -100,13 +119,11 @@ const Projects = () => {
 
   const handleCreateProject = async () => {
     try {
-      // Validación básica antes de crear el proyecto
       if (!newProject.name || !newProject.description || !newProject.startDate || !newProject.dueDate) {
         setError('Por favor complete los campos obligatorios');
         return;
       }
       
-      // Asegurar que las fechas estén en formato ISO
       const formattedProject = {
         ...newProject,
         startDate: new Date(newProject.startDate).toISOString(),
@@ -114,7 +131,6 @@ const Projects = () => {
         projectType: newProject.projectType || "Desarrollo de software",
       };
 
-      // Enviamos el objeto formateado según el esquema requerido
       await ProjectsService.createProject(formattedProject);
       await loadData();  
       setShowForm(false);
@@ -126,9 +142,7 @@ const Projects = () => {
         console.error('Error response data:', data);
     
         if (data.errors && Array.isArray(data.errors)) {
-          // Extraer mensajes de error
           const messages = data.errors.map(err => `${err.path}: ${err.msg}`);
-          // Unir todos los mensajes en un solo string separado por salto de línea
           setError(messages.join('\n'));
         } else if (data.message) {
           setError(data.message);
@@ -150,20 +164,9 @@ const Projects = () => {
       project.description.toLowerCase().includes(filter.toLowerCase())
   );
 
-  // Función auxiliar para obtener el nombre del usuario por ID
   const getUserNameById = (userId) => {
     const user = users.find(user => user._id === userId);
     return user ? user.name : 'Usuario desconocido';
-  };
-
-  const handleAuthorChange = (e) => {
-    /* const { value } = e.target;
-    setNewProject(prev => {
-      const updatedProject = { ...prev, authorUserId: value };
-      
-      // Imprimir la data completa que se enviará al backend
-      console.log('Proyecto actualizado:', updatedProject);
-    }); */
   };
   
   if (loading) return <div>Cargando proyectos...</div>;
@@ -265,42 +268,69 @@ const Projects = () => {
                   />
                 </div>
                 
-                {/* Sección de Miembros con Select */}
+                {/* Sección de Miembros */}
                 <div>
                   <h3 className="font-semibold text-gray-700 dark:text-white mb-2">Miembros</h3>
                   
-                  {/* Formulario para agregar miembros */}
-                  <div className="flex gap-2 mb-3">
-                    <select
-                      value={selectedMember}
-                      onChange={(e) => setSelectedMember(e.target.value)}
-                      className="flex-1 p-2 border rounded-lg text-gray-700 dark:bg-zinc-800 dark:text-white"
-                    >
-                      <option value="">Seleccione un miembro</option>
-                      {users.map(user => (
-                        <option key={user._id} value={user._id}>
-                          {user.name}
-                        </option>
-                      ))}
-                    </select>
-                    
-                    <select
-                      value={selectedRole}
-                      onChange={(e) => setSelectedRole(e.target.value)}
-                      className="w-1/3 p-2 border rounded-lg text-gray-700 dark:bg-zinc-800 dark:text-white"
-                    >
-                      <option value="Miembro">Miembro</option>
-                      <option value="Administrador">Administrador</option>
-                      <option value="Desarrollador">Desarrollador</option>
-                      <option value="Tester">Tester</option>
-                    </select>
-                    
-                    <button
-                      onClick={handleAddMember}
-                      className="p-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg cursor-pointer"
-                    >
-                      Añadir
-                    </button>
+                  <div>
+                    {/* Contenedor principal para campo de búsqueda y selector de rol */}
+                    <div className="flex flex-row gap-3 mb-3 items-center">
+                      {/* Campo de búsqueda - ocupa el espacio restante */}
+                      <div className="flex-1">
+                        <input
+                          type="text"
+                          placeholder="Buscar por nombre o correo"
+                          value={searchTerm}
+                          onChange={handleSearch}
+                          className="w-full p-2 border rounded-lg text-gray-700 dark:bg-zinc-800 dark:text-white"
+                        />
+                      </div>
+
+                      {/* Selector de rol - ancho fijo */}
+                      <div className="w-1/3">
+                        <select
+                          value={selectedRole}
+                          onChange={(e) => setSelectedRole(e.target.value)}
+                          className="w-full p-2 border rounded-lg text-gray-700 dark:bg-zinc-800 dark:text-white"
+                        >
+                          <option value="Miembro">Miembro</option>
+                          <option value="Administrador">Administrador</option>
+                          <option value="Desarrollador">Desarrollador</option>
+                          <option value="Tester">Tester</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Lista de usuarios filtrados */}
+                    <div className="flex flex-col gap-2 mb-3">
+                      {searchTerm && filteredUsers.length > 0 && (
+                        filteredUsers.map(user => (
+                          <div
+                            key={user._id}
+                            onClick={() => {
+                              setSelectedMember(user._id);
+                              const memberExists = newProject.members.some(m => m.userId === user._id);
+                              if (!memberExists) {
+                                const newMember = {
+                                  userId: user._id,
+                                  role: selectedRole,
+                                  joinedAt: new Date().toISOString(),
+                                };
+                                setNewProject(prev => ({
+                                  ...prev,
+                                  members: [...prev.members, newMember],
+                                }));
+                              }
+                            }}
+                            className="flex justify-between items-center p-2 border dark:border-zinc-700 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-zinc-700"
+                          >
+                            <span className="text-gray-800 dark:text-gray-200">
+                              {user.name} - {user.email}
+                            </span>
+                          </div>
+                        ))
+                      )}
+                    </div>
                   </div>
                   
                   {/* Lista de miembros agregados */}
@@ -316,7 +346,7 @@ const Projects = () => {
                             <span className="text-gray-800 dark:text-gray-200">
                               {getUserNameById(member.userId)}
                             </span>
-                            
+
                             <div className="flex items-center gap-2">
                               <select
                                 value={member.role}
