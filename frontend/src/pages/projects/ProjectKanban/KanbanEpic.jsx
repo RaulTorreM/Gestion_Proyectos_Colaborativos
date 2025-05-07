@@ -13,8 +13,8 @@ const formatDateToUserTimezone = (dateIsoString, timezone) => {
 
 const KanbanEpic = ({ epic, theme, onDragStart, onClick, loggedUser }) => {
   // Determinar la prioridad para mostrar y para el color
-  const priorityName = epic.priorityId.name || (typeof epic.priorityId.name === 'string' ? epic.priorityId.name : 'Sin prioridad');
-  const priorityColor = epic.priorityId.color || epic.priorityId.color;
+  const priorityName = epic.priorityId.name || epic.priorityName || 'Sin prioridad';
+  const priorityColor = epic.priorityId.color || epic.priorityId.color || epic.priorityColor;
 
   return (
     <div

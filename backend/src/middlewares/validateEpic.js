@@ -145,6 +145,8 @@ const validateCreateEpic = [
   body('priorityId')
     .notEmpty().withMessage('PriorityId is required')
     .custom(async (value) => {
+      console.log("priorityId: \n", value);
+
       if (!mongoose.Types.ObjectId.isValid(value)) {
         throw new Error('Invalid priorityId');
       }

@@ -26,7 +26,17 @@ const EpicsService = {
       console.error('Error fetching versions:', error);
       throw error;
     }
-  }
+  },
+
+  createEpic: async (epicData) => {
+    try {
+      const response = await api.post('/epics', epicData);
+      return response.data;
+    } catch (error) {
+      console.error('Error creating epic:', error);
+      throw error;
+    }
+  },
 };
 
 export default EpicsService;

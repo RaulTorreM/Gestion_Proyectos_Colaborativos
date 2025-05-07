@@ -15,7 +15,7 @@ import {
   import { useState } from 'react';
   import { useTheme } from '../../context/ThemeContext';
   import { NavLink } from 'react-router-dom';
-  import AuthService from '../../api/services/AuthService';
+  import AuthService from '../../api/services/authService';
 
   const Sidebar = () => {
     const { theme, toggleTheme } = useTheme();

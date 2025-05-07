@@ -23,7 +23,7 @@ const ProjectKanban = () => {
   const [error, setError] = useState(null);
 
   const [columns, setColumns] = useState({
-    todo: { id: 'todo', title: 'Pendiente', epics: [] },
+    pending: { id: 'pending', title: 'Pendiente', epics: [] },
     inProgress: { id: 'inProgress', title: 'En progreso', epics: [] },
     completed: { id: 'completed', title: 'Completado', epics: [] }
   });
@@ -47,7 +47,7 @@ const ProjectKanban = () => {
         if (!prioritiesData) {
           throw new Error('No se pudo obtener las prioridades de épicas');
         }
-        
+          
         setPriorities(prioritiesData);
 
         // Cargar datos del proyecto
@@ -68,7 +68,7 @@ const ProjectKanban = () => {
         
         // Organizar épicas en columnas según su estado
         const updatedColumns = {
-          todo: { id: 'todo', title: 'Pendiente', epics: [] },
+          pending: { id: 'pending', title: 'Pendiente', epics: [] },
           inProgress: { id: 'inProgress', title: 'En progreso', epics: [] },
           completed: { id: 'completed', title: 'Completado', epics: [] }
         };
@@ -76,7 +76,7 @@ const ProjectKanban = () => {
         epicsData.forEach(epic => {
           const columnId = 
             epic.status === 'Completado' ? 'completed' :
-            epic.status === 'En Progreso' ? 'inProgress' : 'todo';
+            epic.status === 'En Progreso' ? 'inProgress' : 'pending';
             
           updatedColumns[columnId].epics.push({
             ...epic,
@@ -159,45 +159,71 @@ const ProjectKanban = () => {
 
   const handleAddEpic = async (newEpic) => {
     try {
-      const priorityObj = priorities.find(p => p._id === newEpic.priority) || { 
-        _id: newEpic.priority, 
-        name: newEpic.priority, 
-        color: 'gray' 
+      // Buscar el objeto de prioridad completo usando el priorityId
+      const priorityObj = priorities.find(p => p._id === newEpic.priorityId) || { 
+        _id: newEpic.priorityId, 
+        name: 'Sin prioridad', // valor por defecto si no se encuentra el objeto
+        color: 'gray' // valor por defecto si no se encuentra el objeto
       };
 
-      const savedEpic = {
+      // Crear un ID temporal para la nueva épica hasta que se confirme desde el backend
+      const tempId = `temp-${Date.now()}`;
+      
+      // Prepare epic data for saving
+      const epicToSave = {
         ...newEpic,
-        _id: Date.now().toString(),
-        projectId,
-        priority: priorityObj,
-        userStories: [],
-        authorUserId: 'usr-12345',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        projectId: project._id,
       };
-
-      // Determinar la columna destino basada en el estado
-      const targetColumn = 
-        newEpic.status === 'Completado' ? 'completed' :
-        newEpic.status === 'En Progreso' ? 'inProgress' : 'todo';
-
+      
+      // Las nuevas épicas siempre van a la columna "pending"
+      const targetColumn = 'pending';
+      
+      // Actualización instantánea antes de actualizar y obtener la data del backend
       setColumns(prevColumns => ({
         ...prevColumns,
         [targetColumn]: {
           ...prevColumns[targetColumn],
           epics: [...prevColumns[targetColumn].epics, { 
-            ...savedEpic,
-            id: savedEpic._id,
-            title: savedEpic.name
+            ...epicToSave,
+            id: tempId,         
+            _id: tempId,        
+            name: epicToSave.name,
+            priorityName: priorityObj.name,
+            priorityColor: priorityObj.color,
           }]
         }
       }));
       
+      // Save epic to backend
+      const savedEpic = await EpicsService.createEpic(epicToSave);
+      
+      if (savedEpic && savedEpic._id) {
+        // Update column with the correct backend ID
+        setColumns(prevColumns => {
+          const updatedPendingEpics = prevColumns[targetColumn].epics.map(epic => 
+            epic.id === tempId ? { 
+              ...epic,
+              id: savedEpic._id,
+              _id: savedEpic._id
+            } : epic
+          );
+          
+          return {
+            ...prevColumns,
+            [targetColumn]: {
+              ...prevColumns[targetColumn],
+              epics: updatedPendingEpics
+            }
+          };
+        });
+      }
+      
       setShowAddEpicModal(false);
     } catch (error) {
       console.error('Error al crear épica:', error);
+      // Consider showing an error notification to the user here
     }
-  };
+  }
 
   const handleDragStart = (e, taskId, sourceColumnId) => {
     e.dataTransfer.setData("taskId", taskId);

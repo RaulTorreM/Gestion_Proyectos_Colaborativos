@@ -18,7 +18,7 @@ import HomeRedirect from './components/HomeRedirect';
 const App = () => {
   return (
     <ThemeProvider>
-      <div className="flex h-screen bg-gray-100 dark:bg-black">
+      <div className="bg-gray-100 dark:bg-black">
         <Routes>
           {/* Ruta pública */}
           <Route path="/" element={<HomeRedirect />} />

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-const AddEpicModal = ({ onClose, onSave, theme, priorities, projectId }) => {
+const AddEpicModal = ({ onClose, onSave, theme, priorities }) => {
   const [newEpic, setNewEpic] = useState({
     name: '',
     description: '',
@@ -27,13 +27,16 @@ const AddEpicModal = ({ onClose, onSave, theme, priorities, projectId }) => {
       return;
     }
 
+    const selectedPriority = priorities.find(priority => priority._id === newEpic.priorityId);
+    const priorityColor = selectedPriority ? selectedPriority.color : ''; // Si no se encuentra, se asigna un string vacío.
+
     onSave({
-      projectId,
       name: newEpic.name,
       description: newEpic.description,
       startDate: newEpic.startDate,
       dueDate: newEpic.dueDate,
-      priorityId: newEpic.priorityId
+      priorityId: newEpic.priorityId,
+      priorityColor: priorityColor, // Se pasa el color de la prioridad encontrada
     });
   };
 
