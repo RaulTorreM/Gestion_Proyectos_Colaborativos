@@ -4,7 +4,7 @@ const { validateCreateProject, validateUpdateProject, validateDeleteProject} = r
 const Project = require('../models/Project');
 const router = Router();
 
-const { getProjects, getProject, createProject,
+const { getProjects, getProject, getProjectByEpic, createProject,
 		updateProject, disableProject, deleteProject } = require('../controllers/projects.controller');
 
 router.route('/')
@@ -15,6 +15,9 @@ router.route('/:id')
 	.all(validateObjectId(Project))
 	.get(getProject)
 	.put(validateUpdateProject, updateProject)
+
+router.route('/epic/:id')
+	.get(getProjectByEpic)
 
 router.route('/disable/:id')
 	.delete(validateObjectId(Project), disableProject)

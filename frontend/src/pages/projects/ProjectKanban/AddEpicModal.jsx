@@ -1,36 +1,39 @@
 import { useState } from 'react';
 
-const AddTaskModal = ({ onClose, onSave, theme, priorities }) => {
-  const [newTask, setNewTask] = useState({
+const AddEpicModal = ({ onClose, onSave, theme, priorities, projectId }) => {
+  const [newEpic, setNewEpic] = useState({
     name: '',
     description: '',
     startDate: '',
-    endDate: '',
-    priority: priorities.length > 0 ? priorities[0]._id : '',
-    status: 'Pendiente'
+    dueDate: '',
+    priorityId: priorities.length > 0 ? priorities[0]._id : ''
   });
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setNewTask(prev => ({ ...prev, [name]: value }));
+    setNewEpic(prev => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    
-    if (new Date(newTask.endDate) < new Date(newTask.startDate)) {
-      alert('La fecha de fin no puede ser anterior a la fecha de inicio');
+
+    if (new Date(newEpic.dueDate) < new Date(newEpic.startDate)) {
+      alert('La fecha límite no puede ser anterior a la fecha de inicio');
       return;
     }
 
-    if (!newTask.name.trim()) {
+    if (!newEpic.name.trim()) {
       alert('El nombre es requerido');
       return;
     }
 
     onSave({
-      ...newTask,
-      dueDate: newTask.endDate
+      projectId,
+      name: newEpic.name,
+      description: newEpic.description,
+      startDate: newEpic.startDate,
+      dueDate: newEpic.dueDate,
+      priorityId: newEpic.priorityId
     });
   };
 
@@ -40,7 +43,7 @@ const AddTaskModal = ({ onClose, onSave, theme, priorities }) => {
         <h2 className={`text-xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>
           Agregar Nueva Épica
         </h2>
-        <button 
+        <button
           onClick={onClose}
           className={`p-2 rounded-full ${theme === 'dark' ? 'hover:bg-zinc-700' : 'hover:bg-gray-200'}`}
         >
@@ -54,7 +57,7 @@ const AddTaskModal = ({ onClose, onSave, theme, priorities }) => {
           <input
             type="text"
             name="name"
-            value={newTask.name}
+            value={newEpic.name}
             onChange={handleInputChange}
             className={`w-full p-2 rounded border ${theme === 'dark' ? 'bg-zinc-700 border-zinc-600 text-white' : 'bg-white border-gray-300'}`}
             required
@@ -65,7 +68,7 @@ const AddTaskModal = ({ onClose, onSave, theme, priorities }) => {
           <label className={`block mb-1 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>Descripción</label>
           <textarea
             name="description"
-            value={newTask.description}
+            value={newEpic.description}
             onChange={handleInputChange}
             rows="3"
             className={`w-full p-2 rounded border ${theme === 'dark' ? 'bg-zinc-700 border-zinc-600 text-white' : 'bg-white border-gray-300'}`}
@@ -78,57 +81,41 @@ const AddTaskModal = ({ onClose, onSave, theme, priorities }) => {
             <input
               type="date"
               name="startDate"
-              value={newTask.startDate}
+              value={newEpic.startDate}
               onChange={handleInputChange}
               className={`w-full p-2 rounded border ${theme === 'dark' ? 'bg-zinc-700 border-zinc-600 text-white' : 'bg-white border-gray-300'}`}
               required
             />
           </div>
           <div>
-            <label className={`block mb-1 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>Fecha Fin*</label>
+            <label className={`block mb-1 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>Fecha Límite*</label>
             <input
               type="date"
-              name="endDate"
-              value={newTask.endDate}
+              name="dueDate"
+              value={newEpic.dueDate}
               onChange={handleInputChange}
-              min={newTask.startDate}
+              min={newEpic.startDate}
               className={`w-full p-2 rounded border ${theme === 'dark' ? 'bg-zinc-700 border-zinc-600 text-white' : 'bg-white border-gray-300'}`}
               required
             />
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className={`block mb-1 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>Prioridad*</label>
-            <select
-              name="priority"
-              value={newTask.priority}
-              onChange={handleInputChange}
-              className={`w-full p-2 rounded border ${theme === 'dark' ? 'bg-zinc-700 border-zinc-600 text-white' : 'bg-white border-gray-300'}`}
-              required
-            >
-              {priorities.map(priority => (
-                <option key={priority._id} value={priority._id}>
-                  {priority.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className={`block mb-1 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>Estado*</label>
-            <select
-              name="status"
-              value={newTask.status}
-              onChange={handleInputChange}
-              className={`w-full p-2 rounded border ${theme === 'dark' ? 'bg-zinc-700 border-zinc-600 text-white' : 'bg-white border-gray-300'}`}
-              required
-            >
-              <option value="Pendiente">Por hacer</option>
-              <option value="En Progreso">En progreso</option>
-              <option value="Completado">Completado</option>
-            </select>
-          </div>
+        <div>
+          <label className={`block mb-1 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>Prioridad*</label>
+          <select
+            name="priorityId"
+            value={newEpic.priorityId}
+            onChange={handleInputChange}
+            className={`w-full p-2 rounded border ${theme === 'dark' ? 'bg-zinc-700 border-zinc-600 text-white' : 'bg-white border-gray-300'}`}
+            required
+          >
+            {priorities.map(priority => (
+              <option key={priority._id} value={priority._id}>
+                {priority.name}
+              </option>
+            ))}
+          </select>
         </div>
 
         <div className="flex justify-end space-x-3 pt-4">
@@ -151,4 +138,4 @@ const AddTaskModal = ({ onClose, onSave, theme, priorities }) => {
   );
 };
 
-export default AddTaskModal;
+export default AddEpicModal;

@@ -33,6 +33,15 @@ const ProjectsService = {
       throw error;
     }
   },
+
+  getProjectByEpicId: async (epicId) => {
+    try {
+      return await api.get(`/projects/epic/${epicId}`);
+    } catch (error) {
+      console.error('Error fetching project:', error);
+      throw error;
+    }
+  }
 };
 
 export default ProjectsService;

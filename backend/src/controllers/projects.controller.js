@@ -35,6 +35,19 @@ projectsController.getProject = async (req, res) => {
 	}
 }
 
+projectsController.getProjectByEpic = async (req, res) => {
+	try {
+		const project = await Project.find({ epics: req.params.id, deletedAt: null });
+
+		if (!project) return res.status(404).json({ error: 'Project by Epic not found' });
+
+		res.json(project);
+	} catch (error) {
+		console.error(error);
+		res.status(500).json({ error: 'Server Error: ' + error.message });
+	}
+}
+
 projectsController.createProject = async (req, res) => {
 	try {
 		// Limpiar campos null o undefined para que usen sus valores por default en el modelo

@@ -1,6 +1,6 @@
 import KanbanEpic from './KanbanEpic';
 
-const KanbanColumn = ({ column, theme, onDragStart, onDrop, onDragOver, onClickTask, loggedUser }) => {
+const KanbanColumn = ({ column, theme, onDragStart, onDrop, onDragOver, onClickEpic, loggedUser }) => {
   return (
     <div
       onDrop={onDrop}
@@ -21,7 +21,7 @@ const KanbanColumn = ({ column, theme, onDragStart, onDrop, onDragOver, onClickT
             epic={epic}
             theme={theme}
             onDragStart={(e) => onDragStart(e, epic.id, column.id)}
-            onClick={() => onClickTask(epic)}
+            onClick={() => onClickEpic(epic)}
             loggedUser={loggedUser}
           />
         ))}

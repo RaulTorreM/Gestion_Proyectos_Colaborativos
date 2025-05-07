@@ -11,6 +11,26 @@ const PrioritiesService = {
     }
   },
 
+  getMoscowPriorities: async () => {
+    try {
+      const response = await api.get('/priorities/moscow');
+      return response;
+    } catch (error) {
+      console.error('Error fetching moscow priorities:', error);
+      throw error;
+    }
+  },
+
+  getNoMoscowPriorities: async () => {
+    try {
+      const response = await api.get('/priorities/noMoscow');
+      return response;
+    } catch (error) {
+      console.error('Error fetching no moscow priorities:', error);
+      throw error;
+    }
+  },
+
   getPriorityById: async (priorityId) => {
     try {
       const response = await api.get(`/priorities/${priorityId}`);

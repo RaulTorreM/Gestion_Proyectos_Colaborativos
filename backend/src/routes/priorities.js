@@ -5,8 +5,9 @@ const { validateCreatePriority, validateUpdatePriority } = require('../middlewar
 const Priority = require('../models/Priority');
 const router = Router();
 
-const { getPriorities, getPriority, getPriorityByMoscowPriority, getPrioritiesBulk, 
-		createPriority, updatePriority, deletePriority } = require('../controllers/priorities.controller');
+const { getPriorities, getMoscowPriorities, getNoMoscowPriorities, getPriority, 
+		getPriorityByMoscowPriority, getPrioritiesBulk, createPriority,
+		updatePriority, deletePriority } = require('../controllers/priorities.controller');
 
 const validateNotToBeMoscowPriority = () => {
 	return async (req, res, next) => {
@@ -45,6 +46,9 @@ const validateMoscowPriority = () => {
 router.route('/')
 	.get(getPriorities)
 	.post(validateCreatePriority, createPriority);
+
+router.get('/moscow', getMoscowPriorities);
+router.get('/noMoscow', getNoMoscowPriorities);
 
 router.route('/:id')
 	.all(validateObjectId(Priority))

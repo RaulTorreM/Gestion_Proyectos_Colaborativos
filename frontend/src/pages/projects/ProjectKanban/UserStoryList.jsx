@@ -27,7 +27,7 @@ const UserStoryList = ({ userStories = [], editing, onUpdate, theme }) => {
       // Crear nueva historia
       updatedStories = [...userStories, {
         ...story,
-        _id: `us-${Date.now()}`,
+        _id: `us-${Date.now()}-${Math.random()}`, // aseguramos id único
         status: 'Pendiente',
         createdAt: new Date().toISOString()
       }];
@@ -87,9 +87,9 @@ const UserStoryList = ({ userStories = [], editing, onUpdate, theme }) => {
           ) : (
             <div className={`rounded-lg overflow-hidden ${theme === 'dark' ? 'bg-zinc-800' : 'bg-white'}`}>
               <ul className="divide-y">
-                {userStories.map((story) => (
+                {userStories.map((story, index) => (
                   <li 
-                    key={story._id}
+                    key={story._id || `story-${index}`}
                     className={`p-4 ${theme === 'dark' ? 'divide-zinc-700 hover:bg-zinc-700' : 'divide-gray-200 hover:bg-gray-50'}`}
                   >
                     <div className="flex justify-between">
@@ -119,18 +119,14 @@ const UserStoryList = ({ userStories = [], editing, onUpdate, theme }) => {
                             className={`p-1 rounded-full ${theme === 'dark' ? 'hover:bg-zinc-700 text-blue-400' : 'hover:bg-gray-200 text-blue-600'}`}
                             title="Editar"
                           >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                              <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
-                            </svg>
+                            ✏️
                           </button>
                           <button
                             onClick={() => handleDeleteStory(story._id)}
                             className={`p-1 rounded-full ${theme === 'dark' ? 'hover:bg-zinc-700 text-red-400' : 'hover:bg-gray-200 text-red-600'}`}
                             title="Eliminar"
                           >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                              <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
-                            </svg>
+                            🗑️
                           </button>
                         </div>
                       )}

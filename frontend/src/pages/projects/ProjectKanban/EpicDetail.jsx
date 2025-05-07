@@ -1,26 +1,26 @@
 import { useState } from 'react';
 import UserStoryList from './UserStoryList';
 
-const TaskDetail = ({ task, priorities = [], onClose, onSave, theme }) => {
+const EpicDetail = ({ epic, priorities = [], onClose, onSave, theme }) => {
   const [editing, setEditing] = useState(false);
-  const [editedTask, setEditedTask] = useState({ 
-    ...task,
-    dueDate: task.dueDate || task.endDate,
-    priority: task.priority || (priorities.length > 0 ? priorities[0] : null)
+  const [editedEpic, setEditedEpic] = useState({ 
+    ...epic,
+    dueDate: epic.dueDate,
+    priority: epic.priority || (priorities.length > 0 ? priorities[0] : null)
   });
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setEditedTask(prev => ({ 
+    setEditedEpic(prev => ({ 
       ...prev, 
       [name]: value,
-      ...(name === 'endDate' && { dueDate: value })
+      ...(name === 'dueDate' && { dueDate: value })
     }));
   };
 
   const handlePriorityChange = (priorityId) => {
     const selectedPriority = priorities.find(p => p._id === priorityId);
-    setEditedTask(prev => ({
+    setEditedEpic(prev => ({
       ...prev,
       priority: selectedPriority
     }));
@@ -28,14 +28,14 @@ const TaskDetail = ({ task, priorities = [], onClose, onSave, theme }) => {
 
   const handleSave = () => {
     const taskToSave = {
-      ...editedTask,
-      priorityId: editedTask.priority?._id
+      ...editedEpic,
+      priorityId: editedEpic.priority?._id
     };
     onSave(taskToSave);
   };
 
   const updateUserStories = (updatedUserStories) => {
-    setEditedTask(prev => ({ ...prev, userStories: updatedUserStories }));
+    setEditedEpic(prev => ({ ...prev, userStories: updatedUserStories }));
   };
 
   return (
@@ -59,7 +59,7 @@ const TaskDetail = ({ task, priorities = [], onClose, onSave, theme }) => {
             <input
               type="text"
               name="name"
-              value={editedTask.name || ''}
+              value={editedEpic.name || ''}
               onChange={handleInputChange}
               className={`w-full p-2 rounded border ${theme === 'dark' ? 'bg-zinc-700 border-zinc-600 text-white' : 'bg-white border-gray-300'}`}
               required
@@ -70,7 +70,7 @@ const TaskDetail = ({ task, priorities = [], onClose, onSave, theme }) => {
             <label className={`block mb-1 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>Descripción</label>
             <textarea
               name="description"
-              value={editedTask.description || ''}
+              value={editedEpic.description || ''}
               onChange={handleInputChange}
               rows="3"
               className={`w-full p-2 rounded border ${theme === 'dark' ? 'bg-zinc-700 border-zinc-600 text-white' : 'bg-white border-gray-300'}`}
@@ -83,7 +83,7 @@ const TaskDetail = ({ task, priorities = [], onClose, onSave, theme }) => {
               <input
                 type="date"
                 name="startDate"
-                value={editedTask.startDate || ''}
+                value={editedEpic.startDate || ''}
                 onChange={handleInputChange}
                 className={`w-full p-2 rounded border ${theme === 'dark' ? 'bg-zinc-700 border-zinc-600 text-white' : 'bg-white border-gray-300'}`}
               />
@@ -93,7 +93,7 @@ const TaskDetail = ({ task, priorities = [], onClose, onSave, theme }) => {
               <input
                 type="date"
                 name="endDate"
-                value={editedTask.endDate || ''}
+                value={editedEpic.endDate || ''}
                 onChange={handleInputChange}
                 className={`w-full p-2 rounded border ${theme === 'dark' ? 'bg-zinc-700 border-zinc-600 text-white' : 'bg-white border-gray-300'}`}
               />
@@ -104,7 +104,7 @@ const TaskDetail = ({ task, priorities = [], onClose, onSave, theme }) => {
             <div>
               <label className={`block mb-1 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>Prioridad</label>
               <select
-                value={editedTask.priority?._id || ''}
+                value={editedEpic.priority?._id || ''}
                 onChange={(e) => handlePriorityChange(e.target.value)}
                 className={`w-full p-2 rounded border ${theme === 'dark' ? 'bg-zinc-700 border-zinc-600 text-white' : 'bg-white border-gray-300'}`}
               >
@@ -119,7 +119,7 @@ const TaskDetail = ({ task, priorities = [], onClose, onSave, theme }) => {
               <label className={`block mb-1 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>Estado</label>
               <select
                 name="status"
-                value={editedTask.status || 'Pendiente'}
+                value={editedEpic.status || 'Pendiente'}
                 onChange={handleInputChange}
                 className={`w-full p-2 rounded border ${theme === 'dark' ? 'bg-zinc-700 border-zinc-600 text-white' : 'bg-white border-gray-300'}`}
               >
@@ -133,26 +133,26 @@ const TaskDetail = ({ task, priorities = [], onClose, onSave, theme }) => {
       ) : (
         <div className="space-y-4">
           <h3 className={`text-lg font-semibold ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>
-            {task.name}
+            {epic.name}
           </h3>
           <p className={`${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
-            {task.description || 'Sin descripción'}
+            {epic.description || 'Sin descripción'}
           </p>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
-                <span className="font-medium">Fecha Inicio:</span> {task.startDate || 'No definida'}
+                <span className="font-medium">Fecha Inicio:</span> {epic.startDate || 'No definida'}
               </p>
               <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
-                <span className="font-medium">Fecha Fin:</span> {task.endDate || 'No definida'}
+                <span className="font-medium">Fecha Fin:</span> {epic.endDate || 'No definida'}
               </p>
             </div>
             <div>
               <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
-                <span className="font-medium">Prioridad:</span> {task.priority?.name || 'No definida'}
+                <span className="font-medium">Prioridad:</span> {epic.priority?.name || 'No definida'}
               </p>
               <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
-                <span className="font-medium">Estado:</span> {task.status || 'Pendiente'}
+                <span className="font-medium">Estado:</span> {epic.status || 'Pendiente'}
               </p>
             </div>
           </div>
@@ -160,11 +160,8 @@ const TaskDetail = ({ task, priorities = [], onClose, onSave, theme }) => {
       )}
 
       <div className="mt-6">
-        <h3 className={`text-lg font-semibold mb-3 ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>
-          Historias de Usuario ({task.userStories?.length || 0})
-        </h3>
         <UserStoryList 
-          userStories={editing ? editedTask.userStories || [] : task.userStories || []} 
+          userStories={editing ? editedEpic.userStories || [] : epic.userStories || []} 
           editing={editing}
           onUpdate={updateUserStories}
           theme={theme}
@@ -208,4 +205,4 @@ const TaskDetail = ({ task, priorities = [], onClose, onSave, theme }) => {
   );
 };
 
-export default TaskDetail;
+export default EpicDetail;

@@ -18,6 +18,36 @@ prioritiesController.getPriorities = async (req, res) => {
 	}
 }
 
+prioritiesController.getMoscowPriorities = async (req, res) => {
+	try {
+		const priorities = await Priority.find({ moscowPriority: { $ne: null }, deletedAt: null}); 
+
+		if (!priorities) {
+			return res.status(404).json({ error: 'Priorities not found' });
+		}
+
+		res.json(priorities);
+	} catch (error) {
+		console.error(error);
+		res.status(500).json({ error: 'Server Error: ' + error.message });
+	}
+}
+
+prioritiesController.getNoMoscowPriorities = async (req, res) => {
+	try {
+		const noMoscowPriorities = await Priority.find({ moscowPriority: null, deletedAt: null}); 
+
+		if (!noMoscowPriorities) {
+			return res.status(404).json({ error: 'No moscow priorities not found' });
+		}
+
+		res.json(noMoscowPriorities);
+	} catch (error) {
+		console.error(error);
+		res.status(500).json({ error: 'Server Error: ' + error.message });
+	}
+}
+
 prioritiesController.getPriority = async (req, res) => {
 	try {
 		const priority = await Priority.findOne({ _id: req.params.id, deletedAt: null });

@@ -1,22 +1,24 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTheme } from '../../context/ThemeContext';
 import { useState, useEffect } from 'react';
-import TaskDetail from './ProjectKanban/TaskDetail';
-import AddTaskModal from './ProjectKanban/AddTaskModal';
+import EpicDetail from './ProjectKanban/EpicDetail';
+import AddEpicModal from './ProjectKanban/AddEpicModal';
 import KanbanColumn from './ProjectKanban/KanbanColumn';
 import ProjectsService from '../../api/services/projectsService';
 import EpicsService from '../../api/services/epicsService';
 import AuthService from '../../api/services/authService';
+import PrioritiesService from '../../api/services/prioritiesService';
 
 const ProjectKanban = () => {
   const [loggedUser, setLoggedUser] = useState(null);
+  const [priorities, setPriorities] = useState([]);
   const { id: projectId } = useParams();
   const [project, setProject] = useState(null);
   const [epics, setEpics] = useState([]);
   const navigate = useNavigate();
   const { theme } = useTheme();
-  const [selectedTask, setSelectedTask] = useState(null);
-  const [showAddTaskModal, setShowAddTaskModal] = useState(false);
+  const [selectedEpic, setselectedEpic] = useState(null);
+  const [showAddEpicModal, setShowAddEpicModal] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -26,23 +28,27 @@ const ProjectKanban = () => {
     completed: { id: 'completed', title: 'Completado', epics: [] }
   });
 
-  const [priorities] = useState([
-    { _id: '1', name: 'Alta', color: 'red' },
-    { _id: '2', name: 'Media', color: 'yellow' },
-    { _id: '3', name: 'Baja', color: 'green' }
-  ]);
-
   useEffect(() => {
     const loadData = async () => {
       try {
         setIsLoading(true);
         
+        // Cargar el usuario logeado
         const loggedUser = await AuthService.getLoggedUser();
         if (!loggedUser) {
           throw new Error('No se pudo obtener el usuario logeado');
         }
         
         setLoggedUser(loggedUser);
+
+        // Cargar las prioridades no moscow
+        const prioritiesData = await PrioritiesService.getNoMoscowPriorities();
+
+        if (!prioritiesData) {
+          throw new Error('No se pudo obtener las prioridades de épicas');
+        }
+        
+        setPriorities(prioritiesData);
 
         // Cargar datos del proyecto
         const projectData = await ProjectsService.getProjectById(projectId);
@@ -91,30 +97,30 @@ const ProjectKanban = () => {
     loadData();
   }, [projectId]);
 
-  const openTaskDetail = (task) => setSelectedTask(task);
-  const closeTaskDetail = () => setSelectedTask(null);
+  const openEpicDetail = (epic) => setselectedEpic(epic);
+  const closeEpicDetail = () => setselectedEpic(null);
 
-  const updateTask = async (updatedTask) => {
+  const updateEpic = async (updatedEpic) => {
     try {
-      const savedTask = { 
-        ...updatedTask,
-        _id: updatedTask.id,
-        name: updatedTask.title,
+      const savedEpic = { 
+        ...updatedEpic,
+        _id: updatedEpic.id,
+        name: updatedEpic.title,
         updatedAt: new Date().toISOString()
       };
 
       const updatedColumns = { ...columns };
       Object.keys(updatedColumns).forEach(columnId => {
-        updatedColumns[columnId].epics = updatedColumns[columnId].epics.map(task => 
-          task.id === savedTask._id ? { 
-            ...savedTask,
-            id: savedTask._id,
-            title: savedTask.name
-          } : task
+        updatedColumns[columnId].epics = updatedColumns[columnId].epics.map(epic => 
+          epic.id === savedEpic._id ? { 
+            ...savedEpic,
+            id: savedEpic._id,
+            title: savedEpic.name
+          } : epic
         );
       });
       setColumns(updatedColumns);
-      closeTaskDetail();
+      closeEpicDetail();
     } catch (error) {
       console.error('Error al actualizar épica:', error);
     }
@@ -131,14 +137,14 @@ const ProjectKanban = () => {
       targetColumnId === 'inProgress' ? 'En Progreso' : 'Pendiente';
 
     setColumns(prevColumns => {
-      const taskToMove = prevColumns[sourceColumnId].epics.find(task => task.id === taskId);
+      const taskToMove = prevColumns[sourceColumnId].epics.find(epic => epic.id === taskId);
       if (!taskToMove) return prevColumns;
 
       return {
         ...prevColumns,
         [sourceColumnId]: {
           ...prevColumns[sourceColumnId],
-          epics: prevColumns[sourceColumnId].epics.filter(task => task.id !== taskId)
+          epics: prevColumns[sourceColumnId].epics.filter(epic => epic.id !== taskId)
         },
         [targetColumnId]: {
           ...prevColumns[targetColumnId],
@@ -151,16 +157,16 @@ const ProjectKanban = () => {
     });
   };
 
-  const handleAddTask = async (newTask) => {
+  const handleAddEpic = async (newEpic) => {
     try {
-      const priorityObj = priorities.find(p => p._id === newTask.priority) || { 
-        _id: newTask.priority, 
-        name: newTask.priority, 
+      const priorityObj = priorities.find(p => p._id === newEpic.priority) || { 
+        _id: newEpic.priority, 
+        name: newEpic.priority, 
         color: 'gray' 
       };
 
-      const savedTask = {
-        ...newTask,
+      const savedEpic = {
+        ...newEpic,
         _id: Date.now().toString(),
         projectId,
         priority: priorityObj,
@@ -172,22 +178,22 @@ const ProjectKanban = () => {
 
       // Determinar la columna destino basada en el estado
       const targetColumn = 
-        newTask.status === 'Completado' ? 'completed' :
-        newTask.status === 'En Progreso' ? 'inProgress' : 'todo';
+        newEpic.status === 'Completado' ? 'completed' :
+        newEpic.status === 'En Progreso' ? 'inProgress' : 'todo';
 
       setColumns(prevColumns => ({
         ...prevColumns,
         [targetColumn]: {
           ...prevColumns[targetColumn],
           epics: [...prevColumns[targetColumn].epics, { 
-            ...savedTask,
-            id: savedTask._id,
-            title: savedTask.name
+            ...savedEpic,
+            id: savedEpic._id,
+            title: savedEpic.name
           }]
         }
       }));
       
-      setShowAddTaskModal(false);
+      setShowAddEpicModal(false);
     } catch (error) {
       console.error('Error al crear épica:', error);
     }
@@ -241,7 +247,7 @@ const ProjectKanban = () => {
         </button>
         
         <button
-          onClick={() => setShowAddTaskModal(true)}
+          onClick={() => setShowAddEpicModal(true)}
           className={`px-4 py-2 rounded-lg flex items-center gap-2 transition-colors
             ${theme === 'dark' ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-blue-500 hover:bg-blue-600 text-white'}`}
         >
@@ -266,18 +272,18 @@ const ProjectKanban = () => {
               onDragStart={(e, epicId) => handleDragStart(e, epicId, columnId)}
               onDrop={(e) => handleDrop(e, columnId)}
               onDragOver={handleDragOver}
-              onClickTask={openTaskDetail}
+              onClickEpic={openEpicDetail}
               loggedUser={loggedUser}
             />
           ))}
         </div>
       </div>
 
-      {showAddTaskModal && (
+      {showAddEpicModal && (
         <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <AddTaskModal
-            onClose={() => setShowAddTaskModal(false)}
-            onSave={handleAddTask}
+          <AddEpicModal
+            onClose={() => setShowAddEpicModal(false)}
+            onSave={handleAddEpic}
             theme={theme}
             priorities={priorities}
             projectId={projectId}
@@ -285,12 +291,12 @@ const ProjectKanban = () => {
         </div>
       )}
 
-      {selectedTask && (
+      {selectedEpic && (
         <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <TaskDetail 
-            task={selectedTask}
-            onClose={closeTaskDetail}
-            onSave={updateTask}
+          <EpicDetail 
+            epic={selectedEpic}
+            onClose={closeEpicDetail}
+            onSave={updateEpic}
             theme={theme}
             priorities={priorities}
           />
