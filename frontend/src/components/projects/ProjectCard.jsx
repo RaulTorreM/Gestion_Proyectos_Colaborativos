@@ -1,11 +1,30 @@
 // src/components/projects/ProjectCard.jsx
 import ProgressBar from './ProgressBar';
 import ProjectActions from './ProjectActions';
-import UsersService  from '../../api/services/usersService';
+import UsersService from '../../api/services/usersService';
 import EpicsService from '../../api/services/epicsService';
 import UserStoriesService from '../../api/services/userStoriesService';
-import { useState, useEffect } from 'react'; 
+import { useState, useEffect } from 'react';
 
+// Función para formatear fecha ISO sin errores de huso horario
+const formatUTCDate = (isoString) => {
+  if (!isoString) return 'No definida';
+  
+  try {
+    // Ajustar la fecha
+    const date = new Date(isoString);
+    date.setHours(date.getHours() + 5); // Compensamos la zona horaria
+    
+    const day = String(date.getUTCDate()).padStart(2, '0');
+    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+    const year = date.getUTCFullYear();
+    
+    return `${day}/${month}/${year}`;
+  } catch (error) {
+    console.error('Error formateando fecha:', error);
+    return 'Fecha inválida';
+  }
+};
 
 const ProjectCard = ({ project, theme }) => {
   const [managerName, setManagerName] = useState('Desconocido');
@@ -38,9 +57,9 @@ const ProjectCard = ({ project, theme }) => {
         // Procesar todas las historias
         const allUserStories = (await Promise.all(storiesRequests))
           .flat()
-          .filter(Boolean); // Eliminar posibles valores nulos
+          .filter(Boolean);
 
-        // Calcular progreso con validación exhaustiva
+        // Calcular progreso
         const totalStories = allUserStories.length;
         const completedStories = allUserStories.filter(
           story => story.status?.toLowerCase() === 'completado'
@@ -50,13 +69,11 @@ const ProjectCard = ({ project, theme }) => {
           ? Math.round((completedStories / totalStories) * 100)
           : 0;
 
-
-        setProgress(Math.min(calculatedProgress, 100)); // Asegurar máximo 100%
-
+        setProgress(Math.min(calculatedProgress, 100));
       } catch (error) {
         console.error('Error general:', error);
         setManagerName('Usuario desconocido');
-        setProgress(0); // Forzar 0% en caso de error
+        setProgress(0);
       }
     };
 
@@ -82,12 +99,14 @@ const ProjectCard = ({ project, theme }) => {
       </p>
 
       <div className={`text-xs mb-3 md:mb-4 ${theme === 'dark' ? 'text-gray-500' : 'text-gray-400'}`}>
-        <p>Fecha inicio: {new Date(project.startDate).toLocaleDateString()}</p>
-        <p>Fecha fin: {new Date(project.endDate).toLocaleDateString()}</p>
+        <p>Fecha inicio: {formatUTCDate(project.startDate)}</p>
+        <p>Fecha límite: {formatUTCDate(project.dueDate)}</p>
         <p>Encargado: {managerName}</p>
       </div>
       
-      <span className={`text-xs mb-3 md:mb-4 ${theme === 'dark' ? 'text-green-500' : 'text-green-400'}`} >{project.status}</span>
+      <span className={`text-xs mb-3 md:mb-4 ${theme === 'dark' ? 'text-green-500' : 'text-green-400'}`}>
+        {project.status}
+      </span>
 
       <div className="mb-3 md:mb-4">
         <div className="flex justify-between text-xs mb-1">

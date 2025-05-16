@@ -1,5 +1,4 @@
 import api from '../axiosInstance';
-import AuthService from './authService';
 
 const ProjectsService = {
   // Obtener todos los proyectos USAR SOLO PARA TESTS
@@ -13,26 +12,29 @@ const ProjectsService = {
     }
   },
 
-  getProjectsByLoggedUser: async () => {
-    try {
-      const loggedUser = await AuthService.getLoggedUser();
-      const response = await api.get(`/projects/user/${loggedUser._id}`);
-      
-      return response;
-    } catch (error) {
-      console.error('Error fetching projects by userId:', error);
-      throw error;
-    }
-  },
-
   // Obtener un proyecto por ID
   getProjectById: async (projectId) => {
     try {
       const response = await api.get(`/projects/${projectId}`);
-      return response;
+
+      if (!response) {
+        throw new Error('No se recibió respuesta del servidor');
+      }
+
+      return response.data || response;
     } catch (error) {
       console.error(`Error fetching project ${projectId}:`, error);
-      throw error;
+
+      if (error.response) {
+        if (error.response.status === 404) {
+          throw new Error('Proyecto no encontrado');
+        }
+        if (error.response.status === 401) {
+          throw new Error('No autorizado para ver este proyecto');
+        }
+      }
+
+      throw new Error(error.message || 'Error al obtener el proyecto');
     }
   },
 
@@ -47,12 +49,22 @@ const ProjectsService = {
     }
   },
 
-  getProjectByEpicId: async (epicId) => {
+  // Actualizar un proyecto por ID
+  updateProject: async (projectId, updateData) => {
     try {
-      return await api.get(`/projects/epic/${epicId}`);
+      const response = await api.put(`/projects/${projectId}`, updateData);
+      return response.data;
     } catch (error) {
-      console.error('Error fetching project:', error);
-      throw error;
+      console.error(`Error updating project ${projectId}:`, error);
+      if (error.response) {
+        if (error.response.status === 404) {
+          throw new Error('Proyecto no encontrado para actualizar');
+        }
+        if (error.response.status === 401) {
+          throw new Error('No autorizado para actualizar este proyecto');
+        }
+      }
+      throw new Error(error.message || 'Error al actualizar el proyecto');
     }
   }
 };

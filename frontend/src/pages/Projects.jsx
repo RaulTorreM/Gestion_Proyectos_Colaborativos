@@ -11,8 +11,6 @@ const Projects = () => {
   const [projects, setProjects] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [users, setUsers] = useState([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filteredUsers, setFilteredUsers] = useState([]);
   const [newProject, setNewProject] = useState({
     name: '',
     description: '',
@@ -29,14 +27,14 @@ const Projects = () => {
   const loadData = async () => {
     try {
       const [projectsData, usersData] = await Promise.all([
-        ProjectsService.getProjectsByLoggedUser(),
+        ProjectsService.getProjects(),
         UsersService.getAllUsers()
       ]);
-  
+
       setProjects(Array.isArray(projectsData) ? projectsData : []);
       const formattedUsers = Array.isArray(usersData) ? usersData : [];
       setUsers(formattedUsers);
-  
+
       if (formattedUsers.length > 0) {
         setSelectedMember(formattedUsers[0]._id);
       }
@@ -47,71 +45,78 @@ const Projects = () => {
     }
   };
 
-  const loadUsers = async () => {
-    try {
-      const usersData = await UsersService.getAllUsers();
-      setUsers(usersData);
-      setFilteredUsers(usersData);
-    } catch (error) {
-      console.error('Error al cargar usuarios:', error);
-    }
-  };
-  
   useEffect(() => {
     loadData();
-    loadUsers();
   }, []);
+
+  const parseISOAsUTC = (isoString) => {
+    const [year, month, day] = isoString.split('-').map(Number);
+    return new Date(Date.UTC(year, month - 1, day));
+  };
+
+  const formatShortDate = (isoString) => {
+    if (!isoString) return '';
+    const date = parseISOAsUTC(isoString);
+    const day = date.getUTCDate().toString().padStart(2, '0');
+    const month = (date.getUTCMonth() + 1).toString().padStart(2, '0');
+    const year = date.getUTCFullYear();
+    return `${day}/${month}/${year}`;
+  };
+
+  const formatLongDate = (isoString) => {
+    if (!isoString) return 'No definida';
+    const date = parseISOAsUTC(isoString);
+    return date.toLocaleDateString('es-ES', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      timeZone: 'UTC'
+    });
+  };
+
+  const calculateDuration = (startIso, endIso) => {
+    if (!startIso || !endIso) return 'No definida';
+
+    try {
+      const start = new Date(startIso);
+      const end = new Date(endIso);
+      const timeDiff = end - start;
+      const dayDiff = Math.ceil(timeDiff / (1000 * 3600 * 24)) + 1;
+      return `${dayDiff} días`;
+    } catch (error) {
+      console.error('Error calculando duración:', error);
+      return 'No definida';
+    }
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setNewProject(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSearch = (e) => {
-    setSearchTerm(e.target.value);
-    const filtered = users.filter(
-      user =>
-        user.name.toLowerCase().includes(e.target.value.toLowerCase()) ||
-        user.email.toLowerCase().includes(e.target.value.toLowerCase())
-    );
-    setFilteredUsers(filtered);
-  };
-
   const handleAddMember = () => {
     if (!selectedMember) return;
-
     const memberExists = newProject.members.some(m => m.userId === selectedMember);
-
     if (!memberExists) {
       const newMember = {
         userId: selectedMember,
         role: selectedRole,
-        joinedAt: new Date().toISOString(),
+        joinedAt: new Date().toISOString()
       };
-      setNewProject(prev => ({
-        ...prev,
-        members: [...prev.members, newMember],
-      }));
+      setNewProject(prev => ({ ...prev, members: [...prev.members, newMember] }));
     }
   };
 
   const handleRemoveMember = (userId) => {
-    setNewProject(prev => ({
-      ...prev,
-      members: prev.members.filter(m => m.userId !== userId)
-    }));
+    setNewProject(prev => ({ ...prev, members: prev.members.filter(m => m.userId !== userId) }));
   };
 
   const handleChangeMemberRole = (userId, newRole) => {
     setNewProject(prev => ({
       ...prev,
-      members: prev.members.map(member => 
-        member.userId === userId 
-          ? {
-              userId: member.userId,
-              role: newRole,
-              joinedAt: member.joinedAt
-            } 
+      members: prev.members.map(member =>
+        member.userId === userId
+          ? { userId: member.userId, role: newRole, joinedAt: member.joinedAt }
           : member
       )
     }));
@@ -123,24 +128,34 @@ const Projects = () => {
         setError('Por favor complete los campos obligatorios');
         return;
       }
-      
+
+      const inputDateToISO = (dateString) => {
+        const [year, month, day] = dateString.split('-');
+        return new Date(Date.UTC(year, month - 1, day)).toISOString();
+      };
+
       const formattedProject = {
         ...newProject,
-        startDate: new Date(newProject.startDate).toISOString(),
-        dueDate: new Date(newProject.dueDate).toISOString(),
+        startDate: inputDateToISO(newProject.startDate),
+        dueDate: inputDateToISO(newProject.dueDate),
         projectType: newProject.projectType || "Desarrollo de software",
       };
 
       await ProjectsService.createProject(formattedProject);
-      await loadData();  
+      await loadData();
       setShowForm(false);
+      setNewProject({
+        name: '',
+        description: '',
+        startDate: '',
+        dueDate: '',
+        members: [],
+        projectType: '',
+      });
     } catch (error) {
       console.error('Error creating project:', error);
-    
       if (error.response) {
         const { data } = error.response;
-        console.error('Error response data:', data);
-    
         if (data.errors && Array.isArray(data.errors)) {
           const messages = data.errors.map(err => `${err.path}: ${err.msg}`);
           setError(messages.join('\n'));
@@ -150,7 +165,6 @@ const Projects = () => {
           setError('Error desconocido al crear el proyecto');
         }
       } else if (error.request) {
-        console.error('No se recibió respuesta del servidor:', error.request);
         setError('No se recibió respuesta del servidor');
       } else {
         setError(error.message || 'Error desconocido');
@@ -158,17 +172,17 @@ const Projects = () => {
     }
   };
 
-  const filteredProjects = projects.filter(project => project) 
+  const filteredProjects = projects.filter(project => project)
     .filter(project =>
       project.name.toLowerCase().includes(filter.toLowerCase()) ||
       project.description.toLowerCase().includes(filter.toLowerCase())
-  );
+    );
 
   const getUserNameById = (userId) => {
     const user = users.find(user => user._id === userId);
     return user ? user.name : 'Usuario desconocido';
   };
-  
+
   if (loading) return <div>Cargando proyectos...</div>;
   if (error) return <div className='font-semibold text-red-700 dark:text-white'>Error: {error}</div>;
 
@@ -200,7 +214,17 @@ const Projects = () => {
         {filteredProjects.map(project => (
           <ProjectCard 
             key={project._id}
-            project={{ ...project, title: project.name }}
+            project={{ 
+              ...project, 
+              title: project.name,
+              formattedStartDate: formatShortDate(project.startDate),
+              formattedDueDate: formatShortDate(project.dueDate),
+              duration: calculateDuration(project.startDate, project.dueDate),
+              rawStartDate: project.startDate,
+              rawEndDate: project.dueDate,
+              longFormattedStartDate: formatLongDate(project.startDate),
+              longFormattedDueDate: formatLongDate(project.dueDate)
+            }}
             theme={theme}
           />
         ))}
@@ -268,72 +292,43 @@ const Projects = () => {
                   />
                 </div>
                 
-                {/* Sección de Miembros */}
+                {/* Sección de Miembros con Select */}
                 <div>
                   <h3 className="font-semibold text-gray-700 dark:text-white mb-2">Miembros</h3>
                   
-                  <div>
-                    {/* Contenedor principal para campo de búsqueda y selector de rol */}
-                    <div className="flex flex-row gap-3 mb-3 items-center">
-                      {/* Campo de búsqueda - ocupa el espacio restante */}
-                      <div className="flex-1">
-                        <input
-                          type="text"
-                          placeholder="Buscar por nombre o correo"
-                          value={searchTerm}
-                          onChange={handleSearch}
-                          className="w-full p-2 border rounded-lg text-gray-700 dark:bg-zinc-800 dark:text-white"
-                        />
-                      </div>
-
-                      {/* Selector de rol - ancho fijo */}
-                      <div className="w-1/3">
-                        <select
-                          value={selectedRole}
-                          onChange={(e) => setSelectedRole(e.target.value)}
-                          className="w-full p-2 border rounded-lg text-gray-700 dark:bg-zinc-800 dark:text-white"
-                        >
-                          <option value="Miembro">Miembro</option>
-                          <option value="Administrador">Administrador</option>
-                          <option value="Desarrollador">Desarrollador</option>
-                          <option value="Tester">Tester</option>
-                        </select>
-                      </div>
-                    </div>
-
-                    {/* Lista de usuarios filtrados */}
-                    <div className="flex flex-col gap-2 mb-3">
-                      {searchTerm && filteredUsers.length > 0 && (
-                        filteredUsers.map(user => (
-                          <div
-                            key={user._id}
-                            onClick={() => {
-                              setSelectedMember(user._id);
-                              const memberExists = newProject.members.some(m => m.userId === user._id);
-                              if (!memberExists) {
-                                const newMember = {
-                                  userId: user._id,
-                                  role: selectedRole,
-                                  joinedAt: new Date().toISOString(),
-                                };
-                                setNewProject(prev => ({
-                                  ...prev,
-                                  members: [...prev.members, newMember],
-                                }));
-                              }
-                            }}
-                            className="flex justify-between items-center p-2 border dark:border-zinc-700 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-zinc-700"
-                          >
-                            <span className="text-gray-800 dark:text-gray-200">
-                              {user.name} - {user.email}
-                            </span>
-                          </div>
-                        ))
-                      )}
-                    </div>
+                  <div className="flex gap-2 mb-3">
+                    <select
+                      value={selectedMember}
+                      onChange={(e) => setSelectedMember(e.target.value)}
+                      className="flex-1 p-2 border rounded-lg text-gray-700 dark:bg-zinc-800 dark:text-white"
+                    >
+                      <option value="">Seleccione un miembro</option>
+                      {users.map(user => (
+                        <option key={user._id} value={user._id}>
+                          {user.name}
+                        </option>
+                      ))}
+                    </select>
+                    
+                    <select
+                      value={selectedRole}
+                      onChange={(e) => setSelectedRole(e.target.value)}
+                      className="w-1/3 p-2 border rounded-lg text-gray-700 dark:bg-zinc-800 dark:text-white"
+                    >
+                      <option value="Miembro">Miembro</option>
+                      <option value="Administrador">Administrador</option>
+                      <option value="Desarrollador">Desarrollador</option>
+                      <option value="Tester">Tester</option>
+                    </select>
+                    
+                    <button
+                      onClick={handleAddMember}
+                      className="p-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg cursor-pointer"
+                    >
+                      Añadir
+                    </button>
                   </div>
                   
-                  {/* Lista de miembros agregados */}
                   <div className="max-h-40 overflow-y-auto border dark:border-zinc-700 rounded-lg p-2">
                     {newProject.members.length === 0 ? (
                       <p className="text-gray-500 dark:text-gray-400 text-center py-2">
@@ -346,7 +341,7 @@ const Projects = () => {
                             <span className="text-gray-800 dark:text-gray-200">
                               {getUserNameById(member.userId)}
                             </span>
-
+                            
                             <div className="flex items-center gap-2">
                               <select
                                 value={member.role}
@@ -375,7 +370,6 @@ const Projects = () => {
               </div>
             </div>
 
-            {/* Botones */}
             <div className="flex justify-end gap-3 p-4 border-t dark:border-zinc-700">
               <button
                 onClick={() => setShowForm(false)}
