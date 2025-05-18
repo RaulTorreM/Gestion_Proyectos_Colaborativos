@@ -11,14 +11,13 @@ const formatUTCDate = (isoString) => {
   if (!isoString) return 'No definida';
   
   try {
-    // Ajustar la fecha
     const date = new Date(isoString);
-    date.setHours(date.getHours() + 5); // Compensamos la zona horaria
-    
+    date.setHours(date.getHours() + 5); // Ajuste zona horaria si es necesario
+
     const day = String(date.getUTCDate()).padStart(2, '0');
     const month = String(date.getUTCMonth() + 1).padStart(2, '0');
     const year = date.getUTCFullYear();
-    
+
     return `${day}/${month}/${year}`;
   } catch (error) {
     console.error('Error formateando fecha:', error);
@@ -26,54 +25,33 @@ const formatUTCDate = (isoString) => {
   }
 };
 
-const ProjectCard = ({ project, theme }) => {
+const ProjectCard = ({ project, theme, onArchive }) => {
   const [managerName, setManagerName] = useState('Desconocido');
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Obtener nombre del manager
         const user = await UsersService.getUserById(project.authorUserId);
         setManagerName(user.name);
 
-        // Obtener y validar épicas
         const epics = await EpicsService.getEpicsByProjectId(project._id);
-        if (!Array.isArray(epics)) {
-          throw new Error('Formato inválido de épicas');
-        }
-
-        // Obtener historias con manejo de errores individual
-        const storiesRequests = epics.map(async (epic) => {
-          try {
-            const stories = await UserStoriesService.getUserStoriesByEpicId(epic._id);
-            return stories;
-          } catch (error) {
-            console.error(`Error en épica ${epic._id}:`, error);
-            return [];
-          }
-        });
-
-        // Procesar todas las historias
-        const allUserStories = (await Promise.all(storiesRequests))
-          .flat()
-          .filter(Boolean);
-
-        // Calcular progreso
+        const storiesRequests = epics.map(epic => 
+          UserStoriesService.getUserStoriesByEpicId(epic._id)
+        );
+        
+        const allUserStories = (await Promise.all(storiesRequests)).flat();
         const totalStories = allUserStories.length;
         const completedStories = allUserStories.filter(
           story => story.status?.toLowerCase() === 'completado'
         ).length;
 
-        const calculatedProgress = totalStories > 0 
+        setProgress(totalStories > 0 
           ? Math.round((completedStories / totalStories) * 100)
-          : 0;
-
-        setProgress(Math.min(calculatedProgress, 100));
+          : 0);
       } catch (error) {
-        console.error('Error general:', error);
+        console.error('Error cargando datos:', error);
         setManagerName('Usuario desconocido');
-        setProgress(0);
       }
     };
 
@@ -81,7 +59,7 @@ const ProjectCard = ({ project, theme }) => {
   }, [project._id, project.authorUserId]);
 
   return (
-    <div className={`
+    <div className={` 
       rounded-xl p-4 md:p-5 shadow-sm transition-all h-full
       ${theme === 'dark' ? 'bg-zinc-900 hover:bg-gray-900' : 'bg-white hover:bg-gray-50'}
     `}>
@@ -116,7 +94,11 @@ const ProjectCard = ({ project, theme }) => {
         <ProgressBar progress={progress} theme={theme} />
       </div>
 
-      <ProjectActions projectId={project.id} theme={theme} />
+      <ProjectActions 
+        projectId={project._id ? project._id.toString() : ''} // Asegurar string
+        theme={theme} 
+        onArchive={onArchive} 
+      />
     </div>
   );
 };

@@ -1,7 +1,7 @@
 import { useTheme } from '../context/ThemeContext';
 import ProjectFilter from '../components/projects/ProjectFilter';
 import ProjectCard from '../components/projects/ProjectCard';
-import { useState, useEffect } from 'react'; 
+import { useState, useEffect } from 'react';
 import ProjectsService from '../api/services/projectsService';
 import UsersService from '../api/services/usersService';
 
@@ -38,6 +38,7 @@ const Projects = () => {
       if (formattedUsers.length > 0) {
         setSelectedMember(formattedUsers[0]._id);
       }
+      setError(null); // Limpiar error si carga bien
     } catch (err) {
       setError(err.message || 'Error al cargar datos');
     } finally {
@@ -50,6 +51,7 @@ const Projects = () => {
   }, []);
 
   const parseISOAsUTC = (isoString) => {
+    if (!isoString) return null;
     const [year, month, day] = isoString.split('-').map(Number);
     return new Date(Date.UTC(year, month - 1, day));
   };
@@ -57,6 +59,7 @@ const Projects = () => {
   const formatShortDate = (isoString) => {
     if (!isoString) return '';
     const date = parseISOAsUTC(isoString);
+    if (!date) return '';
     const day = date.getUTCDate().toString().padStart(2, '0');
     const month = (date.getUTCMonth() + 1).toString().padStart(2, '0');
     const year = date.getUTCFullYear();
@@ -66,6 +69,7 @@ const Projects = () => {
   const formatLongDate = (isoString) => {
     if (!isoString) return 'No definida';
     const date = parseISOAsUTC(isoString);
+    if (!date) return 'No definida';
     return date.toLocaleDateString('es-ES', {
       year: 'numeric',
       month: 'long',
@@ -78,8 +82,11 @@ const Projects = () => {
     if (!startIso || !endIso) return 'No definida';
 
     try {
-      const start = new Date(startIso);
-      const end = new Date(endIso);
+      // Usar parseISOAsUTC para consistencia
+      const start = parseISOAsUTC(startIso);
+      const end = parseISOAsUTC(endIso);
+      if (!start || !end) return 'No definida';
+
       const timeDiff = end - start;
       const dayDiff = Math.ceil(timeDiff / (1000 * 3600 * 24)) + 1;
       return `${dayDiff} días`;
@@ -116,7 +123,7 @@ const Projects = () => {
       ...prev,
       members: prev.members.map(member =>
         member.userId === userId
-          ? { userId: member.userId, role: newRole, joinedAt: member.joinedAt }
+          ? { ...member, role: newRole }
           : member
       )
     }));
@@ -129,9 +136,12 @@ const Projects = () => {
         return;
       }
 
+      setError(null); // Limpiar error antes de crear
+
+      // Reusar parseISOAsUTC para convertir fechas
       const inputDateToISO = (dateString) => {
-        const [year, month, day] = dateString.split('-');
-        return new Date(Date.UTC(year, month - 1, day)).toISOString();
+        const date = parseISOAsUTC(dateString);
+        return date ? date.toISOString() : null;
       };
 
       const formattedProject = {
@@ -172,11 +182,38 @@ const Projects = () => {
     }
   };
 
-  const filteredProjects = projects.filter(project => project)
-    .filter(project =>
-      project.name.toLowerCase().includes(filter.toLowerCase()) ||
-      project.description.toLowerCase().includes(filter.toLowerCase())
-    );
+  const handleProjectArchive = async (projectId) => {
+    try {
+      // 1. Convertir IDs a string para comparación segura
+      const projectIdStr = projectId.toString();
+      
+      // 2. Filtrado correcto del proyecto específico
+      setProjects(prevProjects => {
+        const updatedProjects = prevProjects.filter(
+          project => project._id.toString() !== projectIdStr
+        );
+        
+        console.log('Proyecto archivado:', projectIdStr);
+        console.log('Proyectos restantes:', updatedProjects.map(p => p._id));
+        
+        return updatedProjects;
+      });
+
+      // 3. Archivado en el backend
+      await ProjectsService.archiveProject(projectId);
+
+    } catch (error) {
+      console.error('Error al archivar:', error);
+      // Recargar para mantener consistencia
+      await loadData();
+      throw error; // Para mostrar el error en ProjectActions
+    }
+  };
+
+  const filteredProjects = projects.filter(project =>
+    project.name.toLowerCase().includes(filter.toLowerCase()) ||
+    project.description.toLowerCase().includes(filter.toLowerCase())
+  );
 
   const getUserNameById = (userId) => {
     const user = users.find(user => user._id === userId);
@@ -212,10 +249,10 @@ const Projects = () => {
       {/* Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-4">
         {filteredProjects.map(project => (
-          <ProjectCard 
+          <ProjectCard
             key={project._id}
-            project={{ 
-              ...project, 
+            project={{
+              ...project,
               title: project.name,
               formattedStartDate: formatShortDate(project.startDate),
               formattedDueDate: formatShortDate(project.dueDate),
@@ -226,6 +263,7 @@ const Projects = () => {
               longFormattedDueDate: formatLongDate(project.dueDate)
             }}
             theme={theme}
+            onArchive={handleProjectArchive}
           />
         ))}
       </div>
@@ -250,140 +288,137 @@ const Projects = () => {
                     className="w-full p-2 border rounded-lg text-gray-700 dark:bg-zinc-800 dark:text-white"
                   />
                 </div>
+
                 <div>
-                  <h2 className='text-lg text-gray-500 dark:text-gray-300'>Nombre:</h2>
+                  <h2 className="text-lg text-gray-500 dark:text-gray-300">Nombre:</h2>
                   <input
                     type="text"
                     name="name"
-                    placeholder="ej: Rediseño Plataforma E-learning"
                     value={newProject.name}
                     onChange={handleInputChange}
+                    placeholder="Nombre del proyecto"
                     className="w-full p-2 border rounded-lg text-gray-700 dark:bg-zinc-800 dark:text-white"
+                    required
                   />
                 </div>
+
                 <div>
-                  <h2 className='text-lg text-gray-500 dark:text-gray-300'>Descripción:</h2>
+                  <h2 className="text-lg text-gray-500 dark:text-gray-300">Descripción:</h2>
                   <textarea
                     name="description"
-                    placeholder="ej: Actualización completa de la interfaz y funcionalidades de la plataforma de aprendizaje en línea..."
                     value={newProject.description}
                     onChange={handleInputChange}
-                    className="w-full p-2 border rounded-lg text-gray-700 dark:bg-zinc-800 dark:text-white"
+                    placeholder="Descripción del proyecto"
+                    rows={3}
+                    className="w-full p-2 border rounded-lg resize-none text-gray-700 dark:bg-zinc-800 dark:text-white"
+                    required
                   />
                 </div>
-                <div>
-                  <h2 className='text-lg text-gray-500 dark:text-gray-300'>Fecha de inicio:</h2>
-                  <input
-                    type="date"
-                    name="startDate"
-                    value={newProject.startDate}
-                    onChange={handleInputChange}
-                    className="w-full p-2 border rounded-lg text-gray-700 dark:bg-zinc-800 dark:text-white"
-                  />
+
+                <div className="flex gap-3">
+                  <div className="flex-1">
+                    <h2 className="text-lg text-gray-500 dark:text-gray-300">Fecha inicio:</h2>
+                    <input
+                      type="date"
+                      name="startDate"
+                      value={newProject.startDate}
+                      onChange={handleInputChange}
+                      className="w-full p-2 border rounded-lg text-gray-700 dark:bg-zinc-800 dark:text-white"
+                      required
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <h2 className="text-lg text-gray-500 dark:text-gray-300">Fecha fin:</h2>
+                    <input
+                      type="date"
+                      name="dueDate"
+                      value={newProject.dueDate}
+                      onChange={handleInputChange}
+                      className="w-full p-2 border rounded-lg text-gray-700 dark:bg-zinc-800 dark:text-white"
+                      required
+                    />
+                  </div>
                 </div>
-                <div>
-                  <h2 className='text-lg text-gray-500 dark:text-gray-300'>Fecha límite:</h2>
-                  <input
-                    type="date"
-                    name="dueDate"
-                    value={newProject.dueDate}
-                    onChange={handleInputChange}
-                    className="w-full p-2 border rounded-lg text-gray-700 dark:bg-zinc-800 dark:text-white"
-                  />
-                </div>
-                
-                {/* Sección de Miembros con Select */}
-                <div>
-                  <h3 className="font-semibold text-gray-700 dark:text-white mb-2">Miembros</h3>
-                  
-                  <div className="flex gap-2 mb-3">
+
+                {/* Miembros */}
+                <div className="space-y-2">
+                  <h2 className="text-lg text-gray-500 dark:text-gray-300">Miembros del proyecto:</h2>
+                  <div className="flex gap-3 items-center">
                     <select
                       value={selectedMember}
                       onChange={(e) => setSelectedMember(e.target.value)}
                       className="flex-1 p-2 border rounded-lg text-gray-700 dark:bg-zinc-800 dark:text-white"
                     >
-                      <option value="">Seleccione un miembro</option>
                       {users.map(user => (
                         <option key={user._id} value={user._id}>
                           {user.name}
                         </option>
                       ))}
                     </select>
-                    
                     <select
                       value={selectedRole}
                       onChange={(e) => setSelectedRole(e.target.value)}
-                      className="w-1/3 p-2 border rounded-lg text-gray-700 dark:bg-zinc-800 dark:text-white"
+                      className="p-2 border rounded-lg text-gray-700 dark:bg-zinc-800 dark:text-white"
                     >
-                      <option value="Miembro">Miembro</option>
-                      <option value="Administrador">Administrador</option>
-                      <option value="Desarrollador">Desarrollador</option>
-                      <option value="Tester">Tester</option>
+                      <option>Miembro</option>
+                      <option>Administrador</option>
+                      <option>Líder</option>
                     </select>
-                    
                     <button
                       onClick={handleAddMember}
-                      className="p-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg cursor-pointer"
+                      className="bg-blue-600 text-white px-4 py-2 rounded-lg"
                     >
                       Añadir
                     </button>
                   </div>
-                  
-                  <div className="max-h-40 overflow-y-auto border dark:border-zinc-700 rounded-lg p-2">
-                    {newProject.members.length === 0 ? (
-                      <p className="text-gray-500 dark:text-gray-400 text-center py-2">
-                        No hay miembros agregados
-                      </p>
-                    ) : (
-                      <ul className="space-y-2">
-                        {newProject.members.map((member) => (
-                          <li key={member.userId} className="flex items-center justify-between border-b last:border-b-0 pb-1 dark:border-zinc-700">
-                            <span className="text-gray-800 dark:text-gray-200">
-                              {getUserNameById(member.userId)}
-                            </span>
-                            
-                            <div className="flex items-center gap-2">
-                              <select
-                                value={member.role}
-                                onChange={(e) => handleChangeMemberRole(member.userId, e.target.value)}
-                                className="p-1 text-sm border rounded dark:bg-zinc-800 dark:text-white"
-                              >
-                                <option value="Miembro">Miembro</option>
-                                <option value="Administrador">Administrador</option>
-                                <option value="Desarrollador">Desarrollador</option>
-                                <option value="Tester">Tester</option>
-                              </select>
-                              
-                              <button
-                                onClick={() => handleRemoveMember(member.userId)}
-                                className="text-red-500 hover:text-red-700 p-1 cursor-pointer"
-                              >
-                                ✕
-                              </button>
-                            </div>
-                          </li>
-                        ))}
-                      </ul>
+
+                  <div className="max-h-40 overflow-y-auto border border-gray-300 dark:border-zinc-700 rounded-lg p-2">
+                    {newProject.members.length === 0 && (
+                      <p className="text-gray-500 dark:text-gray-400">No hay miembros añadidos.</p>
                     )}
+                    {newProject.members.map(member => (
+                      <div
+                        key={member.userId}
+                        className="flex items-center justify-between gap-3 py-1"
+                      >
+                        <span className="flex-1 text-gray-700 dark:text-white">{getUserNameById(member.userId)}</span>
+                        <select
+                          value={member.role}
+                          onChange={(e) => handleChangeMemberRole(member.userId, e.target.value)}
+                          className="p-1 border rounded text-gray-700 dark:bg-zinc-800 dark:text-white"
+                        >
+                          <option>Miembro</option>
+                          <option>Administrador</option>
+                          <option>Líder</option>
+                        </select>
+                        <button
+                          onClick={() => handleRemoveMember(member.userId)}
+                          className="text-red-600 font-bold px-2"
+                          title="Eliminar miembro"
+                        >
+                          &times;
+                        </button>
+                      </div>
+                    ))}
                   </div>
                 </div>
+
+                {error && (
+                  <div className="text-red-600 whitespace-pre-line font-semibold">{error}</div>
+                )}
               </div>
             </div>
 
-            <div className="flex justify-end gap-3 p-4 border-t dark:border-zinc-700">
+            <div className="flex justify-between items-center p-4 border-t border-gray-300 dark:border-zinc-700">
               <button
                 onClick={() => setShowForm(false)}
-                className="px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-lg cursor-pointer"
+                className="text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white"
               >
-                Cerrar
+                Cancelar
               </button>
               <button
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  handleCreateProject();
-                }}
-                className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                onClick={handleCreateProject}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
               >
                 Crear Proyecto
               </button>

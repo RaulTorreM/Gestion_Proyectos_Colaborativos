@@ -6,6 +6,7 @@ const Epic = require('../models/Epic');
 const UserStory = require('../models/UserStory');
 const TeamPerformance = require('../models/TeamPerformance');
 const mongoose = require('mongoose');
+
 const router = Router();
 
 const { 
@@ -32,6 +33,56 @@ router.route('/disable/:id')
 
 router.route('/delete/:id')
   .delete(validateObjectId(Project), validateDeleteProject, deleteProject);
+
+// Archivar proyecto
+router.post('/:id/archive', async (req, res) => {
+  try {
+    const project = await Project.findByIdAndUpdate(
+      req.params.id,
+      { status: 'Archivado', archivedAt: new Date() },
+      { new: true }
+    );
+    if (!project) {
+      return res.status(404).json({ error: 'Proyecto no encontrado' });
+    }
+    res.json({ message: 'Proyecto archivado', project });
+  } catch (error) {
+    console.error('Error al archivar:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+});
+
+// Reintegrar proyecto (restaurar desde archivado)
+router.post('/:id/restore', async (req, res) => {
+  try {
+    const project = await Project.findByIdAndUpdate(
+      req.params.id,
+      { status: 'Activo', archivedAt: null },
+      { new: true }
+    );
+    if (!project) {
+      return res.status(404).json({ error: 'Proyecto no encontrado' });
+    }
+    res.json({ message: 'Proyecto restaurado', project });
+  } catch (error) {
+    console.error('Error al restaurar:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+});
+
+// Obtener proyectos archivados
+router.get('/archived', async (req, res) => {
+  try {
+    const projects = await Project.find({ status: 'Archivado' });
+    res.json(projects);
+  } catch (error) {
+    console.error('Error al obtener proyectos archivados:', error);
+    res.status(500).json({ 
+      error: 'Error interno del servidor',
+      details: error.message 
+    });
+  }
+});
 
 // Rutas para métricas de proyectos
 router.get('/:id/metrics', validateObjectId(Project), async (req, res) => {
