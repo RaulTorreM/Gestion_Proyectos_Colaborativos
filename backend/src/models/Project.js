@@ -27,9 +27,9 @@ const projectsSchema = new Schema({
 	},
 	status: {
 		type: String,
-		enum: ['Activo', 'Archivado'], // actualizado según el nuevo enum
+		enum: ['No Iniciado', 'En Progreso', 'Finalizado', 'Archivado'], // actualizado según el nuevo enum
 		required: false,
-		default: 'Activo', // actualizado para que por defecto sea 'Activo'
+		default: 'No Iniciado', 	
 	},
 	archivedAt: { // campo para fecha de archivado
 		type: Date,
