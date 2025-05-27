@@ -19,45 +19,51 @@ import Login from './pages/Login';
 import ProtectedRoute from './components/ProtectedRoutes';
 import HomeRedirect from './components/HomeRedirect';
 
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
 const App = () => {
   return (
-    <ThemeProvider>
-      <AuthProvider> 
-        <div className="bg-gray-100 dark:bg-black">
-          <Routes>
-            {/* Ruta pública */}
-            <Route path="/" element={<HomeRedirect />} />
-            <Route path="/login" element={<Login />} />
+    <>
+    <ToastContainer />
+        <ThemeProvider>
+          <AuthProvider> 
+            <div className="bg-gray-100 dark:bg-black">
+              <Routes>
+                {/* Ruta pública */}
+                <Route path="/" element={<HomeRedirect />} />
+                <Route path="/login" element={<Login />} />
 
-            {/* Rutas protegidas */}
-            <Route
-              path="/*"
-              element={
-                <ProtectedRoute>
-                  <div className="flex w-full h-screen">
-                    <Sidebar />
-                    <main className="flex-1 overflow-y-auto">
-                      <Routes>
-                        <Route path="/dashboard" element={<Dashboard />} />
-                        <Route path="/projects" element={<Projects />} />
-                        <Route path="/projects/:id/details" element={<ProjectDetails />} />
-                        <Route path="/projects/:id/versions" element={<ProjectVersions />} />
-                        <Route path="/projects/:id/kanban" element={<ProjectKanban />} />
-                        <Route path="/chat" element={<Chat />} />
-                        <Route path="/analytics" element={<Analytics />} />
-                        <Route path="/users" element={<Users />} />
-                        <Route path="/admin" element={<Administration />} />
-                        <Route path="/settings" element={<Settings />} />
-                      </Routes>
-                    </main>
-                  </div>
-                </ProtectedRoute>
-              }
-            />
-          </Routes>
-        </div>
-      </AuthProvider>
-    </ThemeProvider>
+                {/* Rutas protegidas */}
+                <Route
+                  path="/*"
+                  element={
+                    <ProtectedRoute>
+                      <div className="flex w-full h-screen">
+                        <Sidebar />
+                        <main className="flex-1 overflow-y-auto">
+                          <Routes>
+                            <Route path="/dashboard" element={<Dashboard />} />
+                            <Route path="/projects" element={<Projects />} />
+                            <Route path="/projects/:id/details" element={<ProjectDetails />} />
+                            <Route path="/projects/:id/versions" element={<ProjectVersions />} />
+                            <Route path="/projects/:id/kanban" element={<ProjectKanban />} />
+                            <Route path="/chat" element={<Chat />} />
+                            <Route path="/analytics" element={<Analytics />} />
+                            <Route path="/users" element={<Users />} />
+                            <Route path="/admin" element={<Administration />} />
+                            <Route path="/settings" element={<Settings />} />
+                          </Routes>
+                        </main>
+                      </div>
+                    </ProtectedRoute>
+                  }
+                />
+              </Routes>
+            </div>
+          </AuthProvider>
+        </ThemeProvider>
+    </>
   );
 };
 

@@ -1,52 +1,103 @@
 import { useState } from 'react';
 import UserStoryList from './UserStoryList';
+import { formatISO, parseISO } from 'date-fns';
+import { formatDateToUserTimezone } from './KanbanDateUtils';
+import UserStoriesService from '../../../api/services/userStoriesService';
+import { toast } from 'react-toastify';
 
-const EpicDetail = ({ epic, priorities = [], onClose, onSave, theme }) => {
+const EpicDetail = ({ epic, priorities = [], onClose, onSave, onDelete, theme }) => {
   const [editing, setEditing] = useState(false);
-  const [editedEpic, setEditedEpic] = useState({ 
+  
+  const parseDate = (date) => {
+    try {
+      return date ? formatISO(typeof date === 'string' ? parseISO(date) : date) : null;
+    } catch {
+      return null;
+    }
+  };
+
+  const [editedEpic, setEditedEpic] = useState({
     ...epic,
-    dueDate: epic.dueDate,
-    priority: epic.priority || (priorities.length > 0 ? priorities[0] : null)
+    startDate: parseDate(epic.startDate),
+    endDate: parseDate(epic.endDate),
+    dueDate: parseDate(epic.dueDate),
+    priorityId: epic.priorityId?._id || epic.priorityId || null
   });
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setEditedEpic(prev => ({ 
-      ...prev, 
-      [name]: value,
-      ...(name === 'dueDate' && { dueDate: value })
-    }));
+    setEditedEpic(prev => ({ ...prev, [name]: value }));
   };
 
-  const handlePriorityChange = (priorityId) => {
-    const selectedPriority = priorities.find(p => p._id === priorityId);
+  const handlePriorityChange = (selectedPriorityId) => {
+    // Validar que sea un ID existente en las prioridades
+    const isValid = priorities.some(p => p._id === selectedPriorityId);
+    
     setEditedEpic(prev => ({
       ...prev,
-      priority: selectedPriority
+      priorityId: isValid ? selectedPriorityId : prev.priorityId
     }));
   };
 
   const handleSave = () => {
-    const taskToSave = {
-      ...editedEpic,
-      priorityId: editedEpic.priority?._id
+    // Mantener _id en el payload
+    const { 
+      __v, createdAt, updatedAt, deletedAt, authorUserId, id, title, 
+      ...epicToSave 
+    } = editedEpic;
+  
+    const payload = {
+      ...epicToSave,
+      _id: editedEpic._id, // ← Asegurar que _id está incluido
+      startDate: epicToSave.startDate || null,
+      endDate: epicToSave.endDate || null,
+      dueDate: epicToSave.dueDate ? new Date(epicToSave.dueDate).toISOString() : null
     };
-    onSave(taskToSave);
+  
+    onSave(payload);
+    setEditing(false);
   };
 
-  const updateUserStories = (updatedUserStories) => {
-    setEditedEpic(prev => ({ ...prev, userStories: updatedUserStories }));
+  // Modificar la función updateUserStories
+const updateUserStories = async (updatedStories) => {
+    try {
+      // Actualizar backend
+      await Promise.all(updatedStories.map(async (story) => {
+        if (story._id?.startsWith('us-')) { // Si es temporal
+          const { _id, ...cleanStory } = story;
+          return UserStoriesService.createUserStory({
+            ...cleanStory,
+            epicId: epic._id
+          });
+        }
+        return UserStoriesService.updateUserStory(story._id, story);
+      }));
+      
+      // Actualizar estado local
+      const freshStories = await UserStoriesService.getUserStoriesByEpic(epic._id);
+      setEditedEpic(prev => ({ ...prev, userStories: freshStories }));
+      
+    } catch (error) {
+      console.error('Error updating user stories:', error);
+      toast.error('Error al actualizar historias');
+    }
   };
 
   return (
-    <div className={`rounded-xl p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-lg ${theme === 'dark' ? 'bg-zinc-800' : 'bg-white'}`}>
+    <div className={`rounded-xl p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-lg ${
+      theme === 'dark' 
+        ? 'bg-zinc-800 text-white' 
+        : 'bg-white text-gray-800'
+    }`}>
       <div className="flex justify-between items-center mb-4">
         <h2 className={`text-xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>
           {editing ? 'Editando Épica' : 'Detalle de Épica'}
         </h2>
         <button 
           onClick={onClose}
-          className={`p-2 rounded-full ${theme === 'dark' ? 'hover:bg-zinc-700' : 'hover:bg-gray-200'}`}
+          className={`p-2 rounded-full hover:bg-opacity-20 ${
+            theme === 'dark' ? 'hover:bg-white' : 'hover:bg-gray-200'
+          }`}
         >
           ✕
         </button>
@@ -55,59 +106,89 @@ const EpicDetail = ({ epic, priorities = [], onClose, onSave, theme }) => {
       {editing ? (
         <div className="space-y-4">
           <div>
-            <label className={`block mb-1 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>Nombre*</label>
+            <label className={`block mb-2 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
+              Nombre*
+            </label>
             <input
-              type="text"
+              className={`w-full p-2 rounded border ${
+                theme === 'dark' 
+                  ? 'bg-zinc-700 border-zinc-600 text-white' 
+                  : 'bg-white border-gray-300'
+              }`}
               name="name"
               value={editedEpic.name || ''}
               onChange={handleInputChange}
-              className={`w-full p-2 rounded border ${theme === 'dark' ? 'bg-zinc-700 border-zinc-600 text-white' : 'bg-white border-gray-300'}`}
               required
             />
           </div>
 
           <div>
-            <label className={`block mb-1 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>Descripción</label>
+            <label className={`block mb-2 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
+              Descripción
+            </label>
             <textarea
+              className={`w-full p-2 rounded border ${
+                theme === 'dark' 
+                  ? 'bg-zinc-700 border-zinc-600 text-white' 
+                  : 'bg-white border-gray-300'
+              }`}
               name="description"
               value={editedEpic.description || ''}
               onChange={handleInputChange}
               rows="3"
-              className={`w-full p-2 rounded border ${theme === 'dark' ? 'bg-zinc-700 border-zinc-600 text-white' : 'bg-white border-gray-300'}`}
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className={`block mb-1 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>Fecha Inicio</label>
+              <label className={`block mb-2 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
+                Fecha Inicio
+              </label>
               <input
+                className={`w-full p-2 rounded border ${
+                  theme === 'dark' 
+                    ? 'bg-zinc-700 border-zinc-600 text-white' 
+                    : 'bg-white border-gray-300'
+                }`}
                 type="date"
                 name="startDate"
-                value={editedEpic.startDate || ''}
+                value={editedEpic.startDate?.split('T')[0] || ''}
                 onChange={handleInputChange}
-                className={`w-full p-2 rounded border ${theme === 'dark' ? 'bg-zinc-700 border-zinc-600 text-white' : 'bg-white border-gray-300'}`}
               />
             </div>
             <div>
-              <label className={`block mb-1 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>Fecha Fin</label>
+              <label className={`block mb-2 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
+                Fecha Fin
+              </label>
               <input
+                className={`w-full p-2 rounded border ${
+                  theme === 'dark' 
+                    ? 'bg-zinc-700 border-zinc-600 text-white' 
+                    : 'bg-white border-gray-300'
+                }`}
                 type="date"
-                name="endDate"
-                value={editedEpic.endDate || ''}
+                name="dueDate"
+                value={editedEpic.dueDate?.split('T')[0] || ''}
                 onChange={handleInputChange}
-                className={`w-full p-2 rounded border ${theme === 'dark' ? 'bg-zinc-700 border-zinc-600 text-white' : 'bg-white border-gray-300'}`}
               />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className={`block mb-1 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>Prioridad</label>
+              <label className={`block mb-2 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
+                Prioridad
+              </label>
               <select
-                value={editedEpic.priority?._id || ''}
+                className={`w-full p-2 rounded border ${
+                  theme === 'dark' 
+                    ? 'bg-zinc-700 border-zinc-600 text-white' 
+                    : 'bg-white border-gray-300'
+                }`}
+                value={editedEpic.priorityId || ''}
                 onChange={(e) => handlePriorityChange(e.target.value)}
-                className={`w-full p-2 rounded border ${theme === 'dark' ? 'bg-zinc-700 border-zinc-600 text-white' : 'bg-white border-gray-300'}`}
               >
+                <option value="">Seleccionar prioridad</option>
                 {priorities.map(priority => (
                   <option key={priority._id} value={priority._id}>
                     {priority.name}
@@ -116,12 +197,18 @@ const EpicDetail = ({ epic, priorities = [], onClose, onSave, theme }) => {
               </select>
             </div>
             <div>
-              <label className={`block mb-1 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>Estado</label>
+              <label className={`block mb-2 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
+                Estado
+              </label>
               <select
+                className={`w-full p-2 rounded border ${
+                  theme === 'dark' 
+                    ? 'bg-zinc-700 border-zinc-600 text-white' 
+                    : 'bg-white border-gray-300'
+                }`}
                 name="status"
                 value={editedEpic.status || 'Pendiente'}
                 onChange={handleInputChange}
-                className={`w-full p-2 rounded border ${theme === 'dark' ? 'bg-zinc-700 border-zinc-600 text-white' : 'bg-white border-gray-300'}`}
               >
                 <option value="Pendiente">Pendiente</option>
                 <option value="En Progreso">En Progreso</option>
@@ -138,21 +225,22 @@ const EpicDetail = ({ epic, priorities = [], onClose, onSave, theme }) => {
           <p className={`${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
             {epic.description || 'Sin descripción'}
           </p>
+          
           <div className="grid grid-cols-2 gap-4">
             <div>
               <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
-                <span className="font-medium">Fecha Inicio:</span> {epic.startDate || 'No definida'}
+                <span className="font-medium">Fecha Inicio:</span> {formatDateToUserTimezone(epic.startDate)}
               </p>
               <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
-                <span className="font-medium">Fecha Fin:</span> {epic.endDate || 'No definida'}
+                <span className="font-medium">Fecha Fin:</span> {formatDateToUserTimezone(epic.dueDate)}
               </p>
             </div>
             <div>
               <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
-                <span className="font-medium">Prioridad:</span> {epic.priority?.name || 'No definida'}
+                <span className="font-medium">Prioridad:</span> {epic.priorityId?.name || 'No definida'}
               </p>
               <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
-                <span className="font-medium">Estado:</span> {epic.status || 'Pendiente'}
+                <span className="font-medium">Estado:</span> {epic.status || 'Pendiente(D)'}
               </p>
             </div>
           </div>
@@ -160,43 +248,57 @@ const EpicDetail = ({ epic, priorities = [], onClose, onSave, theme }) => {
       )}
 
       <div className="mt-6">
-        <UserStoryList 
-          userStories={editing ? editedEpic.userStories || [] : epic.userStories || []} 
+        <UserStoryList
+          userStories={(editing ? editedEpic.userStories : epic.userStories) || []}
           editing={editing}
           onUpdate={updateUserStories}
           theme={theme}
         />
       </div>
 
-      <div className="flex justify-end space-x-3 mt-6">
+      <div className="flex justify-end gap-3 mt-6">
         {editing ? (
           <>
             <button
+              className={`px-4 py-2 rounded-lg ${
+                theme === 'dark' 
+                  ? 'bg-zinc-700 hover:bg-zinc-600 text-white' 
+                  : 'bg-gray-200 hover:bg-gray-300 text-gray-800'
+              }`}
               onClick={() => setEditing(false)}
-              className={`px-4 py-2 rounded-lg ${theme === 'dark' ? 'bg-zinc-700 hover:bg-zinc-600 text-white' : 'bg-gray-200 hover:bg-gray-300 text-gray-800'}`}
             >
               Cancelar
             </button>
             <button
-              onClick={handleSave}
               className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
+              onClick={handleSave}
             >
-              Guardar Cambios
+              Guardar
             </button>
           </>
         ) : (
           <>
             <button
+              className={`px-4 py-2 rounded-lg ${
+                theme === 'dark' 
+                  ? 'bg-zinc-700 hover:bg-zinc-600 text-white' 
+                  : 'bg-gray-200 hover:bg-gray-300 text-gray-800'
+              }`}
               onClick={onClose}
-              className={`px-4 py-2 rounded-lg ${theme === 'dark' ? 'bg-zinc-700 hover:bg-zinc-600 text-white' : 'bg-gray-200 hover:bg-gray-300 text-gray-800'}`}
             >
               Cerrar
             </button>
             <button
-              onClick={() => setEditing(true)}
               className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
+              onClick={() => setEditing(true)}
             >
-              Editar Épica
+              Editar
+            </button>
+            <button 
+              className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg"
+              onClick={() => onDelete(epic._id)}
+            >
+              Eliminar
             </button>
           </>
         )}

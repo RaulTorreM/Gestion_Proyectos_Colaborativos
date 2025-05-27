@@ -37,7 +37,7 @@ const ProjectCard = ({ project, theme, onArchive }) => {
 
         const epics = await EpicsService.getEpicsByProjectId(project._id);
         const storiesRequests = epics.map(epic => 
-          UserStoriesService.getUserStoriesByEpicId(epic._id)
+          UserStoriesService.getUserStoriesByEpic(epic._id)
         );
         
         const allUserStories = (await Promise.all(storiesRequests)).flat();

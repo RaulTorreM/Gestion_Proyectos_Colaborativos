@@ -15,31 +15,45 @@ const UserStoryList = ({ userStories = [], editing, onUpdate, theme }) => {
     setShowForm(true);
   };
 
-  const handleSaveStory = (story) => {
-    let updatedStories;
-    
-    if (story._id) {
-      // Actualizar historia existente
-      updatedStories = userStories.map(us => 
-        us._id === story._id ? story : us
-      );
-    } else {
-      // Crear nueva historia
-      updatedStories = [...userStories, {
-        ...story,
-        _id: `us-${Date.now()}-${Math.random()}`, // aseguramos id único
-        status: 'Pendiente',
-        createdAt: new Date().toISOString()
-      }];
+  const handleSaveStory = async (story) => {
+    try {
+      let savedStory;
+      
+      if (story._id?.startsWith('us-')) {
+        // Crear nueva historia
+        savedStory = await UserStoriesService.createUserStory({
+          ...story,
+          epicId: userStories[0]?.epicId // Asumimos que todas pertenecen a la misma épica
+        });
+      } else {
+        // Actualizar existente
+        savedStory = await UserStoriesService.updateUserStory(story._id, story);
+      }
+  
+      // Actualizar lista local
+      const updatedStories = story._id?.startsWith('us-')
+        ? [...userStories, savedStory]
+        : userStories.map(us => us._id === savedStory._id ? savedStory : us);
+  
+      onUpdate(updatedStories);
+      setShowForm(false);
+      
+    } catch (error) {
+      console.error('Error saving story:', error);
+      toast.error('Error al guardar la historia');
     }
-
-    onUpdate(updatedStories);
-    setShowForm(false);
   };
 
-  const handleDeleteStory = (storyId) => {
-    const updatedStories = userStories.filter(us => us._id !== storyId);
-    onUpdate(updatedStories);
+  const handleDeleteStory = async (storyId) => {
+    try {
+      await UserStoriesService.deleteUserStory(storyId);
+      const updatedStories = userStories.filter(us => us._id !== storyId);
+      onUpdate(updatedStories);
+      
+    } catch (error) {
+      console.error('Error deleting story:', error);
+      toast.error('Error al eliminar la historia');
+    }
   };
 
   const getPriorityColor = (priority) => {

@@ -1,14 +1,22 @@
 const formatDateToUserTimezone = (dateIsoString, timezone) => {
   if (!dateIsoString) return 'N/A';
   const date = new Date(dateIsoString);
-  return new Intl.DateTimeFormat('es-PE', {
-    timeZone: timezone,
+  // Formatear la parte de la fecha en UTC
+  const datePart = new Intl.DateTimeFormat('es-PE', {
+    timeZone: 'UTC',
     year: 'numeric',
     month: 'short',
-    day: '2-digit',
+    day: '2-digit'
+  }).format(date);
+  
+  // Formatear la hora en la zona horaria especificada
+  const timePart = new Intl.DateTimeFormat('es-PE', {
+    timeZone: timezone,
     hour: '2-digit',
     minute: '2-digit'
   }).format(date);
+  
+  return `${datePart}`;
 };
 
 const KanbanEpic = ({ epic, theme, onDragStart, onClick, loggedUser }) => {
@@ -41,7 +49,7 @@ const KanbanEpic = ({ epic, theme, onDragStart, onClick, loggedUser }) => {
       
       <div className="mt-3 flex justify-between items-center text-xs">
         <span className={`${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
-          {formatDateToUserTimezone(epic.startDate, loggedUser.preferences.timezone)} - {formatDateToUserTimezone(epic.endDate, loggedUser.preferences.timezone)}
+          {formatDateToUserTimezone(epic.startDate, loggedUser.preferences.timezone)} - {formatDateToUserTimezone(epic.dueDate, loggedUser.preferences.timezone)}
         </span>
 
         <span className={`px-2 py-1 rounded ${theme === 'dark' ? 'bg-zinc-600 text-gray-200' : 'bg-gray-100 text-gray-700'}`}>

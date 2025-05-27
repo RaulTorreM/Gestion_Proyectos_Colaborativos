@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTheme } from '../../context/ThemeContext';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo} from 'react';
 import EpicDetail from './ProjectKanban/EpicDetail';
 import AddEpicModal from './ProjectKanban/AddEpicModal';
 import KanbanColumn from './ProjectKanban/KanbanColumn';
@@ -8,6 +8,8 @@ import ProjectsService from '../../api/services/projectsService';
 import EpicsService from '../../api/services/epicsService';
 import AuthService from '../../api/services/authService';
 import PrioritiesService from '../../api/services/prioritiesService';
+import UserStoriesService from '../../api/services/userStoriesService';
+import { toast } from 'react-toastify';
 
 const ProjectKanban = () => {
   const [loggedUser, setLoggedUser] = useState(null);
@@ -22,73 +24,65 @@ const ProjectKanban = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const [columns, setColumns] = useState({
-    pending: { id: 'pending', title: 'Pendiente', epics: [] },
-    inProgress: { id: 'inProgress', title: 'En progreso', epics: [] },
-    completed: { id: 'completed', title: 'Completado', epics: [] }
-  });
+  const columns = useMemo(() => {
+    const cols = {
+      pending: { id: 'pending', title: 'Pendiente', epics: [] },
+      inProgress: { id: 'inProgress', title: 'En progreso', epics: [] },
+      completed: { id: 'completed', title: 'Completado', epics: [] }
+    };
+
+    epics.forEach(epic => {
+      const columnId = 
+        epic.status === 'Completado' ? 'completed' :
+        epic.status === 'En Progreso' ? 'inProgress' : 'pending';
+      
+      cols[columnId].epics.push({
+        ...epic,
+        id: epic._id,
+        title: epic.name
+      });
+    });
+
+    return cols;
+  }, [epics]);
 
   useEffect(() => {
     const loadData = async () => {
       try {
         setIsLoading(true);
         
-        // Cargar el usuario logeado
-        const loggedUser = await AuthService.getLoggedUser();
-        if (!loggedUser) {
-          throw new Error('No se pudo obtener el usuario logeado');
-        }
-        
-        setLoggedUser(loggedUser);
+        const [loggedUserRes, prioritiesRes, projectRes] = await Promise.all([
+          AuthService.getLoggedUser(),
+          PrioritiesService.getNoMoscowPriorities(),
+          ProjectsService.getProjectById(projectId)
+        ]);
 
-        // Cargar las prioridades no moscow
-        const prioritiesData = await PrioritiesService.getNoMoscowPriorities();
+        if (!loggedUserRes) throw new Error('No se pudo obtener el usuario logeado');
+        if (!prioritiesRes) throw new Error('Error al obtener prioridades');
+        if (!projectRes) throw new Error('Proyecto no encontrado');
 
-        if (!prioritiesData) {
-          throw new Error('No se pudo obtener las prioridades de épicas');
-        }
-          
-        setPriorities(prioritiesData);
+        setLoggedUser(loggedUserRes);
+        setPriorities(prioritiesRes);
+        setProject(projectRes);
 
-        // Cargar datos del proyecto
-        const projectData = await ProjectsService.getProjectById(projectId);
-        if (!projectData) {
-          throw new Error('No se pudo cargar el proyecto');
-        }
+        const epicsData = await EpicsService.getEpicsByProjectId(projectId);
+        const storiesData = await Promise.all(
+          epicsData.map(epic => 
+            UserStoriesService.getUserStoriesByEpic(epic._id)
+          )
+        );
         
-        setProject(projectData);
+        const epicsWithStories = epicsData.map((epic, index) => ({
+          ...epic,
+          userStories: storiesData[index]
+        }));
         
-        // Cargar épicas asociadas al proyecto
-        let epicsData = [];
-        if (projectData.epics && projectData.epics.length > 0) {
-          epicsData = await EpicsService.getEpicsByIds(projectData.epics);
-        }
+        setEpics(epicsWithStories);
         
-        setEpics(epicsData);
-        
-        // Organizar épicas en columnas según su estado
-        const updatedColumns = {
-          pending: { id: 'pending', title: 'Pendiente', epics: [] },
-          inProgress: { id: 'inProgress', title: 'En progreso', epics: [] },
-          completed: { id: 'completed', title: 'Completado', epics: [] }
-        };
-        
-        epicsData.forEach(epic => {
-          const columnId = 
-            epic.status === 'Completado' ? 'completed' :
-            epic.status === 'En Progreso' ? 'inProgress' : 'pending';
-            
-          updatedColumns[columnId].epics.push({
-            ...epic,
-            id: epic._id,
-            title: epic.name
-          });
-        });
-        
-        setColumns(updatedColumns);
       } catch (err) {
         console.error('Error al cargar datos:', err);
         setError(err.message || 'Error al cargar datos');
+        toast.error(err.message || 'Error al cargar datos');
       } finally {
         setIsLoading(false);
       }
@@ -100,33 +94,34 @@ const ProjectKanban = () => {
   const openEpicDetail = (epic) => setselectedEpic(epic);
   const closeEpicDetail = () => setselectedEpic(null);
 
-  const updateEpic = async (updatedEpic) => {
+  const handleUpdateEpic = async (updatedEpic) => {
     try {
-      const savedEpic = { 
-        ...updatedEpic,
-        _id: updatedEpic.id,
-        name: updatedEpic.title,
-        updatedAt: new Date().toISOString()
-      };
-
-      const updatedColumns = { ...columns };
-      Object.keys(updatedColumns).forEach(columnId => {
-        updatedColumns[columnId].epics = updatedColumns[columnId].epics.map(epic => 
-          epic.id === savedEpic._id ? { 
-            ...savedEpic,
-            id: savedEpic._id,
-            title: savedEpic.name
-          } : epic
-        );
-      });
-      setColumns(updatedColumns);
+      const savedEpic = await EpicsService.updateEpic(updatedEpic._id, updatedEpic);
+      
+      setEpics(prev => prev.map(e => e._id === savedEpic._id ? savedEpic : e));
       closeEpicDetail();
+      toast.success('Épica actualizada correctamente');
     } catch (error) {
-      console.error('Error al actualizar épica:', error);
+      console.error('Error al actualizar:', error);
+      toast.error('Error al actualizar la épica');
     }
   };
 
-  const handleDrop = (e, targetColumnId) => {
+  const handleDeleteEpic = async (epicId) => {
+    if (!window.confirm('¿Estás seguro de eliminar esta épica?')) return;
+    
+    try {
+      await EpicsService.deleteEpic(epicId);
+      setEpics(prev => prev.filter(e => e._id !== epicId));
+      closeEpicDetail();
+      toast.success('Épica eliminada correctamente');
+    } catch (error) {
+      console.error('Error al eliminar épica:', error);
+      toast.error('Error al eliminar la épica');
+    }
+  };
+
+  const handleDrop = async (e, targetColumnId) => {
     const taskId = e.dataTransfer.getData("taskId");
     const sourceColumnId = e.dataTransfer.getData("sourceColumnId");
     
@@ -136,94 +131,35 @@ const ProjectKanban = () => {
       targetColumnId === 'completed' ? 'Completado' :
       targetColumnId === 'inProgress' ? 'En Progreso' : 'Pendiente';
 
-    setColumns(prevColumns => {
-      const taskToMove = prevColumns[sourceColumnId].epics.find(epic => epic.id === taskId);
-      if (!taskToMove) return prevColumns;
-
-      return {
-        ...prevColumns,
-        [sourceColumnId]: {
-          ...prevColumns[sourceColumnId],
-          epics: prevColumns[sourceColumnId].epics.filter(epic => epic.id !== taskId)
-        },
-        [targetColumnId]: {
-          ...prevColumns[targetColumnId],
-          epics: [...prevColumns[targetColumnId].epics, {
-            ...taskToMove,
-            status: newStatus
-          }]
-        }
-      };
-    });
+    try {
+      await EpicsService.updateEpic(taskId, { status: newStatus });
+      setEpics(prev => prev.map(epic => 
+        epic._id === taskId ? { ...epic, status: newStatus } : epic
+      ));
+    } catch (error) {
+      console.error('Error al mover épica:', error);
+      toast.error('Error al mover la épica');
+    }
   };
 
   const handleAddEpic = async (newEpic) => {
     try {
-      // Buscar el objeto de prioridad completo usando el priorityId
-      const priorityObj = priorities.find(p => p._id === newEpic.priorityId) || { 
-        _id: newEpic.priorityId, 
-        name: 'Sin prioridad', // valor por defecto si no se encuentra el objeto
-        color: 'gray' // valor por defecto si no se encuentra el objeto
-      };
-
-      // Crear un ID temporal para la nueva épica hasta que se confirme desde el backend
-      const tempId = `temp-${Date.now()}`;
-      
-      // Prepare epic data for saving
       const epicToSave = {
         ...newEpic,
         projectId: project._id,
+        status: 'Pendiente'
       };
-      
-      // Las nuevas épicas siempre van a la columna "pending"
-      const targetColumn = 'pending';
-      
-      // Actualización instantánea antes de actualizar y obtener la data del backend
-      setColumns(prevColumns => ({
-        ...prevColumns,
-        [targetColumn]: {
-          ...prevColumns[targetColumn],
-          epics: [...prevColumns[targetColumn].epics, { 
-            ...epicToSave,
-            id: tempId,         
-            _id: tempId,        
-            name: epicToSave.name,
-            priorityName: priorityObj.name,
-            priorityColor: priorityObj.color,
-          }]
-        }
-      }));
-      
-      // Save epic to backend
+
       const savedEpic = await EpicsService.createEpic(epicToSave);
       
-      if (savedEpic && savedEpic._id) {
-        // Update column with the correct backend ID
-        setColumns(prevColumns => {
-          const updatedPendingEpics = prevColumns[targetColumn].epics.map(epic => 
-            epic.id === tempId ? { 
-              ...epic,
-              id: savedEpic._id,
-              _id: savedEpic._id
-            } : epic
-          );
-          
-          return {
-            ...prevColumns,
-            [targetColumn]: {
-              ...prevColumns[targetColumn],
-              epics: updatedPendingEpics
-            }
-          };
-        });
-      }
-      
+      setEpics(prev => [...prev, savedEpic]);
       setShowAddEpicModal(false);
+      toast.success('Épica creada correctamente');
     } catch (error) {
       console.error('Error al crear épica:', error);
-      // Consider showing an error notification to the user here
+      toast.error('Error al crear la épica');
     }
-  }
+  };
 
   const handleDragStart = (e, taskId, sourceColumnId) => {
     e.dataTransfer.setData("taskId", taskId);
@@ -322,7 +258,8 @@ const ProjectKanban = () => {
           <EpicDetail 
             epic={selectedEpic}
             onClose={closeEpicDetail}
-            onSave={updateEpic}
+            onSave={handleUpdateEpic}  
+            onDelete={handleDeleteEpic} 
             theme={theme}
             priorities={priorities}
           />
