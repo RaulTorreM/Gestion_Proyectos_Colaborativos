@@ -22,10 +22,10 @@ const userStoriesSchema = new Schema({
 		trim: true,
 		required: true,
 	},
-	moscowPriority: {
-		type: Number,
-		required: false,
-		default: null
+	priorityId: { 
+		type: Schema.Types.ObjectId, 
+		ref: 'Priority',
+		required: false
 	},
 	startDate: {
         type: Date,
@@ -48,7 +48,7 @@ const userStoriesSchema = new Schema({
 		required: false,
 		default: 'Pendiente'
 	},
-	assignedTo: [{ type: Schema.Types.ObjectId, ref: 'Users' }],
+	assignedTo: [{ type: Schema.Types.ObjectId, ref: 'Users', required: false }],
 	authorUserId: { type: Schema.Types.ObjectId, ref: 'Users' },
 	deletedAt: {
 		type: Date,

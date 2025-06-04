@@ -59,23 +59,39 @@ const EpicDetail = ({ epic, priorities = [], onClose, onSave, onDelete, theme })
   };
 
   // Modificar la función updateUserStories
-const updateUserStories = async (updatedStories) => {
+  const updateUserStories = async (updatedStories) => {
     try {
-      // Actualizar backend
-      await Promise.all(updatedStories.map(async (story) => {
-        if (story._id?.startsWith('us-')) { // Si es temporal
-          const { _id, ...cleanStory } = story;
-          return UserStoriesService.createUserStory({
-            ...cleanStory,
-            epicId: epic._id
-          });
-        }
-        return UserStoriesService.updateUserStory(story._id, story);
-      }));
+      // Solo actualiza las stories que han cambiado
+      const updatePromises = updatedStories
+        .filter(story => story._id?.startsWith('us-') || story.isModified)
+        .map(async (story) => {
+          if (story._id?.startsWith('us-')) {
+            const { _id, ...cleanStory } = story;
+            const createdStory = await UserStoriesService.createUserStory({
+              ...cleanStory,
+              epicId: epic._id
+            });
+            return createdStory;
+          } else {
+            return await UserStoriesService.updateUserStory(story._id, story);
+          }
+        });
+  
+      const savedStories = await Promise.all(updatePromises);
       
-      // Actualizar estado local
-      const freshStories = await UserStoriesService.getUserStoriesByEpic(epic._id);
-      setEditedEpic(prev => ({ ...prev, userStories: freshStories }));
+      // Actualiza solo las stories modificadas en el estado local
+      setEditedEpic(prev => {
+        const existingStories = prev.userStories.filter(s => !s._id?.startsWith('us-'));
+        const newStories = savedStories.filter(s => !existingStories.some(es => es._id === s._id));
+        
+        return {
+          ...prev,
+          userStories: [...existingStories, ...newStories].map(story => {
+            const updated = savedStories.find(s => s._id === story._id);
+            return updated || story;
+          })
+        };
+      });
       
     } catch (error) {
       console.error('Error updating user stories:', error);
@@ -253,6 +269,7 @@ const updateUserStories = async (updatedStories) => {
           editing={editing}
           onUpdate={updateUserStories}
           theme={theme}
+          epicId={epic._id}
         />
       </div>
 

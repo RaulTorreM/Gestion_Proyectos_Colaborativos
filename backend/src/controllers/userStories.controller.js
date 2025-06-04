@@ -5,6 +5,8 @@ const Epic = require('../models/Epic');
 const UserStory = require('../models/UserStory');
 const BaseController = require('./base.controller');
 const { getUserIdFromToken } = require('../lib/token');
+const mongoose = require('mongoose'); 
+const Priority = require('../models/Priority');
 
 userStoriesController.getUserStories = async (req, res) => {
 	try {
@@ -81,23 +83,50 @@ userStoriesController.createUserStory = async (req, res) => {
 
 userStoriesController.updateUserStory = async (req, res) => {
 	try {
-		// Limpiar y asignar defaults donde sea necesario
-		const updateData = BaseController.cleanAndAssignDefaults(req.body);
-	
-		const userStoryUpdated = await UserStory.findByIdAndUpdate(req.params.id, updateData, { new: true });
-	
-		if (!userStoryUpdated) {
-			return res.status(404).json({ error: 'UserStory not found' });
+	  // 1. Verificar que el ID existe
+	  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+		return res.status(400).json({ error: "ID inválido" });
+	  }
+  
+	  const exists = await UserStory.exists({ _id: req.params.id });
+	  if (!exists) {
+		return res.status(404).json({ error: "UserStory no encontrado" });
+	  }
+  
+	  // 2. Preparar datos
+	  const updateData = { ...req.body };
+	  
+	  // 3. Validar priorityId si existe
+	  if (updateData.priorityId) {
+		if (!(await Priority.exists({ _id: updateData.priorityId }))) {
+		  return res.status(400).json({ error: "Prioridad no válida" });
 		}
-	
-		const userStoryObject = userStoryUpdated.toObject();
-	
-		res.status(200).json({ message: 'UserStory Updated', user: userStoryObject });
+	  }
+  
+	  // 4. Actualizar con exec()
+	  const userStoryUpdated = await UserStory.findByIdAndUpdate(
+		req.params.id,
+		updateData,
+		{ new: true, runValidators: true }
+	  ).populate('priorityId').exec(); // ¡exec() es crucial!
+  
+	  if (!userStoryUpdated) {
+		return res.status(500).json({ error: "La actualización no devolvió datos" });
+	  }
+  
+	  // 5. Verificar directamente en DB
+	  const dbUserStory = await UserStory.findById(req.params.id);
+	  console.log("En base de datos:", dbUserStory);
+  
+	  res.status(200).json({ 
+		message: 'UserStory Updated', 
+		userStory: userStoryUpdated 
+	  });
 	} catch (error) {
-		console.error(error);
-		res.status(500).json({ error: 'Server Error: ' + error.message });
+	  console.error("Error completo:", error);
+	  res.status(500).json({ error: 'Server Error: ' + error.message });
 	}
-}
+  }
 
 userStoriesController.deleteUserStory = async (req, res) => {
 	try {

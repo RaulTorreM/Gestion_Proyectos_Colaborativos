@@ -1,42 +1,62 @@
 import { useState } from 'react';
 import UserStoryForm from './UserStoryForm';
+import UserStoriesService from '../../../api/services/userStoriesService';
+import { toast } from 'react-toastify';
 
-const UserStoryList = ({ userStories = [], editing, onUpdate, theme }) => {
+const UserStoryList = ({ userStories = [], editing, onUpdate, theme, epicId }) => {
   const [showForm, setShowForm] = useState(false);
   const [editingStory, setEditingStory] = useState(null);
+  const [isCreating, setIsCreating] = useState(false); // Nuevo estado para diferenciar creación
+  const [isSaving, setIsSaving] = useState(false);
 
   const handleAddStory = () => {
     setEditingStory(null);
+    setIsCreating(true); // Indicar que estamos creando
     setShowForm(true);
   };
 
   const handleEditStory = (story) => {
     setEditingStory(story);
+    setIsCreating(false); // Indicar que estamos editando
     setShowForm(true);
   };
 
-  const handleSaveStory = async (story) => {
+  const handleSaveStory = async (storyData) => {
     try {
       let savedStory;
-      
-      if (story._id?.startsWith('us-')) {
+      const payload = {
+        name: storyData.name,
+        description: storyData.description,
+        priorityId: storyData.priorityId, // Asegurar que se envía
+        status: storyData.status,
+        assignedTo: storyData.assignedTo || [],
+        // Mantener epicId para nuevas historias
+        ...(isCreating && { epicId }) 
+      };
+
+      if (isCreating) {
         // Crear nueva historia
-        savedStory = await UserStoriesService.createUserStory({
-          ...story,
-          epicId: userStories[0]?.epicId // Asumimos que todas pertenecen a la misma épica
-        });
+        savedStory = await UserStoriesService.createUserStory(payload);
       } else {
         // Actualizar existente
-        savedStory = await UserStoriesService.updateUserStory(story._id, story);
+        savedStory = await UserStoriesService.updateUserStory(
+          storyData._id, 
+          payload
+        );
       }
-  
+
       // Actualizar lista local
-      const updatedStories = story._id?.startsWith('us-')
-        ? [...userStories, savedStory]
-        : userStories.map(us => us._id === savedStory._id ? savedStory : us);
-  
+      const updatedStories = isCreating
+      ? [...userStories, {...savedStory, isModified: true}]
+      : userStories.map(us => 
+          us._id === savedStory._id 
+            ? {...savedStory, isModified: true} 
+            : us
+        );
+
       onUpdate(updatedStories);
       setShowForm(false);
+      setIsCreating(false);
       
     } catch (error) {
       console.error('Error saving story:', error);
@@ -56,8 +76,11 @@ const UserStoryList = ({ userStories = [], editing, onUpdate, theme }) => {
     }
   };
 
-  const getPriorityColor = (priority) => {
-    switch (priority) {
+  // Modificada para usar priorityId.name
+  const getPriorityColor = (priorityName) => {
+    if (!priorityName) return theme === 'dark' ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-800';
+    
+    switch (priorityName) {
       case 'Must': return theme === 'dark' ? 'bg-red-900 text-red-200' : 'bg-red-100 text-red-800';
       case 'Should': return theme === 'dark' ? 'bg-yellow-900 text-yellow-200' : 'bg-yellow-100 text-yellow-800';
       case 'Could': return theme === 'dark' ? 'bg-blue-900 text-blue-200' : 'bg-blue-100 text-blue-800';
@@ -89,7 +112,10 @@ const UserStoryList = ({ userStories = [], editing, onUpdate, theme }) => {
         <UserStoryForm 
           story={editingStory} 
           onSave={handleSaveStory} 
-          onCancel={() => setShowForm(false)}
+          onCancel={() => {
+            setShowForm(false);
+            setIsCreating(false);
+          }}
           theme={theme}
         />
       ) : (
@@ -117,8 +143,9 @@ const UserStoryList = ({ userStories = [], editing, onUpdate, theme }) => {
                           </p>
                         )}
                         <div className="flex flex-wrap gap-2">
-                          <span className={`text-xs px-2 py-1 rounded ${getPriorityColor(story.priority)}`}>
-                            {story.priority || 'Sin prioridad'}
+                          {/* Mostrar nombre de la prioridad */}
+                          <span className={`text-xs px-2 py-1 rounded ${getPriorityColor(story.priorityId?.name)}`}>
+                            {story.priorityId?.name || 'Sin prioridad'}
                           </span>
                           <span className={`text-xs px-2 py-1 rounded ${theme === 'dark' ? 'bg-zinc-700 text-gray-300' : 'bg-gray-100 text-gray-700'}`}>
                             {story.status || 'Pendiente'}

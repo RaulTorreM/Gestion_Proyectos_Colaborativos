@@ -403,7 +403,7 @@ const validateUpdateUserStory = [
     }),
 
   body('deletedAt')
-    .optional()
+    .optional({ nullable: true, checkFalsy: true })
     .isISO8601().withMessage('Invalid date format')
     .toDate(),
 

@@ -37,8 +37,8 @@ module.exports = async function seedEpics() {
                 name: 'Migración de la base de datos',
                 description: 'Migrar la base de datos de MySQL a MongoDB.',
                 startDate: new Date('2025-01-15'),
-                endDate: new Date('2025-03-01'),
-                dueDate: new Date('2025-04-01'),
+                endDate: new Date('2025-05-30'),
+                dueDate: new Date('2025-06-01'),
                 priorityId: priorities[4], // Alta
                 status: 'En Progreso',
                 authorUserId: users[0]._id,  // Usuario 1 como creador de la épica
