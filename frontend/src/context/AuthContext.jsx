@@ -1,5 +1,5 @@
 import { createContext, useContext } from 'react';
-import AuthService from '../api/services/authService'; // Ajusta si tu ruta es diferente
+import AuthService from '../api/services/authService';
 
 const AuthContext = createContext();
 

@@ -23,5 +23,6 @@ app.use('/api/userStories', validateToken, require('./routes/userStories'))
 app.use('/api/comments', validateToken, require('./routes/comments'))
 app.use('/api/versions', validateToken, require('./routes/versions'))
 app.use('/api/notifications', require('./routes/notifications'))
+app.use('/api/chat', validateToken, require('./routes/chat'));
 
 module.exports = app;
