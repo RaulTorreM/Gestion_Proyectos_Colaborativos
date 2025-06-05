@@ -1,9 +1,11 @@
 const versionsController = {};
 
+const User = require('../models/User');
 const Project = require('../models/Project');
 const Version = require('../models/Version');
 const UserStory = require('../models/UserStory');
 const BaseController = require('./base.controller');
+const { getUserIdFromToken } = require('../lib/token');
 
 versionsController.getVersions = async (req, res) => {
 	try {
@@ -62,26 +64,36 @@ versionsController.getVersionsBulk = async (req, res) => {
 
 versionsController.createVersion = async (req, res) => {
 	try {
-	  // Limpiar campos null o undefined para que usen sus valores por default en el modelo
-	  const createData = BaseController.cleanAndAssignDefaults(req.body);
-	  
-	  // Crear y guardar la nueva versión
-	  const newVersion = new Version(createData);
-	  await newVersion.save();
-  
-	  // Agregar la nueva versión al proyecto relacionado
-	  const project = await Project.findById(createData.projectId);
-	  project.versions.push(newVersion._id);
-	  await project.save();
-  
-	  // Actualizar las UserStories relacionadas
-	  const userStoriesPromises = createData.userStories.map(async (userStoryId) => {
-		await UserStory.findByIdAndUpdate(userStoryId, { versionId: newVersion._id });
-	  });
-  
-	  await Promise.all(userStoriesPromises);
-  
-	  res.status(201).json({ message: 'Version Saved', version: newVersion });
+		// Limpiar campos null o undefined para que usen sus valores por default en el modelo
+		const createData = BaseController.cleanAndAssignDefaults(req.body);
+
+		// Obtener el id del usuario autor
+		const userId = getUserIdFromToken(req);
+
+		const user = await User.findById(userId);
+		if (!user) {
+			return res.status(404).json({ error: 'User not found for this access token' });
+		}
+
+		createData.authorUserId = userId;
+
+		// Crear y guardar la nueva versión
+		const newVersion = new Version(createData);
+		await newVersion.save();
+	
+		// Agregar la nueva versión al proyecto relacionado
+		const project = await Project.findById(createData.projectId);
+		project.versions.push(newVersion._id);
+		await project.save();
+	
+		// Actualizar las UserStories relacionadas
+		const userStoriesPromises = createData.userStories.map(async (userStoryId) => {
+			await UserStory.findByIdAndUpdate(userStoryId, { versionId: newVersion._id });
+		});
+	
+		await Promise.all(userStoriesPromises);
+	
+		res.status(201).json({ message: 'Version Saved', version: newVersion });
 	} catch (error) {
 	  console.error(error);
 	  res.status(500).json({ error: 'Server Error: ' + error.message });

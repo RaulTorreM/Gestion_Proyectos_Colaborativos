@@ -192,7 +192,7 @@ const validateCreateVersion = [
       return true;
     }),
 
-  body('authorUserId')
+  /* body('authorUserId')
     .notEmpty().withMessage('AuthorUserId is required')
     .custom(async (value) => {
       if (!mongoose.Types.ObjectId.isValid(value)) {
@@ -205,7 +205,7 @@ const validateCreateVersion = [
       }
 
       return true;
-    }),
+    }), */
 
   validateResult
 ];  

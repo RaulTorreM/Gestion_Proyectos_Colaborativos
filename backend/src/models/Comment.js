@@ -17,7 +17,13 @@ const commentsSchema = new Schema({
 		required: true,
 		trim: true
 	},
-	mentions: [{ type: Schema.Types.ObjectId, ref: 'Users' }]
+	mentions: [
+		{
+			type: Schema.Types.ObjectId,
+			ref: 'Users',
+			required: false
+		}
+	]
 }, {
 	timestamps: true,
 	toJSON: { virtuals: true },

@@ -1,4 +1,6 @@
 const { Router } = require('express');
+const validateObjectId = require('../middlewares/validateObjectId');
+const Comment = require('../models/Comment');
 const router = Router();
 
 const { getComments, getComment, createComment, 
@@ -9,6 +11,7 @@ router.route('/')
 	.post(createComment);
 
 router.route('/:id')
+	.all(validateObjectId(Comment))
 	.get(getComment)
 	.put(updateComment)
 	.delete(deleteComment);
