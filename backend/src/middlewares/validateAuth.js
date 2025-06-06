@@ -14,6 +14,7 @@ const validateLoginUser = [
 const validateGetLoggedUser = [
   header('Authorization')
     .exists().withMessage('Authorization header is required')
+    .custom(value => value !== null).withMessage('Authorization header cannot be null')
     .notEmpty().withMessage('Authorization header cannot be empty')
     .matches(/^\S.+/).withMessage('Invalid Authorization header format'),
 

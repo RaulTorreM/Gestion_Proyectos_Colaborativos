@@ -23,10 +23,10 @@ exports.loginUser = async (req, res) => {
 
 exports.refreshToken = async (req, res) => {
   const { refreshToken } = req.body;
-  if (!refreshToken) return res.status(401).json({ error: 'Refresh Token requerido' });
+  if (!refreshToken) return res.status(400).json({ error: 'Refresh Token requerido' });
 
   const tokenInDb = await RefreshToken.findOne({ token: refreshToken });
-  if (!tokenInDb) return res.status(403).json({ error: 'Refresh Token inválido' });
+  if (!tokenInDb) return res.status(404).json({ error: 'Refresh Token inválido' });
 
   try {
     const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
@@ -40,8 +40,11 @@ exports.refreshToken = async (req, res) => {
 }
 
 exports.getLoggedUser = async (req, res) => {
-  const accessToken = req.get('Authorization');
-  if (!accessToken) return res.status(400).json({ error: 'Access token requerido' });
+  const accessToken = req.headers.authorization;
+
+  if (!accessToken || accessToken === null  || accessToken === 'null') {
+    return res.status(400).json({ error: 'Access token requerido' });
+  }
 
   try {
     const decoded = jwt.verify(accessToken, process.env.JWT_SECRET);
@@ -59,7 +62,10 @@ exports.logoutUser = async (req, res) => {
   const { refreshToken } = req.body;
   if (!refreshToken) return res.status(400).json({ error: 'Refresh token requerido' });
 
-  await RefreshToken.deleteOne({ token: refreshToken });
+  const refreshTokenBD = await RefreshToken.findOne({ token: refreshToken });
+  if (!refreshTokenBD) return res.status(404).json({ error: 'Refresh Token no encontrado' });
+
+  await RefreshToken.deleteOne({ _id: refreshTokenBD._id });
 
   res.status(200).json({ error: 'Sesión cerrada correctamente' });
 }
