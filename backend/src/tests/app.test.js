@@ -1,5 +1,4 @@
 // Primero los mocks antes de cualquier importación (se llaman automáticamente en los tests)
-jest.mock('../models/User');
 jest.mock('../models/RefreshToken');
 jest.mock('bcrypt');
 jest.mock('jsonwebtoken');

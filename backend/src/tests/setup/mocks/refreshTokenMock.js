@@ -1,0 +1,1 @@
+jest.mock('../../../models/RefreshToken');

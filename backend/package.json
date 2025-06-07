@@ -7,9 +7,6 @@
     "test": "jest",
     "dev": "nodemon src/index.js"
   },
-  "jest": {
-    "testEnvironment": "node"
-  },
   "keywords": [],
   "author": "",
   "license": "ISC",
