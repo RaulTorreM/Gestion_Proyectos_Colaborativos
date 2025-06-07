@@ -14,7 +14,7 @@ usersController.getUsers = async (req, res) => {
 
 		res.json(users);
 	} catch (error) {
-		console.error(error);
+		console.error(error.message);
 		res.status(500).json({ error: 'Server Error: ' + error.message });
 	}
 }
@@ -29,7 +29,7 @@ usersController.getUser = async (req, res) => {
 
 		res.json(user);
 	} catch (error) {
-	  console.error(error);
+	  console.error(error.message);
 	  res.status(500).json({ error: 'Server Error: ' + error.message });
 	}
 }
@@ -54,7 +54,7 @@ usersController.getUsersBulk = async (req, res) => {
   
 	  res.json(users);
 	} catch (error) {
-	  console.error(error);
+	  console.error(error.message);
 	  res.status(500).json({ error: 'Error del servidor: ' + error.message });
 	}
   };
@@ -74,7 +74,7 @@ usersController.createUser = async (req, res) => {
 
 		res.status(201).json({ message: 'User Saved', data: newUser });
 	} catch (error) {
-		console.error(error);
+		console.error(error.message);
 		res.status(500).json({ error: 'Server Error: ' + error.message });
 	}
 };
@@ -109,7 +109,7 @@ usersController.updateUser = async (req, res) => {
   
 	  res.status(200).json({ message: 'User Updated', data: userObject });
 	} catch (error) {
-	  console.error(error);
+	  console.error(error.message);
 	  res.status(500).json({ error: 'Server Error: ' + error.message });
 	}
 };
@@ -128,7 +128,7 @@ usersController.deleteUser = async (req, res) => {
 	
 		res.json({ message: 'User Disabled', user });
 	} catch (error) {
-		console.error(error);
+		console.error(error.message);
 		res.status(500).json({ error: 'Server Error: ' + error.message });
 	}
 };

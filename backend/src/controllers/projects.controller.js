@@ -15,7 +15,7 @@ projectsController.getProjects = async (req, res) => {
 
     res.json(projects);
   } catch (error) {
-    console.error(error);
+    console.error(error.message);
     res.status(500).json({ error: 'Server Error: ' + error.message });
   }
 };
@@ -30,7 +30,7 @@ projectsController.getProject = async (req, res) => {
 
     res.json(project);
   } catch (error) {
-    console.error(error);
+    console.error(error.message);
     res.status(500).json({ error: 'Server Error: ' + error.message });
   }
 };
@@ -55,7 +55,7 @@ projectsController.createProject = async (req, res) => {
 
     res.status(201).json({ message: 'Project Saved', data: newProject });
   } catch (error) {
-    console.error(error);
+    console.error(error.message);
     res.status(500).json({ error: 'Server Error: ' + error.message });
   }
 };
@@ -74,7 +74,7 @@ projectsController.updateProject = async (req, res) => {
 
     res.status(200).json({ message: 'Project Updated', user: projectObject });
   } catch (error) {
-    console.error(error);
+    console.error(error.message);
     res.status(500).json({ error: 'Server Error: ' + error.message });
   }
 };
@@ -93,7 +93,7 @@ projectsController.disableProject = async (req, res) => {
 
     res.json({ message: 'Project Disabled', data: projectDisabled });
   } catch (error) {
-    console.error(error);
+    console.error(error.message);
     res.status(500).json({ error: 'Server Error: ' + error.message });
   }
 };
@@ -108,7 +108,7 @@ projectsController.deleteProject = async (req, res) => {
 
     res.json({ message: 'Project Deleted', data: projectDeleted });
   } catch (error) {
-    console.error(error);
+    console.error(error.message);
     res.status(500).json({ error: 'Server Error: ' + error.message });
   }
 };

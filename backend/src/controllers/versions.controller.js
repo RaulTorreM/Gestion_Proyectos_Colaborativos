@@ -17,7 +17,7 @@ versionsController.getVersions = async (req, res) => {
 
 		res.json(versions);
 	} catch (error) {
-		console.error(error);
+		console.error(error.message);
 		res.status(500).json({ error: 'Server Error: ' + error.message });
 	}
 }
@@ -32,7 +32,7 @@ versionsController.getVersion = async (req, res) => {
 
 		res.json(version);
 	} catch (error) {
-		console.error(error);
+		console.error(error.message);
 		res.status(500).json({ error: 'Server Error: ' + error.message });
 	}
 }
@@ -57,7 +57,7 @@ versionsController.getVersionsBulk = async (req, res) => {
   
 	  res.json(versions);
 	} catch (error) {
-	  console.error(error);
+	  console.error(error.message);
 	  res.status(500).json({ message: 'Error del servidor', error: error.message });
 	}
   };
@@ -95,7 +95,7 @@ versionsController.createVersion = async (req, res) => {
 	
 		res.status(201).json({ message: 'Version Saved', version: newVersion });
 	} catch (error) {
-	  console.error(error);
+	  console.error(error.message);
 	  res.status(500).json({ error: 'Server Error: ' + error.message });
 	}
 };
@@ -134,7 +134,7 @@ versionsController.updateVersion = async (req, res) => {
   
 	  res.status(200).json({ message: 'Version Updated', data: versionUpdated });
 	} catch (error) {
-	  console.error(error);
+	  console.error(error.message);
 	  res.status(500).json({ error: 'Server Error: ' + error.message });
 	}
 };
@@ -153,7 +153,7 @@ versionsController.deleteVersion = async (req, res) => {
 	
 		res.json({ message: 'Version Disabled', version });
 	} catch (error) {
-		console.error(error);
+		console.error(error.message);
 		res.status(500).json({ error: 'Server Error: ' + error.message });
 	}
 }

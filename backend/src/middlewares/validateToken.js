@@ -1,20 +1,19 @@
 const jwt = require('jsonwebtoken');
 
 exports.validateToken = (req, res, next) => {
-  const authHeader = req.get('Authorization');
+  const accessToken = req.headers.authorization;
 
-  if (!authHeader) {
-    return res.status(401).json({ error: 'Access Token no proporcionado' });
+  // Validar si el token existe o es válido
+  if (!accessToken || accessToken === null || accessToken === 'null' || accessToken === '') {
+    return res.status(400).json({ error: 'Access token requerido' });
   }
 
-  // Extraer token si viene con "Bearer "
-  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : authHeader;
-
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    // Validar y decodificar el JWT
+    const decoded = jwt.verify(accessToken, process.env.JWT_SECRET);
     req.userId = decoded.id;
     next();
   } catch (error) {
-    res.status(401).json({ error: `Access Token inválido o expirado: ${error.message}` });
+    return res.status(401).json({ error: `Access Token inválido o expirado: ${error.message}` });
   }
 };

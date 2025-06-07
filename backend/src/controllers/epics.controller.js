@@ -18,7 +18,7 @@ epicsController.getEpics = async (req, res) => {
 
 		res.json(epics);
 	} catch (error) {
-		console.error(error);
+		console.error(error.message);
 		res.status(500).json({ error: 'Server Error: ' + error.message });
 	}
 }
@@ -33,7 +33,7 @@ epicsController.getEpic = async (req, res) => {
 
 		res.json(epic);
 	} catch (error) {
-		console.error(error);
+		console.error(error.message);
 		res.status(500).json({ error: 'Server Error: ' + error.message });
 	}
 }
@@ -48,7 +48,7 @@ epicsController.getEpicsByProjects = async (req, res) => {
 	  
 	  res.json(epics); // Siempre devolver array (aunque esté vacío)
 	} catch (error) {
-	  console.error(error);
+	  console.error(error.message);
 	  res.status(500).json({ error: 'Server Error: ' + error.message });
 	}
 }
@@ -72,7 +72,7 @@ epicsController.getEpicsBulk = async (req, res) => {
   
 	  res.json(epics);
 	} catch (error) {
-	  console.error(error);
+	  console.error(error.message);
 	  res.status(500).json({ error: 'Server Error: ' + error.message });
 	}
 };
@@ -113,7 +113,7 @@ epicsController.createEpic = async (req, res) => {
 
 		res.status(201).json({message: 'Epic Saved', data: newEpic});
 	} catch (error) {
-		console.error(error);
+		console.error(error.message);
 		res.status(500).json({ error: 'Server Error: ' + error.message });
 	}
 }
@@ -153,7 +153,7 @@ epicsController.updateEpic = async (req, res) => {
   
 	  res.json(epicUpdated);
 	} catch (error) {
-	  console.error(error);
+	  console.error(error.message);
 	  res.status(400).json({ 
 		error: 'Error al actualizar',
 		details: error.message 
@@ -175,7 +175,7 @@ epicsController.deleteEpic = async (req, res) => {
 	
 		res.json({ message: 'Epic Disabled', data: epic });
 	} catch (error) {
-		console.error(error);
+		console.error(error.message);
 		res.status(500).json({ error: 'Server Error: ' + error.message });
 	}
 }
@@ -192,7 +192,7 @@ epicsController.getEpicUserStories = async (req, res) => {
   
 	  res.json(epic.userStories);
 	} catch (error) {
-	  console.error(error);
+	  console.error(error.message);
 	  res.status(500).json({ error: 'Server Error: ' + error.message });
 	}
   }
@@ -218,7 +218,7 @@ epicsController.getEpicUserStories = async (req, res) => {
   
 	  res.json(stats);
 	} catch (error) {
-	  console.error(error);
+	  console.error(error.message);
 	  res.status(500).json({ error: 'Server Error: ' + error.message });
 	}
   }

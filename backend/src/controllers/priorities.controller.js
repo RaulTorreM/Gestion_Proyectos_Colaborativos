@@ -13,7 +13,7 @@ prioritiesController.getPriorities = async (req, res) => {
 
 		res.json(priorities);
 	} catch (error) {
-		console.error(error);
+		console.error(error.message);
 		res.status(500).json({ error: 'Server Error: ' + error.message });
 	}
 }
@@ -28,7 +28,7 @@ prioritiesController.getMoscowPriorities = async (req, res) => {
 
 		res.json(priorities);
 	} catch (error) {
-		console.error(error);
+		console.error(error.message);
 		res.status(500).json({ error: 'Server Error: ' + error.message });
 	}
 }
@@ -43,7 +43,7 @@ prioritiesController.getNoMoscowPriorities = async (req, res) => {
 
 		res.json(noMoscowPriorities);
 	} catch (error) {
-		console.error(error);
+		console.error(error.message);
 		res.status(500).json({ error: 'Server Error: ' + error.message });
 	}
 }
@@ -58,7 +58,7 @@ prioritiesController.getPriority = async (req, res) => {
 
 		res.json(priority);
 	} catch (error) {
-		console.error(error);
+		console.error(error.message);
 		res.status(500).json({ error: 'Server Error: ' + error.message });
 	}
 }
@@ -73,7 +73,7 @@ prioritiesController.getPriorityByMoscowPriority = async (req, res) => {
 
 		res.json(moscowPriority);
 	} catch (error) {
-		console.error(error);
+		console.error(error.message);
 		res.status(500).json({ error: 'Server Error: ' + error.message });
 	}
 }
@@ -98,7 +98,7 @@ prioritiesController.getPrioritiesBulk = async (req, res) => {
   
 	  res.json(priorities);
 	} catch (error) {
-	  console.error(error);
+	  console.error(error.message);
 	  res.status(500).json({ error: 'Server Error: ' + error.message });
 	}
 };
@@ -114,7 +114,7 @@ prioritiesController.createPriority = async (req, res) => {
 
 		res.status(201).json({message: 'Priority Saved', data: newPriority});
 	} catch (error) {
-		console.error(error);
+		console.error(error.message);
 		res.status(500).json({ error: 'Server Error: ' + error.message });
 	}
 }
@@ -134,7 +134,7 @@ prioritiesController.updatePriority = async (req, res) => {
 	
 		res.status(200).json({ message: 'Priority Updated', data: priorityObject });
 	} catch (error) {
-		console.error(error);
+		console.error(error.message);
 		res.status(500).json({ error: 'Server Error: ' + error.message });
 	}
 }
@@ -153,7 +153,7 @@ prioritiesController.deletePriority = async (req, res) => {
 	
 		res.json({ message: 'Priority Disabled', priority });
 	} catch (error) {
-		console.error(error);
+		console.error(error.message);
 		res.status(500).json({ error: 'Server Error: ' + error.message });
 	}
 }

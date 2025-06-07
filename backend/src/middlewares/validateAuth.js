@@ -11,7 +11,7 @@ const validateLoginUser = [
   validateResult
 ];
 
-const validateGetLoggedUser = [
+/* const validateGetLoggedUser = [
   header('Authorization')
     .exists().withMessage('Authorization header is required')
     .custom(value => value !== null).withMessage('Authorization header cannot be null')
@@ -19,7 +19,7 @@ const validateGetLoggedUser = [
     .matches(/^\S.+/).withMessage('Invalid Authorization header format'),
 
   validateResult
-];
+]; */
 
 module.exports = {
   validateLoginUser,
