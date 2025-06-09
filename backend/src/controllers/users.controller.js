@@ -12,7 +12,7 @@ usersController.getUsers = async (req, res) => {
 			return res.status(404).json({ error: 'Users not found' });
 		}
 
-		res.json(users);
+		res.status(200).json(users);
 	} catch (error) {
 		console.error(error.message);
 		res.status(500).json({ error: 'Server Error: ' + error.message });
@@ -27,7 +27,7 @@ usersController.getUser = async (req, res) => {
 			return res.status(404).json({ error: 'User not found' });
 		}
 
-		res.json(user);
+		res.status(200).json(user);
 	} catch (error) {
 	  console.error(error.message);
 	  res.status(500).json({ error: 'Server Error: ' + error.message });
@@ -46,18 +46,18 @@ usersController.getUsersBulk = async (req, res) => {
 	  const users = await User.find({ 
 		_id: { $in: ids },
 		deletedAt: null 
-	  }).select('name email'); // Selecciona solo los campos necesarios
+	  }).select('name email').lean().exec(); // Selecciona solo los campos necesarios
   
 	  if (!users || users.length === 0) {
 		return res.status(404).json({ error: 'Usuarios no encontrados' });
 	  }
   
-	  res.json(users);
+	  res.status(200).json(users);
 	} catch (error) {
 	  console.error(error.message);
 	  res.status(500).json({ error: 'Error del servidor: ' + error.message });
 	}
-  };
+};
 
 usersController.createUser = async (req, res) => {
 	try {
@@ -126,7 +126,7 @@ usersController.deleteUser = async (req, res) => {
 			return res.status(404).json({ error: 'User not found' });
 		}
 	
-		res.json({ message: 'User Disabled', user });
+		res.status(200).json({ message: 'User Disabled', user });
 	} catch (error) {
 		console.error(error.message);
 		res.status(500).json({ error: 'Server Error: ' + error.message });

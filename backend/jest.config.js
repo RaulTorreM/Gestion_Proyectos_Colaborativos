@@ -5,6 +5,10 @@ module.exports = {
 	// Cargar helpers después de que Jest configure el entorno
 	setupFilesAfterEnv: ['./src/tests/setup/mocks/index.js', './src/tests/setup/testHelpers.js'],
   
+	moduleNameMapper: {
+		'^@middlewares/(.*)$': '<rootDir>/src/middlewares/$1',
+	},
+	  
 	// Extensiones válidas de test
 	testMatch: [
 	  '**/tests/**/*.test.js'

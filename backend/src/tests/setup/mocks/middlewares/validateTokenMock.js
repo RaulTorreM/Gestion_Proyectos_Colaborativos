@@ -1,4 +1,4 @@
-jest.mock('../../../../middlewares/validateToken', () => ({
+jest.mock('@middlewares/validateToken', () => ({
     validateToken: jest.fn((req, res, next) => {
         const accessToken = req.headers.authorization;
         

@@ -1,4 +1,4 @@
-jest.mock('../../../../middlewares/validateProject', () => ({
+jest.mock('@middlewares/validateProject', () => ({
     validateCreateProject: [jest.fn((req, res, next) => {
         if (req.testForceValidationError) {
             const error = new Error('Mocked validation error');

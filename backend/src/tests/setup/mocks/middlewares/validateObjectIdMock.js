@@ -1,4 +1,4 @@
-jest.mock('../../../../middlewares/validateObjectId', () => {
+jest.mock('@middlewares/validateObjectId', () => {
     return jest.fn((model) => {
         return jest.fn((req, res, next) => {
             const { id } = req.params;
