@@ -5,7 +5,7 @@ const { generateAccessToken } = require('../../../lib/token');
 
 describe('POST /api/refresh-token', () => {
 	beforeEach(() => {
-	jest.clearAllMocks();
+		jest.clearAllMocks();
 	});
 
 	// 1. Test cuando no se envía refresh token
