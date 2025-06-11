@@ -15,7 +15,6 @@ projectsController.getProjects = async (req, res) => {
 
     res.json(projects);
   } catch (error) {
-    console.error(error.message);
     res.status(500).json({ error: 'Server Error: ' + error.message });
   }
 };
@@ -30,7 +29,6 @@ projectsController.getProject = async (req, res) => {
 
     res.json(project);
   } catch (error) {
-    console.error(error.message);
     res.status(500).json({ error: 'Server Error: ' + error.message });
   }
 };
@@ -74,7 +72,6 @@ projectsController.updateProject = async (req, res) => {
 
     res.status(200).json({ message: 'Project Updated', user: projectObject });
   } catch (error) {
-    console.error(error.message);
     res.status(500).json({ error: 'Server Error: ' + error.message });
   }
 };
@@ -149,7 +146,6 @@ projectsController.archiveProject = async (req, res) => {
       project: updatedProject,
     });
   } catch (error) {
-    console.error('Error en archiveProject:', error);
     res.status(500).json({
       error: 'Error al archivar el proyecto',
       details: error.message,

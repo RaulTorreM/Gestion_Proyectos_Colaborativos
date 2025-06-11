@@ -55,7 +55,6 @@ MockUserConstructor.findByIdAndDelete = jest.fn();
 // Mock the User model
 jest.mock('../../../models/User', () => MockUserConstructor);
 
-// Helper functions for easier test setup
 const mockHelpers = {
 	// Reset all mocks
 	resetMocks: () => {

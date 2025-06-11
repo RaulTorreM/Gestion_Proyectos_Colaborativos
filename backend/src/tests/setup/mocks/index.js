@@ -11,7 +11,7 @@ const { refreshTokenMock } = require('./refreshTokenMock');
 const { tokenLibMock } = require('./tokenLibMock');
 const { mockUser, mockHelpers, MockUserConstructor } = require('./userMock');
 const { baseControllerMock } = require('./baseControllerMock');
-const { projectMock } = require('./projectMock');
+const { mockProject, MockProjectConstructor, mockProjectHelpers } = require('./projectMock');
 const { validateObjectIdMock } = require('./middlewares/validateObjectIdMock');
 const { validateObjectIdArrayMock } = require('./middlewares/validateObjectIdArrayMock');
 const { validateProjectMock } = require('./middlewares/validateProjectMock');
@@ -26,7 +26,9 @@ module.exports = {
 	mockHelpers,
 	MockUserConstructor,
 	baseControllerMock,
-	projectMock,
+	mockProject,
+	MockProjectConstructor,
+	mockProjectHelpers,
 	validateObjectIdMock,
 	validateObjectIdArrayMock,
 	validateProjectMock,

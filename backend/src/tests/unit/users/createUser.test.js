@@ -3,11 +3,6 @@ const mongoose = require('mongoose');
 const { mockHelpers } = require('../../setup/mocks'); 
 
 describe('POST /api/users', () => { 
-	// Limpiar mocks antes de cada test
-	beforeEach(() => {
-		mockHelpers.resetMocks();
-	});
-
 	// 11. POST crear usuario - forzar error de validación 
 	test('should handle validation middleware error', async () => { 
 		const response = await global.request 
