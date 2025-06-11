@@ -79,7 +79,7 @@ describe('GET /api/projects/:id', () => {
 		expect(response.body.error).toBe('Invalid ID.');
 	});
 
-	// 2. Proyecto no encontrado
+	// 2. Proyecto no encontrad
 	test('should return 404 when project is not found', async () => {
 		mockProjectHelpers.setupFindOneMock(null);
 
