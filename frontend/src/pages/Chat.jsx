@@ -7,7 +7,7 @@ import ChatService from '../api/services/chatService';
 import { useAuth } from '../context/AuthContext';
 import { io } from 'socket.io-client';
 
-const SOCKET_URL = 'http://localhost:4000'; // Cambia esto a tu URL del backend/socket
+const SOCKET_URL = 'http://localhost:4000';
 
 const Chat = () => {
   const { theme } = useTheme();
@@ -25,20 +25,19 @@ const Chat = () => {
   const [currentUser, setCurrentUser] = useState(null);
   const socketRef = useRef(null);
 
-  // Detectar redimensionamiento para responsive
+  // Detectar tamaño de pantalla
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Cargar usuarios (igual que antes)
+  // Obtener lista de usuarios
   useEffect(() => {
     const fetchUsers = async () => {
       try {
         const response = await ChatService.getUsers();
         const users = Array.isArray(response) ? response : [];
-        if (!Array.isArray(users)) throw new Error('Respuesta inválida');
 
         const currentUserId = auth?.user?.id;
         const enrichedUsers = users.map(user => ({
@@ -62,7 +61,7 @@ const Chat = () => {
     fetchUsers();
   }, [auth?.user?.id]);
 
-  // Cargar mensajes para usuario seleccionado
+  // Obtener mensajes al seleccionar usuario
   useEffect(() => {
     if (!selectedUserId) return;
 
@@ -81,66 +80,91 @@ const Chat = () => {
     fetchMessages();
   }, [selectedUserId]);
 
-  // Conectar y manejar socket.io
+  // Configurar conexión del socket
   useEffect(() => {
-    if (!auth?.user?.token) return;
+    if (!auth?.user?.token || !auth?.user?.id) return;
 
-    // Inicializar socket
     socketRef.current = io(SOCKET_URL, {
       auth: { token: auth.user.token },
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+      transports: ['websocket'],
     });
 
-    // Al conectarse, enviar join con user id
     socketRef.current.on('connect', () => {
-      console.log('Socket conectado, id:', socketRef.current.id);
+      console.log('Socket conectado:', socketRef.current.id);
       socketRef.current.emit('join', auth.user.id);
     });
 
-    // Escuchar mensajes entrantes
-    socketRef.current.on('receiveMessage', ({ from, content, timestamp }) => {
-      setMessagesData(prev => ({
-        ...prev,
-        [from]: [...(prev[from] || []), { from, content, timestamp }],
-      }));
+    socketRef.current.on('joinConfirmed', (data) => {
+      console.log('Unido correctamente a la sala:', data);
     });
 
-    // Manejo de desconexión y errores
-    socketRef.current.on('disconnect', (reason) => {
-      console.log('Socket desconectado:', reason);
+    socketRef.current.on('receiveMessage', (message) => {
+      console.log('Mensaje recibido vía socket:', message);
+
+      const formattedMessage = {
+        id: message.id,
+        from: message.from,
+        content: message.content,
+        timestamp: message.timestamp || new Date().toLocaleTimeString([], {
+          hour: '2-digit',
+          minute: '2-digit',
+        }),
+        isFromCurrentUser: false
+      };
+
+      setMessagesData(prev => {
+        const currentMessages = prev[message.from] || [];
+        if (currentMessages.some(msg => msg.id === message.id)) return prev;
+
+        return {
+          ...prev,
+          [message.from]: [...currentMessages, formattedMessage],
+        };
+      });
     });
 
     socketRef.current.on('connect_error', (err) => {
       console.error('Error de conexión socket:', err.message);
+      setTimeout(() => {
+        socketRef.current.connect();
+      }, 1000);
     });
 
     return () => {
       if (socketRef.current) {
+        console.log('Desconectando socket...');
         socketRef.current.disconnect();
-        socketRef.current = null;
       }
     };
   }, [auth?.user?.token, auth?.user?.id]);
 
-  // Enviar mensaje y emitir por socket
   const handleSendMessage = async (userId, content) => {
+    if (!content.trim()) return;
+
     try {
-      // Guardar en backend
       const newMessage = await ChatService.sendMessage(userId, content);
+      setMessagesData(prev => {
+        const currentMessages = prev[userId] || [];
 
-      // Actualizar localmente
-      setMessagesData(prev => ({
-        ...prev,
-        [userId]: [...(prev[userId] || []), newMessage],
-      }));
+        const exists = currentMessages.some(msg => msg.id === newMessage.id);
+        if (exists) return prev;
 
-      // Emitir por socket solo si está conectado
-      if (socketRef.current && socketRef.current.connected) {
-        socketRef.current.emit('sendMessage', {
-          from: auth.user.id,
-          to: userId,
-          content,
-        });
-      }
+        const formattedMessage = {
+          id: newMessage.id,
+          from: 'Yo',
+          content: newMessage.content,
+          timestamp: newMessage.timestamp,
+          isFromCurrentUser: true
+        };
+
+        return {
+          ...prev,
+          [userId]: [...currentMessages, formattedMessage],
+        };
+      });
     } catch (err) {
       console.error('Error al enviar mensaje:', err);
     }
@@ -155,7 +179,6 @@ const Chat = () => {
 
   return (
     <div className={`flex h-screen ${bgClass}`}>
-      {/* Panel de mensajes */}
       <div className="flex flex-col flex-grow p-4 relative">
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-2xl font-bold">Chat de Proyectos 2</h1>
@@ -171,10 +194,7 @@ const Chat = () => {
               </button>
 
               {showPopover && (
-                <div
-                  id="user-popover"
-                  className="absolute right-0 mt-2 z-50 w-64 bg-white dark:bg-gray-800 border dark:border-gray-700 shadow-lg rounded-lg p-4"
-                >
+                <div className="absolute right-0 mt-2 z-50 w-64 bg-white dark:bg-gray-800 border dark:border-gray-700 shadow-lg rounded-lg p-4">
                   <UserPopover
                     users={usersData}
                     onUserSelect={handleUserSelect}
