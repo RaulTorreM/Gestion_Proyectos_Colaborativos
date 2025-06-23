@@ -19,6 +19,7 @@ const MessageWindow = ({ user, messages, onSend }) => {
         ></span>
       </header>
 
+
       <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50 dark:bg-black rounded-md hide-scroll">
         <div>
           {messages.length === 0 && <p className="text-center text-gray-500 dark:text-white">No hay mensajes aún</p>}
