@@ -24,18 +24,21 @@ epicsController.getEpics = async (req, res) => {
 }
 
 epicsController.getEpic = async (req, res) => {
-	try {
-		const epic = await Epic.findOne({ _id: req.params.id, deletedAt: null });
+    try {
+        const epic = await Epic.findOne({ 
+            _id: req.params.id, 
+            deletedAt: null 
+        }).populate('projectId');
 
-		if (!epic) {
-			return res.status(404).json({ error: 'Epic not found' });
-		}
+        if (!epic) {
+            return res.status(404).json({ error: 'Epic not found' });
+        }
 
-		res.json(epic);
-	} catch (error) {
-		console.error(error.message);
-		res.status(500).json({ error: 'Server Error: ' + error.message });
-	}
+        res.json(epic);
+    } catch (error) {
+        console.error(error.message);
+        res.status(500).json({ error: 'Server Error: ' + error.message });
+    }
 }
 
 //Obtener las epicas por proyecto (Corregir para que el output sea solo las ids)

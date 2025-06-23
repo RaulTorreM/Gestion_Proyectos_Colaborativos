@@ -3,7 +3,7 @@ const { Schema, model } = require('mongoose');
 const epicsSchema = new Schema({
 	projectId: {
 		type: Schema.Types.ObjectId,
-		ref: 'Projects',
+		ref: 'Project',
 		required: true
 	},
 	name: {

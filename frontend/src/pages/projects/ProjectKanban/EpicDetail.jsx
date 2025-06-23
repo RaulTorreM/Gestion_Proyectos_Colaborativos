@@ -266,6 +266,7 @@ const EpicDetail = ({ epic, priorities = [], onClose, onSave, onDelete, theme })
       <div className="mt-6">
         <UserStoryList
           userStories={(editing ? editedEpic.userStories : epic.userStories) || []}
+          epicToEdit={editedEpic}
           editing={editing}
           onUpdate={updateUserStories}
           theme={theme}
