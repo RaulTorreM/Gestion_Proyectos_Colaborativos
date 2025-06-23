@@ -52,9 +52,28 @@ Sigue estrictamente estas reglas:
    - HU no accionables (ej: "Investigar tecnologías").
 `;
 
+const initialTranslationPrompt = `
+Sistema de Traducción Automática Bilingüe (ES↔EN)
+
+Instrucciones:
+1. Identifica automáticamente el idioma de origen (ES o EN)
+2. Traduce al idioma opuesto manteniendo:
+   - Términos técnicos sin traducir (ej: "backend", "API")
+   - Estructura gramatical correcta
+   - Contexto profesional (gestión ágil/tecnológica)
+3. Devuelve SOLO el texto traducido, sin comentarios adicionales
+
+Ejemplos:
+Entrada (ES): "Como desarrollador, quiero implementar JWT"
+Salida (EN): "As a developer, I want to implement JWT"
+
+Entrada (EN): "The product owner needs the dashboard"
+Salida (ES): "El product owner necesita el dashboard"
+`;
+
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-export const fetchChatWithHUPrompt = async (proyecto = "", descripcion_proyecto = "", epica = "", descripcion_epica = "") => {
+export const fetchIAWithHUPrompt = async (proyecto = "", descripcion_proyecto = "", epica = "", descripcion_epica = "") => {
   let attempt = 0;
   const maxAttempts = 3;
   
@@ -175,4 +194,64 @@ export const fetchChatWithHUPrompt = async (proyecto = "", descripcion_proyecto 
   }
   
   throw new Error('No se pudo completar la solicitud después de varios intentos');
+};
+
+export const fetchIAWithTranslationPrompt = async (text) => {
+  if (!text || typeof text !== 'string') return text;
+
+  let attempt = 0;
+  const maxAttempts = 3;
+
+  while (attempt < maxAttempts) {
+    try {
+      const response = await fetch(API_URL, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${API_KEY}`,
+          "Content-Type": "application/json",
+          "HTTP-Referer": window.location.origin,
+          "X-Title": "Translation Service"
+        },
+        body: JSON.stringify({
+          model: "deepseek/deepseek-chat",
+          messages: [
+            {
+              role: "system",
+              content: initialTranslationPrompt
+            },
+            {
+              role: "user",
+              content: text.substring(0, 5000) // Limitar tamaño
+            }
+          ],
+          temperature: 0.1,
+          max_tokens: 1500
+        })
+      });
+
+      // Manejo de errores
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error?.message || `HTTP ${response.status}`);
+      }
+
+      const data = await response.json();
+      const translatedText = data.choices?.[0]?.message?.content?.trim();
+
+      if (!translatedText) {
+        throw new Error("Empty translation response");
+      }
+
+      return translatedText;
+
+    } catch (error) {
+      console.error(`Translation attempt ${attempt + 1} failed:`, error);
+      attempt++;
+      if (attempt >= maxAttempts) {
+        console.warn("Returning original text after failed translations");
+        return text; // Devuelve el texto original si falla
+      }
+      await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+    }
+  }
 };

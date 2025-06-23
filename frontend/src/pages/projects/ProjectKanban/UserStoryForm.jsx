@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import PrioritiesService from '../../../api/services/prioritiesService';
 import EpicsService from '../../../api/services/epicsService';
 import UserStoriesService from '../../../api/services/userStoriesService';
-import { fetchChatWithHUPrompt } from '../../../utils/api_deepseek';
+import { fetchIAWithHUPrompt } from '../../../utils/api_deepseek';
 import { LoaderCircle } from 'lucide-react';
 
 const UserStoryForm = ({ epicId, epicToEdit, onCancel, theme, onSaveSuccess }) => {
@@ -68,7 +68,7 @@ const UserStoryForm = ({ epicId, epicToEdit, onCancel, theme, onSaveSuccess }) =
     setIsGeneratingIA(true);
     try {
       const { proyecto, descripcion_proyecto, epica, descripcion_epica } = proyectoContexto;
-      const data = await fetchChatWithHUPrompt(proyecto, descripcion_proyecto, epica, descripcion_epica);
+      const data = await fetchIAWithHUPrompt(proyecto, descripcion_proyecto, epica, descripcion_epica);
       const generated = data.historias_usuario_IA || [];
 
       const converted = generated.map(hu => {

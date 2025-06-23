@@ -12,7 +12,7 @@ import {
     LuChevronRight,
     LuLogOut
   } from 'react-icons/lu';
-  import { useState } from 'react';
+  import { useEffect, useState } from 'react';
   import { useTheme } from '../../context/ThemeContext';
   import { NavLink } from 'react-router-dom';
   import AuthService from '../../api/services/authService';
@@ -21,7 +21,10 @@ import {
     const { theme, toggleTheme } = useTheme();
     const [collapsed, setCollapsed] = useState(false);
     const [showUserMenu, setShowUserMenu] = useState(false);
+    const [loggedUser, setLoggedUser] = useState(null);
+    const [isLoadingUser, setIsLoadingUser] = useState(true);
     
+        
     const menuItems = [
       { icon: <LuLayoutDashboard size={20} />, text: 'Dashboard', path: '/' },
       { icon: <LuFolder size={20} />, text: 'Proyectos', path: '/projects' },
@@ -44,7 +47,24 @@ import {
       AuthService.logout();
       window.location.href = '/login';
     };
-  
+    
+    useEffect(() => {
+      const fetchInitialData = async () => {
+        try {
+          const userData = await AuthService.getLoggedUser();
+          setLoggedUser(userData);
+        } catch (err) {
+          setLoggedUser(null);
+          console.error('Error fetching user data:', err);
+        } finally {
+          setIsLoadingUser(false);
+        }
+      };
+    
+      fetchInitialData();
+    }, []);
+
+
     return (
       <div className={`h-full flex flex-col border-r transition-all duration-300 ease-in-out
         ${collapsed ? 'w-16' : 'w-52'}
@@ -131,16 +151,29 @@ import {
             </div>
             {!collapsed && (
               <div className="ml-2 overflow-hidden">
-                <p className={`text-sm font-medium truncate ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>
-                  Usuario Ejemplo
-                </p>
-                <p className={`text-xs truncate ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
-                  Administrador
-                </p>
+                {isLoadingUser ? (
+                  <div>
+                    <p className={`text-sm font-medium ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>
+                      Cargando...
+                    </p>
+                    <p className={`text-xs ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+                      Por favor espera
+                    </p>
+                  </div>
+                ) : (
+                  <div>
+                    <p className={`text-sm font-medium truncate ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>
+                      {loggedUser?.name || 'Invitado'}
+                    </p>
+                    <p className={`text-xs truncate ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+                      {loggedUser?.email || ''}
+                    </p>
+                  </div>
+                )}
               </div>
             )}
           </div>
-  
+
           {/* Menú desplegable de usuario */}
           {showUserMenu && (
             <div className={`absolute bottom-14 left-2 right-2 mb-2 py-1 rounded-lg shadow-lg
