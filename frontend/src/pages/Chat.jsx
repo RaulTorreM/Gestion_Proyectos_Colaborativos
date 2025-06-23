@@ -168,6 +168,7 @@ const Chat = () => {
           )}
         </div>
 
+
         {selectedUserId ? (
           <MessageWindow
             user={usersData.find(u => u.id === selectedUserId)}
