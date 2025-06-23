@@ -11,6 +11,16 @@ const UserStoriesService = {
     }
   },
 
+  createUserStoriesBulk: async (storiesData) => {
+    try {
+      const response = await api.post('/userStories/bulk', storiesData);
+      return response.data;
+    } catch (error) {
+      console.error('Error creating user stories (bulk):', error);
+      throw error;
+    }
+  },
+
   updateUserStory: async (storyId, storyData) => {
     try {
       const response = await api.put(`/userStories/${storyId}`, storyData);
