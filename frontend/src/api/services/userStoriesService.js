@@ -13,7 +13,7 @@ const UserStoriesService = {
 
   createUserStoriesBulk: async (storiesData) => {
     try {
-      const response = await api.post('/userStories/bulk', storiesData);
+      const response = await api.post('/userStories/create/bulk', storiesData);
       return response.data;
     } catch (error) {
       console.error('Error creating user stories (bulk):', error);

@@ -147,6 +147,7 @@ const UserStoryList = ({ userStories = [], epicToEdit, editing, onUpdate, theme,
                         <div className="flex flex-wrap gap-2">
                           {/* Mostrar nombre de la prioridad */}
                           <span className={`text-xs px-2 py-1 rounded ${getPriorityColor(story.priorityId?.name)}`}>
+                            {/* {console.log(story)} */}
                             {story.priorityId?.name || 'Sin prioridad'}
                           </span>
                           <span className={`text-xs px-2 py-1 rounded ${theme === 'dark' ? 'bg-zinc-700 text-gray-300' : 'bg-gray-100 text-gray-700'}`}>

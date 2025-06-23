@@ -41,19 +41,25 @@ epicsController.getEpic = async (req, res) => {
     }
 }
 
-//Obtener las epicas por proyecto (Corregir para que el output sea solo las ids)
 epicsController.getEpicsByProjects = async (req, res) => {
-	try {
-	  const epics = await Epic.find({ 
-		projectId: req.params.id, 
-		deletedAt: null 
-	  }).populate('priorityId authorUserId'); // Mejorar con populate
-	  
-	  res.json(epics); // Siempre devolver array (aunque esté vacío)
-	} catch (error) {
-	  console.error(error.message);
-	  res.status(500).json({ error: 'Server Error: ' + error.message });
-	}
+    try {
+        const epics = await Epic.find({ 
+            projectId: req.params.id, 
+            deletedAt: null 
+        })
+		.populate('priorityId authorUserId')
+		.populate({
+            path: 'userStories',
+            populate: {
+                path: 'priorityId',
+                select: 'name'  // Poblamos priorityId en las User Stories
+            }
+        });
+        res.json(epics); // Devuelve el array completo como antes
+    } catch (error) {
+        console.error(error.message);
+        res.status(500).json({ error: 'Server Error: ' + error.message });
+    }
 }
 
 epicsController.getEpicsBulk = async (req, res) => {

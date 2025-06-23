@@ -5,7 +5,7 @@ const UserStory = require('../models/UserStory');
 const Epic = require('../models/Epic');
 const router = Router();
 
-const { getUserStories, getUserStory, createUserStory,
+const { getUserStories, getUserStory, createUserStory, createUserStoriesBulk, 
 		updateUserStory, deleteUserStory, getUserStoryByEpic } = require('../controllers/userStories.controller');
 
 router.route('/')
@@ -21,5 +21,8 @@ router.route('/:id')
 router.route('/epic/:id')
 	.all(validateObjectId(Epic))
 	.get(getUserStoryByEpic)
+
+router.post('/create/bulk', createUserStoriesBulk);
+
 
 module.exports = router;

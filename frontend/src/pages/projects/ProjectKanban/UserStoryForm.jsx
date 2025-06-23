@@ -78,7 +78,7 @@ const UserStoryForm = ({ epicId, epicToEdit, onCancel, theme, onSaveSuccess }) =
           description: hu.hu_description,
           priorityId: priority?._id || '',
           status: 'Pendiente',
-          epicId
+          epicId: epicToEdit._id
         };
       });
 
@@ -106,6 +106,7 @@ const UserStoryForm = ({ epicId, epicToEdit, onCancel, theme, onSaveSuccess }) =
 
     try {
       setIsLoading(true);
+      console.log(userStories);
       const result = await UserStoriesService.createUserStoriesBulk(userStories);
       onSaveSuccess?.(result);
     } catch (err) {

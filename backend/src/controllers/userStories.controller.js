@@ -83,55 +83,55 @@ userStoriesController.createUserStory = async (req, res) => {
 
 userStoriesController.createUserStoriesBulk = async (req, res) => {
 	try {
-	  const userId = getUserIdFromToken(req);
-	  const user = await User.findById(userId);
-  
-	  if (!user) {
-		return res.status(404).json({ error: 'User not found for this access token' });
-	  }
-  
-	  let stories = Array.isArray(req.body) ? req.body : [req.body];
-	  if (stories.length === 0) {
-		return res.status(400).json({ error: 'No stories provided' });
-	  }
-  
-	  // Limpiar y preparar todas las historias
-	  const cleanedStories = stories.map(s => {
-		const cleaned = BaseController.cleanAndAssignDefaults(s);
-		cleaned.authorUserId = userId;
-		return cleaned;
-	  });
-  
-	  // Insertar todas las historias
-	  const insertedStories = await UserStory.insertMany(cleanedStories);
-  
-	  // Agrupar por epicId para actualizar cada épica
-	  const epicUpdates = {};
-  
-	  insertedStories.forEach(story => {
-		if (!epicUpdates[story.epicId]) {
-		  epicUpdates[story.epicId] = [];
+		const userId = getUserIdFromToken(req);
+		const user = await User.findById(userId);
+
+		if (!user) {
+			return res.status(404).json({ error: 'User not found for this access token' });
 		}
-		epicUpdates[story.epicId].push(story._id);
-	  });
-  
-	  // Actualizar épicas con sus nuevas userStories
-	  const updateEpicPromises = Object.entries(epicUpdates).map(([epicId, storyIds]) =>
-		Epic.findByIdAndUpdate(
-		  epicId,
-		  { $push: { userStories: { $each: storyIds } } },
-		  { new: true }
-		)
-	  );
-	  await Promise.all(updateEpicPromises);
-  
-	  res.status(201).json({
-		message: `${insertedStories.length} UserStories created`,
-		data: insertedStories
-	  });
+
+		let stories = Array.isArray(req.body) ? req.body : [req.body];
+		if (stories.length === 0) {
+			return res.status(400).json({ error: 'No stories provided' });
+		}
+
+		// Limpiar y preparar todas las historias
+		const cleanedStories = stories.map(s => {
+			const cleaned = BaseController.cleanAndAssignDefaults(s);
+			cleaned.authorUserId = userId;
+			return cleaned;
+		});
+
+		// Insertar todas las historias
+		const insertedStories = await UserStory.insertMany(cleanedStories);
+
+		// Agrupar por epicId para actualizar cada épica
+		const epicUpdates = {};
+
+		insertedStories.forEach(story => {
+			if (!epicUpdates[story.epicId]) {
+			epicUpdates[story.epicId] = [];
+			}
+			epicUpdates[story.epicId].push(story._id);
+		});
+
+		// Actualizar épicas con sus nuevas userStories
+		const updateEpicPromises = Object.entries(epicUpdates).map(([epicId, storyIds]) =>
+			Epic.findByIdAndUpdate(
+			epicId,
+			{ $push: { userStories: { $each: storyIds } } },
+			{ new: true }
+			)
+		);
+		await Promise.all(updateEpicPromises);
+
+		res.status(201).json({
+			message: `${insertedStories.length} UserStories created`,
+			data: insertedStories
+		});
 	} catch (error) {
-	  console.error('Bulk creation error:', error.message);
-	  res.status(500).json({ error: 'Server Error: ' + error.message });
+		console.error('Bulk creation error:', error.message);
+		res.status(500).json({ error: 'Server Error: ' + error.message });
 	}
 };
 

@@ -51,34 +51,23 @@ const ProjectKanban = () => {
       try {
         setIsLoading(true);
         
-        const [loggedUserRes, prioritiesRes, projectRes] = await Promise.all([
+        const [loggedUserRes, prioritiesRes, projectRes, epicsData] = await Promise.all([
           AuthService.getLoggedUser(),
           PrioritiesService.getNoMoscowPriorities(),
-          ProjectsService.getProjectById(projectId)
+          ProjectsService.getProjectById(projectId),
+          EpicsService.getEpicsByProjectId(projectId) // Obtenemos epics con sus HUs ya incluidas
         ]);
 
         if (!loggedUserRes) throw new Error('No se pudo obtener el usuario logeado');
         if (!prioritiesRes) throw new Error('Error al obtener prioridades');
         if (!projectRes) throw new Error('Proyecto no encontrado');
+        if (!epicsData) throw new Error('Error al obtener épicas');
 
         setLoggedUser(loggedUserRes);
         setPriorities(prioritiesRes);
         setProject(projectRes);
+        setEpics(epicsData); // Ya incluyen las userStories pobladas
 
-        const epicsData = await EpicsService.getEpicsByProjectId(projectId);
-        const storiesData = await Promise.all(
-          epicsData.map(epic => 
-            UserStoriesService.getUserStoriesByEpic(epic._id)
-          )
-        );
-        
-        const epicsWithStories = epicsData.map((epic, index) => ({
-          ...epic,
-          userStories: storiesData[index]
-        }));
-        
-        setEpics(epicsWithStories);
-        
       } catch (err) {
         console.error('Error al cargar datos:', err);
         setError(err.message || 'Error al cargar datos');
