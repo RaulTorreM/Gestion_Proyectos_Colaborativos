@@ -1,0 +1,16 @@
+[
+  {
+    "_id": "project-1",
+    "name": "Proyecto de Raúl",
+    "owner": "raul-user-id",
+    "startDate": "2025-01-01",
+    "dueDate": "2025-12-31"
+  },
+  {
+    "_id": "project-2",
+    "name": "Otro Proyecto",
+    "owner": "other-user-id",
+    "startDate": "2025-02-01",
+    "dueDate": "2025-11-30"
+  }
+]
