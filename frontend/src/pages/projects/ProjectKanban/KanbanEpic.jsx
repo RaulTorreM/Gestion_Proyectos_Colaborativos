@@ -21,8 +21,22 @@ const formatDateToUserTimezone = (dateIsoString, timezone) => {
 
 const KanbanEpic = ({ epic, theme, onDragStart, onClick, loggedUser }) => {
   // Determinar la prioridad para mostrar y para el color
-  const priorityName = epic.priorityId.name || epic.priorityName || 'Sin prioridad';
-  const priorityColor = epic.priorityId.color || epic.priorityId.color || epic.priorityColor;
+  let priorityName = 'Sin prioridad';
+  let priorityColor = '#999';
+  
+  if (typeof epic.priorityId === 'object') {
+    // Prioridad como objeto completo
+    priorityName = epic.priorityId.name || priorityName;
+    priorityColor = epic.priorityId.color || priorityColor;
+  } else if (epic.priority) {
+    // Prioridad como objeto en propiedad diferente
+    priorityName = epic.priority.name || priorityName;
+    priorityColor = epic.priority.color || priorityColor;
+  } else if (epic.priorityName) {
+    // Valores directos
+    priorityName = epic.priorityName;
+    priorityColor = epic.priorityColor || priorityColor;
+  }
 
   return (
     <div
@@ -33,7 +47,7 @@ const KanbanEpic = ({ epic, theme, onDragStart, onClick, loggedUser }) => {
         theme === 'dark' ? 'bg-zinc-700 hover:bg-zinc-600' : 'bg-white hover:bg-gray-50'
       }`}
     >
-      <div style={{ backgroundColor: priorityColor || '#999' }} className={`text-xs text-white py-1 px-2 rounded-md inline-block mb-2`}>
+      <div style={{ backgroundColor: priorityColor }} className="text-xs text-white py-1 px-2 rounded-md inline-block mb-2">
         {priorityName}
       </div>
       

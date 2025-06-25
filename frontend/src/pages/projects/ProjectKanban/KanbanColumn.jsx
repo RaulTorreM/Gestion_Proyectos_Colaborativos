@@ -1,10 +1,7 @@
 import KanbanEpic from './KanbanEpic';
 
 const KanbanColumn = ({ column, theme, onDragStart, onDrop, onDragOver, onClickEpic, loggedUser }) => {
-  // Ensure epics exist before trying to map or count them
   const epics = column.epics || [];
-
-  // console.log(column);
 
   return (
     <div
@@ -20,20 +17,20 @@ const KanbanColumn = ({ column, theme, onDragStart, onDrop, onDragOver, onClickE
       </h2>
 
       <div className="space-y-3">
-        {epics.map((epic, index) => {
-          // Ensure we always have a unique key, even for newly created epics that might not have IDs yet
-          const epicKey = epic._id || epic.id || `temp-epic-${index}`;
-          
+        {epics.map((epic) => {
+          // Normalizar el ID siempre a 'id'
+          const normalizedEpic = {
+            ...epic,
+            id: epic.id || epic._id || `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+          };
+
           return (
             <KanbanEpic
-              key={epicKey}
-              epic={{
-                ...epic,
-                id: epic.id || epic._id || epicKey, // Ensure id property exists for child component
-              }}
+              key={normalizedEpic.id}
+              epic={normalizedEpic}
               theme={theme}
-              onDragStart={(e) => onDragStart(e, epic._id, column.id)}
-              onClick={() => onClickEpic(epic)}
+              onDragStart={(e) => onDragStart(e, normalizedEpic.id, column.id)}
+              onClick={() => onClickEpic(normalizedEpic)}
               loggedUser={loggedUser}
             />
           );
