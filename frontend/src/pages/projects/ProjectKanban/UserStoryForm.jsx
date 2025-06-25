@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import PrioritiesService from '../../../api/services/prioritiesService';
 import EpicsService from '../../../api/services/epicsService';
 import UserStoriesService from '../../../api/services/userStoriesService';
+import UsersService from '../../../api/services/usersService';
 import { fetchIAWithHUPrompt } from '../../../utils/api_deepseek';
 import { LoaderCircle } from 'lucide-react';
 
@@ -13,6 +14,7 @@ const UserStoryForm = ({ epicId, epicToEdit, onCancel, theme, onSaveSuccess }) =
     descripcion_epica: ''
   });
   const [priorities, setPriorities] = useState([]);
+  const [users, setUsers] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isGeneratingIA, setIsGeneratingIA] = useState(false);
   const [userStories, setUserStories] = useState([]);
@@ -22,7 +24,8 @@ const UserStoryForm = ({ epicId, epicToEdit, onCancel, theme, onSaveSuccess }) =
     description: '',
     priorityId: '',
     status: 'Pendiente',
-    epicId
+    epicId,
+    assignedTo: ''
   };
 
   useEffect(() => {
@@ -39,8 +42,13 @@ const UserStoryForm = ({ epicId, epicToEdit, onCancel, theme, onSaveSuccess }) =
           descripcion_epica: epicToEdit.description || ''
         });
 
-        const prioritiesData = await PrioritiesService.getMoscowPriorities();
+        const [prioritiesData, allUsers] = await Promise.all([
+          PrioritiesService.getMoscowPriorities(),
+          UsersService.getAllUsers()
+        ]);
+
         setPriorities(prioritiesData || []);
+        setUsers(allUsers || []);
       } catch (error) {
         console.error('Error al cargar datos:', error);
       } finally {
@@ -78,7 +86,8 @@ const UserStoryForm = ({ epicId, epicToEdit, onCancel, theme, onSaveSuccess }) =
           description: hu.hu_description,
           priorityId: priority?._id || '',
           status: 'Pendiente',
-          epicId: epicToEdit._id
+          epicId: epicToEdit._id,
+          assignedTo: ''
         };
       });
 
@@ -101,12 +110,13 @@ const UserStoryForm = ({ epicId, epicToEdit, onCancel, theme, onSaveSuccess }) =
     e.preventDefault();
     if (!userStories.length) return alert('Agrega al menos una historia de usuario.');
 
-    const invalid = userStories.some(hu => !hu.description.trim() || !hu.name.trim());
-    if (invalid) return alert('Todas las HUs necesitan nombre y descripción.');
+    const invalid = userStories.some(hu =>
+      !hu.name.trim() || !hu.description.trim() || !hu.priorityId || !hu.assignedTo
+    );
+    if (invalid) return alert('Todas las HUs necesitan nombre, descripción, prioridad y asignación.');
 
     try {
       setIsLoading(true);
-      console.log(userStories);
       const result = await UserStoriesService.createUserStoriesBulk(userStories);
       onSaveSuccess?.(result);
     } catch (err) {
@@ -167,7 +177,7 @@ const UserStoryForm = ({ epicId, epicToEdit, onCancel, theme, onSaveSuccess }) =
             required
           />
 
-          <div className="flex gap-4">
+          <div className="flex flex-col md:flex-row gap-4">
             <select
               value={hu.priorityId}
               onChange={e => handleUpdateHU(i, 'priorityId', e.target.value)}
@@ -189,6 +199,18 @@ const UserStoryForm = ({ epicId, epicToEdit, onCancel, theme, onSaveSuccess }) =
               <option value="Pendiente">Pendiente</option>
               <option value="En progreso">En progreso</option>
               <option value="Completado">Completada</option>
+            </select>
+
+            <select
+              value={hu.assignedTo}
+              onChange={e => handleUpdateHU(i, 'assignedTo', e.target.value)}
+              className={`flex-1 px-3 py-2 rounded border ${theme === 'dark' ? 'bg-zinc-700 text-white border-zinc-600' : 'border-gray-300'}`}
+              required
+            >
+              <option value="">Asignar usuario</option>
+              {users.map(user => (
+                <option key={user._id} value={user._id}>{user.name}</option>
+              ))}
             </select>
           </div>
 
