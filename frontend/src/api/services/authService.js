@@ -50,7 +50,7 @@ const AuthService = {
       const response = await api.get("/logged");
       const loggedUser = response.data || response;
 
-      console.log("✅ Usuario logueado obtenido:", loggedUser);
+      // console.log("✅ Usuario logueado obtenido:", loggedUser);
       return loggedUser;
     } catch (error) {
       // Usuario no autenticado

@@ -25,7 +25,7 @@ export const AuthProvider = ({ children }) => {
       const userData = await AuthService.getLoggedUser();
       setUser(userData);
       setIsAuthenticated(true);
-      console.log("✅ Usuario cargado:", userData);
+      // console.log("✅ Usuario cargado:", userData);
     } catch (error) {
       console.error("❌ Error cargando usuario:", error);
       // Si hay error, limpiar sesión
