@@ -1,4 +1,3 @@
-// src/api/services/userStoriesService.js
 import api from '../axiosInstance';
 
 const UserStoriesService = {
