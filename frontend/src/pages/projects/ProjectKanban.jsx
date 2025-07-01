@@ -32,14 +32,17 @@ const ProjectKanban = () => {
     };
 
     epics.forEach(epic => {
+
+      const status = epic.status?.toLowerCase() || 'pendiente';
       const columnId = 
-        epic.status === 'Completado' ? 'completed' :
-        epic.status === 'En Progreso' ? 'inProgress' : 'pending';
+        status.includes('completado') ? 'completed' :
+        status.includes('progreso') ? 'inProgress' : 'pending';
       
       cols[columnId].epics.push({
         ...epic,
         id: epic._id,
-        title: epic.name
+        title: epic.name,
+        userStories: epic.userStories || [] 
       });
     });
 
@@ -131,24 +134,23 @@ const ProjectKanban = () => {
     }
   };
 
-  const handleAddEpic = async (newEpic) => {
+  const handleAddEpic = async (newEpicData) => {
     try {
-      const epicToSave = {
-        ...newEpic,
-        projectId: project._id,
-        status: 'Pendiente'
-      };
-
-      const savedEpic = await EpicsService.createEpic(epicToSave);
-      
-      setEpics(prev => [...prev, savedEpic]);
+      const payload = { ...newEpicData, projectId: project._id, status: 'Pendiente' };
+      const response = await EpicsService.createEpic(payload);
+      if (!response) throw new Error('No se recibió respuesta del servidor');
+      // Luego:
+      const updatedEpics = await EpicsService.getEpicsByProjectId(project._id);
+      setEpics(updatedEpics);
       setShowAddEpicModal(false);
       toast.success('Épica creada correctamente');
     } catch (error) {
-      console.error('Error al crear épica:', error);
-      toast.error('Error al crear la épica');
+      console.error('Error en handleAddEpic:', error);
+      toast.error(error.response?.data?.message || 'Error al crear la épica');
     }
   };
+  
+    
 
   const handleDragStart = (e, taskId, sourceColumnId) => {
     e.dataTransfer.setData("taskId", taskId);
@@ -238,6 +240,7 @@ const ProjectKanban = () => {
             theme={theme}
             priorities={priorities}
             projectId={projectId}
+            projectDueDate={project.dueDate}
           />
         </div>
       )}

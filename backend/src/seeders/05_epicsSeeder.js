@@ -44,7 +44,7 @@ module.exports = async function seedEpics() {
                 authorUserId: users[0]._id,  // Usuario 1 como creador de la épica
             },
             {
-                projectId: projects[1]._id, // Relacionar con el primer proyecto
+                projectId: projects[0]._id, // Relacionar con el primer proyecto
                 name: 'Desarrollo de la interfaz de usuario',
                 description: 'Crear la interfaz de usuario para la aplicación móvil.',
                 startDate: new Date('2025-02-01'),

@@ -6,6 +6,7 @@ const Epic = require('../models/Epic');
 const UserStory = require('../models/UserStory');
 const TeamPerformance = require('../models/TeamPerformance');
 const mongoose = require('mongoose');
+const versionsController = require('../controllers/versions.controller');
 
 const router = Router();
 
@@ -257,5 +258,22 @@ router.get('/:id/performance', validateObjectId(Project), async (req, res) => {
     });
   }
 });
+
+router.get('/:id/versions', validateObjectId(Project), async (req, res) => {
+  try {
+    const projectId = req.params.id;
+
+    const versions = await require('../models/Version')
+      .find({ projectId, deletedAt: null })
+      .populate('userStories'); // trae historias de usuario completas si quieres
+
+    res.json(versions);
+  } catch (error) {
+    console.error('Error al obtener versiones del proyecto:', error);
+    res.status(500).json({ error: 'Error al obtener las versiones del proyecto' });
+  }
+});
+
+router.get('/:projectId/versions', versionsController.getVersionsByProject);
 
 module.exports = router;

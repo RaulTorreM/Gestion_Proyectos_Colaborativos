@@ -5,6 +5,7 @@ const { validateCreateVersion, validateUpdateVersion } = require('../middlewares
 const Version = require('../models/Version');
 const router = Router();
 
+
 const { getVersions, getVersion, createVersion, updateVersion, deleteVersion, getVersionsBulk } = require('../controllers/versions.controller');
 
 router.route('/')
@@ -21,5 +22,6 @@ router.post('/bulk/ids',
 	validateObjectIdArray(Version), 
 	getVersionsBulk
 	);
+
 
 module.exports = router;

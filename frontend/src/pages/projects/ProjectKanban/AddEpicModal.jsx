@@ -1,6 +1,7 @@
 import { useState } from 'react';
 
-const AddEpicModal = ({ onClose, onSave, theme, priorities }) => {
+
+const AddEpicModal = ({ onClose, onSave, theme, priorities, projectDueDate  }) => {
   const [newEpic, setNewEpic] = useState({
     name: '',
     description: '',
@@ -9,12 +10,25 @@ const AddEpicModal = ({ onClose, onSave, theme, priorities }) => {
     priorityId: priorities.length > 0 ? priorities[0]._id : ''
   });
 
+  
+    // Helper para formatear ISO string a "YYYY-MM-DD"
+  const formatToYYYYMMDD = (dateIsoString) => {
+      if (!dateIsoString) return '';
+      return new Date(dateIsoString).toISOString().split('T')[0];
+    };
+  
+  // Calculamos la cadena a usar en max del input de dueDate
+  const projectDueDateString = formatToYYYYMMDD(projectDueDate);
+
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setNewEpic(prev => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = (e) => {
+
+    
     e.preventDefault();
 
     if (new Date(newEpic.dueDate) < new Date(newEpic.startDate)) {
@@ -39,6 +53,8 @@ const AddEpicModal = ({ onClose, onSave, theme, priorities }) => {
       priorityColor: priorityColor, // Se pasa el color de la prioridad encontrada
     });
   };
+  
+
 
   return (
     <div className={`rounded-xl p-6 w-full max-w-md ${theme === 'dark' ? 'bg-zinc-800' : 'bg-white'}`}>
@@ -86,6 +102,7 @@ const AddEpicModal = ({ onClose, onSave, theme, priorities }) => {
               name="startDate"
               value={newEpic.startDate}
               onChange={handleInputChange}
+              max={projectDueDateString}
               className={`w-full p-2 rounded border ${theme === 'dark' ? 'bg-zinc-700 border-zinc-600 text-white' : 'bg-white border-gray-300'}`}
               required
             />
@@ -98,6 +115,7 @@ const AddEpicModal = ({ onClose, onSave, theme, priorities }) => {
               value={newEpic.dueDate}
               onChange={handleInputChange}
               min={newEpic.startDate}
+              max={projectDueDateString}
               className={`w-full p-2 rounded border ${theme === 'dark' ? 'bg-zinc-700 border-zinc-600 text-white' : 'bg-white border-gray-300'}`}
               required
             />

@@ -1,31 +1,25 @@
-import React, { useEffect, useState } from 'react';
-import { Navigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import React from "react";
+import { Navigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 const ProtectedRoute = ({ children }) => {
-  const auth = useAuth();
-  const [loggedUser, setLoggedUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const accessToken = auth.getAccessToken();
+  const { user, loading } = useAuth();
 
-  useEffect(() => {
-    const fetchUser = async () => {
-      const user = await auth.getLoggedUser();
-      setLoggedUser(user);
-      setLoading(false);
-    };
+  // Si está cargando, mostrar mensaje de carga
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-lg">Cargando usuario...</div>
+      </div>
+    );
+  }
 
-    fetchUser();
-  }, [auth]);
-
-  if (!accessToken) {
+  // Si no hay usuario, redirigir al login
+  if (!user) {
     return <Navigate to="/login" replace />;
   }
 
-  if (loading) {
-    return <p>Cargando usuario...</p>;
-  }
-
+  // Si hay usuario, mostrar el contenido protegido
   return children;
 };
 

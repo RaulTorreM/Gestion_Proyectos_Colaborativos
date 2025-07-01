@@ -1,13 +1,10 @@
 import React from 'react';
 
 const VersionList = ({ versions, searchTerm, setSearchTerm, selectedVersion, setSelectedVersion, theme }) => {
-  // Asegurarse de que versions sea un array y manejar el caso donde sea undefined
   const filteredVersions = (versions || [])
     .filter(version => {
-      // Verificar que version y version.version existan antes de usar toLowerCase()
-      if (!version || !version.version) return false;
-      
-      return version.version.toLowerCase().includes(searchTerm.toLowerCase());
+      if (!version || !version.name) return false;
+      return version.name.toLowerCase().includes(searchTerm.toLowerCase());
     });
 
   return (
@@ -28,10 +25,10 @@ const VersionList = ({ versions, searchTerm, setSearchTerm, selectedVersion, set
         {filteredVersions.length > 0 ? (
           filteredVersions.map(version => (
             <div
-              key={version.id}
+              key={version._id}
               onClick={() => setSelectedVersion(version)}
               className={`p-3 rounded-lg cursor-pointer ${
-                selectedVersion?.id === version.id
+                selectedVersion?._id === version._id
                   ? theme === 'dark' 
                     ? 'bg-blue-800/50' 
                     : 'bg-blue-100'
@@ -41,7 +38,7 @@ const VersionList = ({ versions, searchTerm, setSearchTerm, selectedVersion, set
               }`}
             >
               <p className={`font-medium ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>
-                {version.version || 'Sin versión'}
+                {version.name || 'Sin versión'}
               </p>
               <p className={`text-xs ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
                 {version.status} • {version.startDate ? new Date(version.startDate).toLocaleDateString() : 'Sin fecha'}

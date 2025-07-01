@@ -1,386 +1,277 @@
-// src/pages/projects/ProjectVersions/AddVersionForm.jsx
 import { useState, useEffect } from 'react';
+import UsersService from '../../../api/services/usersService';
+import VersionsService from '../../../api/services/versionsService';
+import ProjectsService from '../../../api/services/projectsService';
 
-const AddVersionForm = ({ theme, onSave, onCancel, projectMembers, allMembers }) => {
-  const [newVersion, setNewVersion] = useState({
-    version: '',
-    status: 'Planificado',
-    startDate: '',
-    endDate: '',
+const AddVersionForm = ({ theme, onSave, onCancel, projectId }) => {
+  const [formData, setFormData] = useState({
+    versionName: '',
+    status: 'Planeado',
     description: '',
+    startDate: '',
+    releaseDate: '',
     progress: 0,
-    completedTasks: 0,
-    totalTasks: 0,
-    releaseNotes: [''],
-    assignedMembers: []
+    userStories: [],
+    assignedTeam: []
   });
 
-  const [newNote, setNewNote] = useState('');
-  const [versionError, setVersionError] = useState('');
   const [availableMembers, setAvailableMembers] = useState([]);
+  const [projectStartDate, setProjectStartDate] = useState(null);
+  const [projectEndDate, setProjectEndDate] = useState(null);
+  const [errors, setErrors] = useState([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    // Filtrar miembros disponibles (todos los miembros menos los ya asignados)
-    setAvailableMembers(allMembers.filter(member => 
-      !newVersion.assignedMembers.some(am => am.userId === member.userId)
-    ));
-  }, [allMembers, newVersion.assignedMembers]);
+    const fetchData = async () => {
+      try {
+        const users = await UsersService.getAllUsers();
+        setAvailableMembers(users.filter(u => !u.deletedAt));
 
-  const validateVersionFormat = (version) => {
-    const versionRegex = /^v\d+\.\d+\.\d+$/;
-    return versionRegex.test(version);
-  };
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    
-    if (name === 'version') {
-      if (!validateVersionFormat(value) && value !== '') {
-        setVersionError('El formato debe ser vX.X.X (ejemplo: v1.0.0)');
-      } else {
-        setVersionError('');
+        const project = await ProjectsService.getProjectById(projectId);
+        if (project) {
+          setProjectStartDate(project?.startDate?.slice(0, 10));
+          setProjectEndDate(project?.endDate?.slice(0, 10));
+        }
+      } catch (error) {
+        console.error('Error al cargar datos iniciales:', error);
+        setErrors([{ msg: 'Error al cargar datos iniciales' }]);
       }
-    }
-    
-    setNewVersion(prev => ({ ...prev, [name]: value }));
-  };
+    };
+    fetchData();
+  }, [projectId]);
 
-  const handleAddNote = () => {
-    if (newNote.trim()) {
-      setNewVersion(prev => ({
-        ...prev,
-        releaseNotes: [...prev.releaseNotes, newNote.trim()]
-      }));
-      setNewNote('');
-    }
-  };
-
-  const handleRemoveNote = (index) => {
-    setNewVersion(prev => ({
-      ...prev,
-      releaseNotes: prev.releaseNotes.filter((_, i) => i !== index)
-    }));
-  };
-
-  const handleNoteChange = (e, index) => {
-    const updatedNotes = [...newVersion.releaseNotes];
-    updatedNotes[index] = e.target.value;
-    setNewVersion(prev => ({ ...prev, releaseNotes: updatedNotes }));
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const handleAddMember = (member) => {
-    setNewVersion(prev => ({
+    if (!formData.assignedTeam.includes(member._id)) {
+      setFormData(prev => ({
+        ...prev,
+        assignedTeam: [...prev.assignedTeam, member._id]
+      }));
+    }
+  };
+
+  const handleRemoveMember = (userId) => {
+    setFormData(prev => ({
       ...prev,
-      assignedMembers: [...prev.assignedMembers, member]
+      assignedTeam: prev.assignedTeam.filter(id => id !== userId)
     }));
   };
 
-  const handleRemoveMember = (memberId) => {
-    setNewVersion(prev => ({
-      ...prev,
-      assignedMembers: prev.assignedMembers.filter(m => m.userId !== memberId)
-    }));
+  const validateForm = () => {
+    const newErrors = [];
+
+    if (!formData.versionName.trim()) {
+      newErrors.push({ msg: 'El nombre de la versión es obligatorio' });
+    }
+
+    if (!formData.description.trim()) {
+      newErrors.push({ msg: 'La descripción es obligatoria' });
+    }
+
+    if (!formData.startDate) {
+      newErrors.push({ msg: 'La fecha de inicio es obligatoria' });
+    } else if (projectStartDate && new Date(formData.startDate) < new Date(projectStartDate)) {
+      newErrors.push({ msg: 'La fecha de inicio no puede ser anterior a la fecha de inicio del proyecto' });
+    }
+
+    if (formData.releaseDate && projectEndDate && new Date(formData.releaseDate) > new Date(projectEndDate)) {
+      newErrors.push({ msg: 'La fecha de lanzamiento no puede ser posterior a la fecha de fin del proyecto' });
+    }
+
+    if (formData.releaseDate && new Date(formData.releaseDate) < new Date(formData.startDate)) {
+      newErrors.push({ msg: 'La fecha de lanzamiento no puede ser anterior a la fecha de inicio' });
+    }
+
+    setErrors(newErrors);
+    return newErrors.length === 0;
   };
 
-  const handleSubmit = () => {
-    if (!validateVersionFormat(newVersion.version)) {
-      setVersionError('El formato de versión es requerido (vX.X.X)');
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setErrors([]);
+
+    if (!validateForm()) {
+      setIsSubmitting(false);
       return;
     }
-    onSave(newVersion);
+
+    try {
+      const newVersionPayload = {
+        name: formData.versionName,
+        status: formData.status,
+        description: formData.description,
+        startDate: formData.startDate,
+        releaseDate: formData.releaseDate || null,
+        progress: formData.progress,
+        assignedTeam: formData.assignedTeam,
+        projectId,
+        userStories: [] // Vacío, hasta que se elijan desde épicas
+      };
+
+      const version = await VersionsService.createVersion(newVersionPayload);
+
+      if (!version || !version._id) {
+        throw new Error('La versión creada no tiene un ID válido');
+      }
+
+      onSave(version);
+
+    } catch (error) {
+      console.error('Error al guardar versión:', error);
+      if (error.response?.data?.errors) {
+        setErrors(error.response.data.errors);
+      } else if (error.message) {
+        setErrors([{ msg: error.message }]);
+      } else {
+        setErrors([{ msg: 'Error inesperado al guardar la versión.' }]);
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
+  const inputClass = `w-full px-3 py-2 border rounded-lg ${theme === 'dark' ? 'bg-zinc-800 text-white border-zinc-700' : ''}`;
+
   return (
-    <>
-      {/* Fondo con blur */}
-      <div className={`fixed inset-0 z-40 backdrop-blur-sm ${theme === 'dark' ? 'bg-black/50' : 'bg-gray-500/50'}`}></div>
-      
-      {/* Formulario modal */}
-      <div className={`fixed inset-0 z-50 flex items-center justify-center p-4`}>
-        <div className={`rounded-xl p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto ${
-          theme === 'dark' ? 'bg-zinc-900' : 'bg-white border border-gray-200'
-        }`}>
-          <div className="flex justify-between items-start mb-4">
-            <h2 className={`text-2xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>
-              Agregar Nueva Versión
-            </h2>
-            <button
-              onClick={onCancel}
-              className={`p-1 rounded-full ${theme === 'dark' ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+      <div className={`rounded-xl p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto ${theme === 'dark' ? 'bg-zinc-900 text-white' : 'bg-white border border-gray-200'}`}>
+        <h2 className="text-xl font-bold mb-4">Agregar nueva versión</h2>
+
+        {errors.length > 0 && (
+          <div className="bg-red-100 text-red-700 p-3 rounded mb-4">
+            {errors.map((e, i) => <div key={i}>• {e.msg}</div>)}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit}>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="text-sm font-medium">Número de versión *</label>
+              <input
+                type="text"
+                name="versionName"
+                value={formData.versionName}
+                onChange={handleChange}
+                placeholder="v1.0.0"
+                className={inputClass}
+                required
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium">Estado</label>
+              <select name="status" value={formData.status} onChange={handleChange} className={inputClass}>
+                <option value="Planeado">Planificado</option>
+                <option value="En Progreso">En progreso</option>
+                <option value="Lanzado">Lanzado</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-sm font-medium">Fecha de inicio *</label>
+              <input
+                type="date"
+                name="startDate"
+                value={formData.startDate}
+                onChange={handleChange}
+                className={inputClass}
+                min={projectStartDate}
+                required
+              />
+              {projectStartDate && <p className="text-xs text-gray-500 mt-1">Mínimo permitido: {projectStartDate}</p>}
+            </div>
+            <div>
+              <label className="text-sm font-medium">Fecha de lanzamiento</label>
+              <input
+                type="date"
+                name="releaseDate"
+                value={formData.releaseDate}
+                onChange={handleChange}
+                className={inputClass}
+                min={formData.startDate || projectStartDate}
+                max={projectEndDate}
+              />
+              {projectEndDate && <p className="text-xs text-gray-500 mt-1">Máximo permitido: {projectEndDate}</p>}
+            </div>
+            <div className="md:col-span-2">
+              <label className="text-sm font-medium">Descripción *</label>
+              <textarea
+                name="description"
+                value={formData.description}
+                onChange={handleChange}
+                rows="3"
+                className={inputClass}
+                required
+              />
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Columna izquierda - Información básica */}
-            <div className="space-y-4">
-              {/* Solo queda el campo de número de versión */}
-              <div>
-                <label className={`block text-sm font-medium mb-1 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
-                  Número de versión* (Formato: vX.X.X)
-                </label>
-                <input
-                  type="text"
-                  name="version"
-                  value={newVersion.version}
-                  onChange={handleInputChange}
-                  required
-                  placeholder="Ejemplo: v1.0.0"
-                  className={`w-full px-3 py-2 rounded-lg ${
-                    theme === 'dark' ? 'bg-gray-700 text-white border-gray-600' : 'bg-white text-gray-800 border-gray-300'
-                  } border ${versionError ? 'border-red-500' : ''}`}
-                />
-                {versionError && (
-                  <p className="text-xs text-red-500 mt-1">{versionError}</p>
-                )}
-              </div>
-              <div>
-                <label className={`block text-sm font-medium mb-1 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
-                  Estado*
-                </label>
-                <select
-                  name="status"
-                  value={newVersion.status}
-                  onChange={handleInputChange}
-                  className={`w-full px-3 py-2 rounded-lg ${
-                    theme === 'dark' ? 'bg-gray-700 text-white border-gray-600' : 'bg-white text-gray-800 border-gray-300'
-                  } border`}
+          <div className="mt-6">
+            <h3 className="font-semibold mb-2">Miembros asignados</h3>
+            <div className="flex flex-wrap gap-2 mb-2">
+              {availableMembers.map((member) => (
+                <button
+                  key={member._id}
+                  type="button"
+                  onClick={() => handleAddMember(member)}
+                  className={`px-3 py-1 rounded text-sm ${
+                    formData.assignedTeam.includes(member._id)
+                      ? 'bg-gray-300 cursor-not-allowed'
+                      : 'bg-green-100 hover:bg-green-200 text-black'
+                  }`}
+                  disabled={formData.assignedTeam.includes(member._id)}
                 >
-                  {['Planificado', 'En progreso', 'Completado'].map(option => (
-                    <option key={option} value={option}>{option}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className={`block text-sm font-medium mb-1 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
-                  Descripción*
-                </label>
-                <textarea
-                  name="description"
-                  value={newVersion.description}
-                  onChange={handleInputChange}
-                  rows="3"
-                  required
-                  className={`w-full px-3 py-2 rounded-lg ${
-                    theme === 'dark' ? 'bg-gray-700 text-white border-gray-600' : 'bg-white text-gray-800 border-gray-300'
-                  } border`}
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className={`block text-sm font-medium mb-1 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
-                    Fecha de inicio*
-                  </label>
-                  <input
-                    type="date"
-                    name="startDate"
-                    value={newVersion.startDate}
-                    onChange={handleInputChange}
-                    required
-                    className={`w-full px-3 py-2 rounded-lg ${
-                      theme === 'dark' ? 'bg-gray-700 text-white border-gray-600' : 'bg-white text-gray-800 border-gray-300'
-                    } border`}
-                  />
-                </div>
-                <div>
-                  <label className={`block text-sm font-medium mb-1 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
-                    Fecha de fin
-                  </label>
-                  <input
-                    type="date"
-                    name="endDate"
-                    value={newVersion.endDate}
-                    onChange={handleInputChange}
-                    className={`w-full px-3 py-2 rounded-lg ${
-                      theme === 'dark' ? 'bg-gray-700 text-white border-gray-600' : 'bg-white text-gray-800 border-gray-300'
-                    } border`}
-                  />
-                </div>
-              </div>
+                  {member.name}
+                </button>
+              ))}
             </div>
-
-            {/* Columna derecha - Progreso, miembros y notas */}
-            <div className="space-y-4">
-              <div>
-                <label className={`block text-sm font-medium mb-1 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
-                  Progreso (%)
-                </label>
-                <input
-                  type="number"
-                  name="progress"
-                  min="0"
-                  max="100"
-                  value={newVersion.progress}
-                  onChange={handleInputChange}
-                  className={`w-full px-3 py-2 rounded-lg ${
-                    theme === 'dark' ? 'bg-gray-700 text-white border-gray-600' : 'bg-white text-gray-800 border-gray-300'
-                  } border`}
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className={`block text-sm font-medium mb-1 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
-                    Tareas completadas
-                  </label>
-                  <input
-                    type="number"
-                    name="completedTasks"
-                    min="0"
-                    value={newVersion.completedTasks}
-                    onChange={handleInputChange}
-                    className={`w-full px-3 py-2 rounded-lg ${
-                      theme === 'dark' ? 'bg-gray-700 text-white border-gray-600' : 'bg-white text-gray-800 border-gray-300'
-                    } border`}
-                  />
-                </div>
-                <div>
-                  <label className={`block text-sm font-medium mb-1 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
-                    Total de tareas
-                  </label>
-                  <input
-                    type="number"
-                    name="totalTasks"
-                    min="0"
-                    value={newVersion.totalTasks}
-                    onChange={handleInputChange}
-                    className={`w-full px-3 py-2 rounded-lg ${
-                      theme === 'dark' ? 'bg-gray-700 text-white border-gray-600' : 'bg-white text-gray-800 border-gray-300'
-                    } border`}
-                  />
-                </div>
-              </div>
-
-              {/* Asignación de miembros */}
-              <div>
-                <label className={`block text-sm font-medium mb-1 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
-                  Miembros asignados
-                </label>
-                <div className="space-y-2">
-                  {newVersion.assignedMembers.map(member => (
-                    <div key={member.userId} className="flex items-center justify-between p-2 rounded-lg bg-opacity-50 ${
-                      theme === 'dark' ? 'bg-gray-700' : 'bg-gray-100'
-                    }">
-                      <span className={`text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
-                        {member.name} - {member.role}
-                      </span>
+            <div className="text-sm text-gray-500 dark:text-gray-300">
+              Seleccionados:{' '}
+              {formData.assignedTeam.length === 0 ? (
+                <span className="italic">Ninguno</span>
+              ) : (
+                formData.assignedTeam.map((id) => {
+                  const member = availableMembers.find((m) => m._id === id);
+                  return (
+                    <span key={id} className="inline-block mr-2 bg-zinc-800/30 px-2 py-1 rounded">
+                      {member?.name || 'Miembro'}{' '}
                       <button
                         type="button"
-                        onClick={() => handleRemoveMember(member.userId)}
-                        className={`p-1 rounded-full ${theme === 'dark' ? 'hover:bg-gray-600' : 'hover:bg-gray-200'}`}
+                        onClick={() => handleRemoveMember(id)}
+                        className="text-red-400 hover:text-red-600 ml-1"
                       >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
+                        ✕
                       </button>
-                    </div>
-                  ))}
-
-                  {availableMembers.length > 0 && (
-                    <div className="relative">
-                <select
-                    onChange={(e) => {
-                    const selectedMember = availableMembers.find(m => m.userId === e.target.value);
-                    if (selectedMember) {
-                        handleAddMember(selectedMember);
-                    }
-                    }}
-                    className={`w-full px-3 py-2 rounded-lg ${
-                    theme === 'dark' ? 'bg-gray-700 text-white border-gray-600' : 'bg-white text-gray-800 border-gray-300'
-                    } border`}
-                    value="" // Esto evita que se quede seleccionado un valor
-                >
-                    <option value="">Seleccionar miembro...</option>
-                    {availableMembers.map(member => (
-                    <option key={member.userId} value={member.userId}>
-                        {member.name} ({member.role})
-                    </option>
-                    ))}
-                </select>
-                </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Release Notes */}
-              <div>
-                <label className={`block text-sm font-medium mb-1 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
-                  Tareas de la versión
-                </label>
-                <div className="space-y-2">
-                  {newVersion.releaseNotes.map((note, index) => (
-                    <div key={index} className="flex items-center gap-2">
-                      <input
-                        type="text"
-                        value={note}
-                        onChange={(e) => handleNoteChange(e, index)}
-                        className={`flex-1 px-3 py-2 rounded-lg ${
-                          theme === 'dark' ? 'bg-gray-700 text-white border-gray-600' : 'bg-white text-gray-800 border-gray-300'
-                        } border`}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveNote(index)}
-                        className={`p-1 rounded-full ${theme === 'dark' ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
-                      >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      </button>
-                    </div>
-                  ))}
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="text"
-                      value={newNote}
-                      onChange={(e) => setNewNote(e.target.value)}
-                      placeholder="Nueva tarea..."
-                      className={`flex-1 px-3 py-2 rounded-lg ${
-                        theme === 'dark' ? 'bg-gray-700 text-white border-gray-600' : 'bg-white text-gray-800 border-gray-300'
-                      } border`}
-                    />
-                    <button
-                      type="button"
-                      onClick={handleAddNote}
-                      className={`px-3 py-2 rounded-lg ${
-                        theme === 'dark' ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-blue-500 hover:bg-blue-600 text-white'
-                      }`}
-                    >
-                      Agregar
-                    </button>
-                  </div>
-                </div>
-              </div>
+                    </span>
+                  );
+                })
+              )}
             </div>
           </div>
 
           <div className="flex justify-end gap-2 mt-6">
             <button
+              type="button"
               onClick={onCancel}
-              className={`px-4 py-2 rounded-lg ${
-                theme === 'dark' ? 'bg-gray-700 hover:bg-gray-600 text-white' : 'bg-gray-200 hover:bg-gray-300 text-gray-800'
-              }`}
+              className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300 text-black"
+              disabled={isSubmitting}
             >
               Cancelar
             </button>
             <button
-              onClick={handleSubmit}
-              disabled={versionError}
-              className={`px-4 py-2 rounded-lg ${
-                theme === 'dark' ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-blue-500 hover:bg-blue-600 text-white'
-              } ${versionError ? 'opacity-50 cursor-not-allowed' : ''}`}
+              type="submit"
+              className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700"
+              disabled={isSubmitting}
             >
-              Guardar Versión
+              {isSubmitting ? 'Guardando...' : 'Guardar'}
             </button>
           </div>
-        </div>
+        </form>
       </div>
-    </>
+    </div>
   );
 };
 

@@ -1,10 +1,14 @@
+// src/api/services/userStoriesService.js
 import api from '../axiosInstance';
 
 const UserStoriesService = {
   createUserStory: async (storyData) => {
     try {
+      if (!Array.isArray(storyData.assignedTo)) {
+        storyData.assignedTo = [];
+      }
       const response = await api.post('/userStories', storyData);
-      return response;
+      return response.data;
     } catch (error) {
       console.error('Error creating user story:', error);
       throw error;

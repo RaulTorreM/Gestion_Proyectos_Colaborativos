@@ -1,13 +1,16 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import UserStoryList from './UserStoryList';
 import { formatISO, parseISO } from 'date-fns';
 import { formatDateToUserTimezone } from './KanbanDateUtils';
 import UserStoriesService from '../../../api/services/userStoriesService';
+import PrioritiesService from '../../../api/services/prioritiesService';
+import EpicsService from '../../../api/services/epicsService';
 import { toast } from 'react-toastify';
 
-const EpicDetail = ({ epic, priorities = [], onClose, onSave, onDelete, theme }) => {
+const EpicDetail = ({ epic, onClose, onSave, onDelete, theme }) => {
   const [editing, setEditing] = useState(false);
-  
+
+  // Estado para la épica editada
   const parseDate = (date) => {
     try {
       return date ? formatISO(typeof date === 'string' ? parseISO(date) : date) : null;
@@ -19,10 +22,32 @@ const EpicDetail = ({ epic, priorities = [], onClose, onSave, onDelete, theme })
   const [editedEpic, setEditedEpic] = useState({
     ...epic,
     startDate: parseDate(epic.startDate),
-    endDate: parseDate(epic.endDate),
     dueDate: parseDate(epic.dueDate),
-    priorityId: epic.priorityId?._id || epic.priorityId || null
+    endDate: parseDate(epic.endDate),
+    priorityId: epic.priorityId?._id || epic.priorityId || null,
+    userStories: epic.userStories || []
   });
+
+  // Estado para prioridades MOSCOW
+  const [moscowPriorities, setMoscowPriorities] = useState([]);
+  const [isLoadingPriorities, setIsLoadingPriorities] = useState(false);
+
+  useEffect(() => {
+    // Cargar prioridades MOSCOW al montar
+    const fetchPriorities = async () => {
+      setIsLoadingPriorities(true);
+      try {
+        const prios = await PrioritiesService.getMoscowPriorities();
+        setMoscowPriorities(prios || []);
+      } catch (err) {
+        console.error('Error cargando prioridades MOSCOW:', err);
+        toast.error('No se pudieron cargar prioridades');
+      } finally {
+        setIsLoadingPriorities(false);
+      }
+    };
+    fetchPriorities();
+  }, []);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -30,9 +55,7 @@ const EpicDetail = ({ epic, priorities = [], onClose, onSave, onDelete, theme })
   };
 
   const handlePriorityChange = (selectedPriorityId) => {
-    // Validar que sea un ID existente en las prioridades
-    const isValid = priorities.some(p => p._id === selectedPriorityId);
-    
+    const isValid = moscowPriorities.some(p => p._id === selectedPriorityId);
     setEditedEpic(prev => ({
       ...prev,
       priorityId: isValid ? selectedPriorityId : prev.priorityId
@@ -40,28 +63,62 @@ const EpicDetail = ({ epic, priorities = [], onClose, onSave, onDelete, theme })
   };
 
   const handleSave = () => {
-    // Mantener _id en el payload
-    const { 
-      __v, createdAt, updatedAt, deletedAt, authorUserId, id, title, 
-      ...epicToSave 
+    // Preparar payload de la épica
+    const {
+      __v, createdAt, updatedAt, deletedAt, authorUserId, id, title,
+      userStories, // no lo incluimos aquí; se gestiona en updateUserStories
+      ...epicToSave
     } = editedEpic;
-  
+
     const payload = {
       ...epicToSave,
-      _id: editedEpic._id, // ← Asegurar que _id está incluido
-      startDate: epicToSave.startDate || null,
-      endDate: epicToSave.endDate || null,
-      dueDate: epicToSave.dueDate ? new Date(epicToSave.dueDate).toISOString() : null
+      _id: editedEpic._id,
+      startDate: epicToSave.startDate ? new Date(epicToSave.startDate).toISOString() : null,
+      dueDate: epicToSave.dueDate ? new Date(epicToSave.dueDate).toISOString() : null,
+      endDate: epicToSave.endDate ? new Date(epicToSave.endDate).toISOString() : null,
+      // priorityId: ya viene como ID o null
     };
-  
+
     onSave(payload);
     setEditing(false);
   };
 
-  // Modificar la función updateUserStories
-  const updateUserStories = async (updatedStories) => {
+  const refreshEpicFromServer = async () => {
     try {
-      // Solo actualiza las stories que han cambiado
+      console.log('refreshEpicFromServer: solicitando épica...');
+      const freshEpic = await EpicsService.getEpicById(epic._id);
+      console.log('refreshEpicFromServer: freshEpic.userStories:', freshEpic.userStories);
+      setEditedEpic({
+        ...freshEpic,
+        startDate: parseDate(freshEpic.startDate),
+        dueDate: parseDate(freshEpic.dueDate),
+        endDate: parseDate(freshEpic.endDate),
+        priorityId: freshEpic.priorityId?._id || freshEpic.priorityId || null,
+        userStories: freshEpic.userStories || []
+      });
+      console.log('refreshEpicFromServer: estado editedEpic.userStories actualizado');
+    } catch (err) {
+      console.error('Error refrescando épica:', err);
+      toast.error('No se pudo recargar épica tras cambio de HU');
+    }
+  };
+  
+  
+  
+
+  // Función para actualizar historias de usuario (la tuya ya existente)
+  const updateUserStories = async (updatedStories) => {
+    // Si vienen historias sin prefijo 'us-' o isModified, pero en el flujo manual llegan ya completas
+    // Por simplicidad, detecta si todas las historias ya tienen _id real (no empiezan con 'us-') y
+    // no tienen isModified: en ese caso, solo actualizar el estado local sin llamar API de nuevo.
+    const needsApi = updatedStories.some(story => story._id?.startsWith('us-') || story.isModified);
+    if (!needsApi) {
+      setEditedEpic(prev => ({ ...prev, userStories: updatedStories }));
+
+      return;
+    }
+    // Si hay items nuevos (prefijo us-) o isModified, proceder con la lógica batch:
+    try {
       const updatePromises = updatedStories
         .filter(story => story._id?.startsWith('us-') || story.isModified)
         .map(async (story) => {
@@ -76,40 +133,43 @@ const EpicDetail = ({ epic, priorities = [], onClose, onSave, onDelete, theme })
             return await UserStoriesService.updateUserStory(story._id, story);
           }
         });
-  
       const savedStories = await Promise.all(updatePromises);
-      
-      // Actualiza solo las stories modificadas en el estado local
+      // Fusionar con historias existentes sin prefijo
       setEditedEpic(prev => {
-        const existingStories = prev.userStories.filter(s => !s._id?.startsWith('us-'));
+        const existingStories = (prev.userStories || []).filter(s => !s._id?.startsWith('us-'));
         const newStories = savedStories.filter(s => !existingStories.some(es => es._id === s._id));
-        
-        return {
-          ...prev,
-          userStories: [...existingStories, ...newStories].map(story => {
-            const updated = savedStories.find(s => s._id === story._id);
-            return updated || story;
-          })
-        };
+        const merged = [...existingStories, ...newStories].map(story => {
+          const updated = savedStories.find(s => s._id === story._id);
+          return updated || story;
+        });
+        return { ...prev, userStories: merged };
       });
-      
     } catch (error) {
       console.error('Error updating user stories:', error);
       toast.error('Error al actualizar historias');
     }
   };
+  
+
+  // Helper para mostrar nombre de prioridad en vista no-edit
+  const getEpicPriorityName = () => {
+    const pid = editedEpic.priorityId || epic.priorityId?._id || epic.priorityId;
+    if (!pid) return null;
+    const p = moscowPriorities.find(pr => pr._id === pid);
+    return p?.name || null;
+  };
 
   return (
     <div className={`rounded-xl p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-lg ${
-      theme === 'dark' 
-        ? 'bg-zinc-800 text-white' 
+      theme === 'dark'
+        ? 'bg-zinc-800 text-white'
         : 'bg-white text-gray-800'
     }`}>
       <div className="flex justify-between items-center mb-4">
         <h2 className={`text-xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>
           {editing ? 'Editando Épica' : 'Detalle de Épica'}
         </h2>
-        <button 
+        <button
           onClick={onClose}
           className={`p-2 rounded-full hover:bg-opacity-20 ${
             theme === 'dark' ? 'hover:bg-white' : 'hover:bg-gray-200'
@@ -121,14 +181,15 @@ const EpicDetail = ({ epic, priorities = [], onClose, onSave, onDelete, theme })
 
       {editing ? (
         <div className="space-y-4">
+          {/* Nombre */}
           <div>
             <label className={`block mb-2 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
               Nombre*
             </label>
             <input
               className={`w-full p-2 rounded border ${
-                theme === 'dark' 
-                  ? 'bg-zinc-700 border-zinc-600 text-white' 
+                theme === 'dark'
+                  ? 'bg-zinc-700 border-zinc-600 text-white'
                   : 'bg-white border-gray-300'
               }`}
               name="name"
@@ -137,15 +198,15 @@ const EpicDetail = ({ epic, priorities = [], onClose, onSave, onDelete, theme })
               required
             />
           </div>
-
+          {/* Descripción */}
           <div>
             <label className={`block mb-2 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
               Descripción
             </label>
             <textarea
               className={`w-full p-2 rounded border ${
-                theme === 'dark' 
-                  ? 'bg-zinc-700 border-zinc-600 text-white' 
+                theme === 'dark'
+                  ? 'bg-zinc-700 border-zinc-600 text-white'
                   : 'bg-white border-gray-300'
               }`}
               name="description"
@@ -154,7 +215,7 @@ const EpicDetail = ({ epic, priorities = [], onClose, onSave, onDelete, theme })
               rows="3"
             />
           </div>
-
+          {/* Fechas */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className={`block mb-2 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
@@ -162,24 +223,26 @@ const EpicDetail = ({ epic, priorities = [], onClose, onSave, onDelete, theme })
               </label>
               <input
                 className={`w-full p-2 rounded border ${
-                  theme === 'dark' 
-                    ? 'bg-zinc-700 border-zinc-600 text-white' 
+                  theme === 'dark'
+                    ? 'bg-zinc-700 border-zinc-600 text-white'
                     : 'bg-white border-gray-300'
                 }`}
                 type="date"
                 name="startDate"
+                // prellenar con parte YYYY-MM-DD
                 value={editedEpic.startDate?.split('T')[0] || ''}
                 onChange={handleInputChange}
+                // Podemos usar min/max si quisiéramos validar rango de épica contra otras restricciones
               />
             </div>
             <div>
               <label className={`block mb-2 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
-                Fecha Fin
+                Fecha Límite
               </label>
               <input
                 className={`w-full p-2 rounded border ${
-                  theme === 'dark' 
-                    ? 'bg-zinc-700 border-zinc-600 text-white' 
+                  theme === 'dark'
+                    ? 'bg-zinc-700 border-zinc-600 text-white'
                     : 'bg-white border-gray-300'
                 }`}
                 type="date"
@@ -189,7 +252,7 @@ const EpicDetail = ({ epic, priorities = [], onClose, onSave, onDelete, theme })
               />
             </div>
           </div>
-
+          {/* Prioridad y estado */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className={`block mb-2 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
@@ -197,19 +260,22 @@ const EpicDetail = ({ epic, priorities = [], onClose, onSave, onDelete, theme })
               </label>
               <select
                 className={`w-full p-2 rounded border ${
-                  theme === 'dark' 
-                    ? 'bg-zinc-700 border-zinc-600 text-white' 
+                  theme === 'dark'
+                    ? 'bg-zinc-700 border-zinc-600 text-white'
                     : 'bg-white border-gray-300'
                 }`}
                 value={editedEpic.priorityId || ''}
                 onChange={(e) => handlePriorityChange(e.target.value)}
               >
                 <option value="">Seleccionar prioridad</option>
-                {priorities.map(priority => (
-                  <option key={priority._id} value={priority._id}>
-                    {priority.name}
-                  </option>
-                ))}
+                {isLoadingPriorities
+                  ? <option disabled>Cargando...</option>
+                  : moscowPriorities.map(priority => (
+                    <option key={priority._id} value={priority._id}>
+                      {priority.name}
+                    </option>
+                  ))
+                }
               </select>
             </div>
             <div>
@@ -218,8 +284,8 @@ const EpicDetail = ({ epic, priorities = [], onClose, onSave, onDelete, theme })
               </label>
               <select
                 className={`w-full p-2 rounded border ${
-                  theme === 'dark' 
-                    ? 'bg-zinc-700 border-zinc-600 text-white' 
+                  theme === 'dark'
+                    ? 'bg-zinc-700 border-zinc-600 text-white'
                     : 'bg-white border-gray-300'
                 }`}
                 name="status"
@@ -241,7 +307,7 @@ const EpicDetail = ({ epic, priorities = [], onClose, onSave, onDelete, theme })
           <p className={`${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
             {epic.description || 'Sin descripción'}
           </p>
-          
+
           <div className="grid grid-cols-2 gap-4">
             <div>
               <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
@@ -253,10 +319,10 @@ const EpicDetail = ({ epic, priorities = [], onClose, onSave, onDelete, theme })
             </div>
             <div>
               <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
-                <span className="font-medium">Prioridad:</span> {epic.priorityId?.name || 'No definida'}
+                <span className="font-medium">Prioridad:</span> { getEpicPriorityName() || 'No definida' }
               </p>
               <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
-                <span className="font-medium">Estado:</span> {epic.status || 'Pendiente(D)'}
+                <span className="font-medium">Estado:</span> {epic.status || 'Pendiente'}
               </p>
             </div>
           </div>
@@ -265,13 +331,17 @@ const EpicDetail = ({ epic, priorities = [], onClose, onSave, onDelete, theme })
 
       <div className="mt-6">
         <UserStoryList
-          userStories={(editing ? editedEpic.userStories : epic.userStories) || []}
+          userStories={editedEpic.userStories || []}
           epicToEdit={editedEpic}
           editing={editing}
           onUpdate={updateUserStories}
+          onSavedOneStory={refreshEpicFromServer}
           theme={theme}
           epicId={epic._id}
+          priorities={moscowPriorities}
         />
+
+
       </div>
 
       <div className="flex justify-end gap-3 mt-6">
@@ -279,8 +349,8 @@ const EpicDetail = ({ epic, priorities = [], onClose, onSave, onDelete, theme })
           <>
             <button
               className={`px-4 py-2 rounded-lg ${
-                theme === 'dark' 
-                  ? 'bg-zinc-700 hover:bg-zinc-600 text-white' 
+                theme === 'dark'
+                  ? 'bg-zinc-700 hover:bg-zinc-600 text-white'
                   : 'bg-gray-200 hover:bg-gray-300 text-gray-800'
               }`}
               onClick={() => setEditing(false)}
@@ -298,8 +368,8 @@ const EpicDetail = ({ epic, priorities = [], onClose, onSave, onDelete, theme })
           <>
             <button
               className={`px-4 py-2 rounded-lg ${
-                theme === 'dark' 
-                  ? 'bg-zinc-700 hover:bg-zinc-600 text-white' 
+                theme === 'dark'
+                  ? 'bg-zinc-700 hover:bg-zinc-600 text-white'
                   : 'bg-gray-200 hover:bg-gray-300 text-gray-800'
               }`}
               onClick={onClose}
@@ -312,7 +382,7 @@ const EpicDetail = ({ epic, priorities = [], onClose, onSave, onDelete, theme })
             >
               Editar
             </button>
-            <button 
+            <button
               className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg"
               onClick={() => onDelete(epic._id)}
             >
