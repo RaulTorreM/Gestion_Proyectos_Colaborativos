@@ -52,11 +52,15 @@ Sigue estrictamente estas reglas:
    - HU no accionables (ej: "Investigar tecnologías").
 `;
 
+/*
+ (ES↔EN)
+ (ES o EN)
+*/
 const initialTranslationPrompt = `
-Sistema de Traducción Automática Bilingüe (ES↔EN)
+Sistema de Traducción Automática Bilingüe
 
 Instrucciones:
-1. Identifica automáticamente el idioma de origen (ES o EN)
+1. Identifica automáticamente el idioma de origen
 2. Traduce al idioma opuesto manteniendo:
    - Términos técnicos sin traducir (ej: "backend", "API")
    - Estructura gramatical correcta

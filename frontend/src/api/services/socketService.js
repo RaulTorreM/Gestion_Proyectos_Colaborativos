@@ -1,4 +1,4 @@
-import { io } from 'socket.io-client';
+import { io } from "socket.io-client";
 
 class SocketService {
   constructor() {
@@ -9,131 +9,230 @@ class SocketService {
     this.connectionListeners = new Set();
     this.reconnectAttempts = 0;
     this.maxReconnectAttempts = 5;
+    this.SOCKET_URL = "http://localhost:4000";
   }
 
-  // Inicializar conexión
+  getAccessToken() {
+    try {
+      let token = localStorage.getItem("accessToken");
+
+      if (!token) {
+        token =
+          localStorage.getItem("token") ||
+          localStorage.getItem("access_token") ||
+          sessionStorage.getItem("accessToken") ||
+          sessionStorage.getItem("token");
+      }
+
+      if (!token || typeof token !== "string") return null;
+
+      if (token === "[object Object]" || token.includes("[object Object]")) {
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("token");
+        return null;
+      }
+
+      if (token.length < 50) return null;
+
+      return token;
+    } catch {
+      return null;
+    }
+  }
+
   connect(userId) {
     return new Promise((resolve, reject) => {
-      // Si ya está conectado para el mismo usuario, no hacer nada
-      if (this.socket && this.isConnected && this.currentUserId === userId) {
-        console.log('🔗 Socket ya conectado para usuario:', userId);
+      if (this.socket?.connected && this.currentUserId === userId) {
         return resolve();
       }
 
-      // Desconectar socket anterior si existe
       if (this.socket) {
         this.disconnect();
       }
 
-      console.log('🚀 Iniciando conexión socket para usuario:', userId);
-      
-      this.socket = io('http://localhost:4000', {
-        transports: ['websocket'],
+      const token = this.getAccessToken();
+      if (!token) {
+        return reject(
+          new Error("No se encontró token de autenticación válido")
+        );
+      }
+
+      const jwtPattern = /^[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]*$/;
+      if (!jwtPattern.test(token)) {
+        return reject(new Error("Token no tiene formato JWT válido"));
+      }
+
+      this.socket = io(this.SOCKET_URL, {
+        auth: {
+          token,
+          userId,
+        },
+        transports: ["websocket", "polling"],
         reconnection: true,
         reconnectionAttempts: this.maxReconnectAttempts,
         reconnectionDelay: 1000,
         reconnectionDelayMax: 5000,
         autoConnect: true,
-        query: { userId }
+        forceNew: true,
+        timeout: 10000,
+        upgrade: true,
       });
 
-      // Configurar event listeners
-      this.socket.on('connect', () => {
-        console.log('✅ Socket conectado:', this.socket.id);
+      const connectionTimeout = setTimeout(() => {
+        if (!this.isConnected) {
+          this.socket?.disconnect();
+          reject(
+            new Error("Timeout al conectar socket después de 10 segundos")
+          );
+        }
+      }, 10000);
+
+      this.socket.on("connect", () => {
+        clearTimeout(connectionTimeout);
         this.isConnected = true;
         this.currentUserId = userId;
+        this.reconnectAttempts = 0;
+        this.socket.emit("join", userId);
+        this.notifyConnectionChange(true);
         resolve();
       });
 
-      this.socket.on('disconnect', (reason) => {
-        console.log('🔌 Socket desconectado:', reason);
+      this.socket.on("disconnect", (reason) => {
         this.isConnected = false;
-        this.notifyConnectionChange(false);
+        this.notifyConnectionChange(false, { reason });
       });
 
-      this.socket.on('connect_error', (error) => {
-        console.error('❌ Error de conexión:', error.message);
+      this.socket.on("connect_error", (error) => {
+        clearTimeout(connectionTimeout);
         this.isConnected = false;
         this.reconnectAttempts++;
-        
+        this.notifyConnectionChange(false, { error: error.message });
+
         if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-          reject(new Error(`No se pudo conectar después de ${this.maxReconnectAttempts} intentos`));
+          reject(
+            new Error(
+              `No se pudo conectar después de ${this.maxReconnectAttempts} intentos: ${error.message}`
+            )
+          );
         }
       });
 
-      this.socket.on('receiveMessage', (messageData) => {
-        console.log('📨 Mensaje recibido:', messageData);
+      this.socket.on("receiveMessage", (messageData) => {
         this.notifyMessageListeners(messageData);
       });
 
-      this.socket.on('messageDelivered', (data) => {
-        console.log('✅ Mensaje entregado:', data);
+      this.socket.on("joinConfirmed", (data) => {
+        this.notifyConnectionChange(true, data);
       });
 
-      this.socket.on('joinConfirmed', (data) => {
-        console.log('🏠 Unión a sala confirmada:', data);
-        this.notifyConnectionChange(true);
+      this.socket.on("joinError", (error) => {
+        this.notifyConnectionChange(false, { error });
+      });
+
+      this.socket.on("authError", (error) => {
+        clearTimeout(connectionTimeout);
+        reject(new Error(`Error de autenticación: ${error.message}`));
+      });
+
+      this.socket.on("forceDisconnect", () => {
+        this.disconnect();
+      });
+
+      this.socket.on("messageError", () => {});
+
+      this.socket.on("error", (error) => {
+        this.notifyConnectionChange(false, { error });
+      });
+
+      this.socket.io.on("reconnect_attempt", () => {
+        const updatedToken = this.getAccessToken();
+        if (updatedToken && this.socket) {
+          this.socket.auth.token = updatedToken;
+        }
+      });
+
+      this.socket.io.on("reconnect_failed", () => {
+        this.notifyConnectionChange(false, { error: "No se pudo reconectar" });
+      });
+
+      this.socket.io.on("reconnect", () => {
+        if (this.currentUserId) {
+          this.socket.emit("join", this.currentUserId);
+        }
+        this.notifyConnectionChange(true, { reconnected: true });
       });
     });
   }
 
-  // Notificar a los listeners de mensajes
   notifyMessageListeners(messageData) {
-    this.messageListeners.forEach(listener => {
+    this.messageListeners.forEach((listener) => {
       try {
         listener(messageData);
-      } catch (error) {
-        console.error('Error en message listener:', error);
-      }
+      } catch {}
     });
   }
 
-  // Notificar a los listeners de conexión
   notifyConnectionChange(connected, data = {}) {
-    this.connectionListeners.forEach(listener => {
+    this.connectionListeners.forEach((listener) => {
       try {
         listener(connected, data);
-      } catch (error) {
-        console.error('Error en connection listener:', error);
-      }
+      } catch {}
     });
   }
 
-  // Enviar mensaje
   sendMessage(messageData) {
     return new Promise((resolve, reject) => {
       if (!this.socket || !this.isConnected) {
-        reject(new Error('Socket no conectado'));
+        reject(new Error("Socket no conectado"));
         return;
       }
 
-      console.log('📤 Enviando mensaje via socket:', messageData);
-      this.socket.emit('sendMessage', messageData, (ack) => {
-        if (ack && ack.success) {
-          resolve(ack);
+      if (!messageData?.to || !messageData?.content) {
+        reject(new Error("Datos de mensaje incompletos"));
+        return;
+      }
+
+      const messageWithMetadata = {
+        ...messageData,
+        from: this.currentUserId,
+        timestamp: new Date().toISOString(),
+      };
+
+      const ackTimeout = setTimeout(() => {
+        resolve({ success: true, warning: "ACK timeout" });
+      }, 5000);
+
+      this.socket.emit("sendMessage", messageWithMetadata, (ack) => {
+        clearTimeout(ackTimeout);
+        if (ack?.error) {
+          reject(new Error(ack.error));
         } else {
-          reject(ack?.error || 'Error al enviar mensaje');
+          resolve(ack || { success: true });
         }
       });
     });
   }
 
-  // Agregar listener para mensajes
   onMessage(callback) {
     this.messageListeners.add(callback);
-    return () => this.messageListeners.delete(callback);
+    return () => {
+      this.messageListeners.delete(callback);
+    };
   }
 
-  // Agregar listener para cambios de conexión
   onConnectionChange(callback) {
     this.connectionListeners.add(callback);
-    return () => this.connectionListeners.delete(callback);
+    return () => {
+      this.connectionListeners.delete(callback);
+    };
   }
 
-  // Desconectar
   disconnect() {
     if (this.socket) {
-      console.log('🔌 Desconectando socket...');
+      this.socket.removeAllListeners();
+      if (this.socket.io) {
+        this.socket.io.removeAllListeners();
+      }
       this.socket.disconnect();
       this.socket = null;
       this.isConnected = false;
@@ -143,7 +242,6 @@ class SocketService {
     }
   }
 
-  // Getters
   get connected() {
     return this.socket?.connected || false;
   }
@@ -151,8 +249,32 @@ class SocketService {
   get socketId() {
     return this.socket?.id || null;
   }
+
+  get userId() {
+    return this.currentUserId;
+  }
+
+  getDebugInfo() {
+    const token = this.getAccessToken();
+    return {
+      connected: this.connected,
+      socketId: this.socketId,
+      userId: this.userId,
+      messageListeners: this.messageListeners.size,
+      connectionListeners: this.connectionListeners.size,
+      hasToken: !!token,
+      tokenValid: token && typeof token === "string" && token.length > 50,
+      tokenPreview: token ? token.substring(0, 30) + "..." : null,
+      socketUrl: this.SOCKET_URL,
+      socketExists: !!this.socket,
+      engineConnected: this.socket?.io?.engine?.readyState === "open",
+    };
+  }
+
+  debugToken() {}
+
+  debugConnection() {}
 }
 
-// Exportar instancia singleton
 const socketService = new SocketService();
 export default socketService;
