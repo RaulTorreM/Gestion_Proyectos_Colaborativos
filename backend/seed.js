@@ -3,7 +3,6 @@ const dotenv = require('dotenv');
 const fs = require('fs');
 const path = require('path');
 
-
 dotenv.config();
 
 const URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/gestionproyectoscolaborativos';
