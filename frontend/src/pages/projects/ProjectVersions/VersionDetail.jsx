@@ -100,27 +100,7 @@ const VersionDetails = ({ version, theme, issues = [], onClose, projectManager, 
             </div>
           </div>
 
-          <div>
-            <h4 className={`font-medium mb-3 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
-              Equipo asignado
-            </h4>
-            <div className="space-y-2">
-              {version.assignedTeam && version.assignedTeam.length > 0 ? (
-                version.assignedTeam.map(member => (
-                  <div key={member._id || member.userId} className="flex items-center gap-2">
-                    <div className={`w-2 h-2 rounded-full ${theme === 'dark' ? 'bg-gray-500' : 'bg-gray-400'}`} />
-                    <p className={`text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
-                      {member.name} – <span className="text-gray-500">{member.role}</span>
-                    </p>
-                  </div>
-                ))
-              ) : (
-                <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
-                  No hay miembros asignados a esta versión.
-                </p>
-              )}
-            </div>
-          </div>
+          
         </div>
 
         {/* Columna derecha */}

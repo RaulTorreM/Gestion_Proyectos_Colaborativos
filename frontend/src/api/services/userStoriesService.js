@@ -52,7 +52,18 @@ const UserStoriesService = {
       console.error('Error fetching user stories:', error);
       throw error;
     }
+  },
+
+  getUserStoriesByProject: async (projectId) => {
+    try {
+      const response = await api.get(`/userStories/by-project/${projectId}`);
+      return response;
+    } catch (error) {
+      console.error('Error fetching user stories by project:', error);
+      throw error;
+    }
   }
+  
 };
 
 export default UserStoriesService;

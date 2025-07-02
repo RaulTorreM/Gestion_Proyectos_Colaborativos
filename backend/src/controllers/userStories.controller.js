@@ -52,6 +52,34 @@ userStoriesController.getUserStoryByEpic = async (req, res) => {
   }
 };
 
+userStoriesController.getUserStoriesByProject = async (req, res) => {
+  try {
+    const projectId = req.params.projectId;
+
+    // Obtener las épicas activas del proyecto
+    const epics = await Epic.find({ projectId, deletedAt: null }).select('_id');
+
+    if (!epics || epics.length === 0) {
+      return res.json([]); // No hay épicas, no hay HU
+    }
+
+    const epicIds = epics.map(e => e._id);
+
+    // Buscar las HU que pertenezcan a esas épicas
+    const stories = await UserStory.find({
+      epicId: { $in: epicIds },
+      deletedAt: null
+    });
+
+    res.json(stories);
+  } catch (error) {
+    console.error('Error al obtener historias por proyecto:', error.message);
+    res.status(500).json({ error: 'Server Error: ' + error.message });
+  }
+};
+
+
+
 userStoriesController.createUserStory = async (req, res) => {
   try {
     const createData = BaseController.cleanAndAssignDefaults(req.body);

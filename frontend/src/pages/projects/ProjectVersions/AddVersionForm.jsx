@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import UsersService from '../../../api/services/usersService';
 import VersionsService from '../../../api/services/versionsService';
+import UserStoriesService from '../../../api/services/userStoriesService';
 import ProjectsService from '../../../api/services/projectsService';
 
 const AddVersionForm = ({ theme, onSave, onCancel, projectId }) => {
@@ -12,20 +13,27 @@ const AddVersionForm = ({ theme, onSave, onCancel, projectId }) => {
     releaseDate: '',
     progress: 0,
     userStories: [],
-    assignedTeam: []
   });
 
-  const [availableMembers, setAvailableMembers] = useState([]);
   const [projectStartDate, setProjectStartDate] = useState(null);
   const [projectEndDate, setProjectEndDate] = useState(null);
   const [errors, setErrors] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [projectUserStories, setProjectUserStories] = useState([]);
+
+  useEffect(() => {
+    const fetchStories = async () => {
+      const allStories = await UserStoriesService.getUserStoriesByProject(projectId);
+      setProjectUserStories(allStories.filter(story => !story.deletedAt));
+    };
+    fetchStories();
+  }, [projectId]);
+  
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const users = await UsersService.getAllUsers();
-        setAvailableMembers(users.filter(u => !u.deletedAt));
+
 
         const project = await ProjectsService.getProjectById(projectId);
         if (project) {
@@ -45,21 +53,8 @@ const AddVersionForm = ({ theme, onSave, onCancel, projectId }) => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleAddMember = (member) => {
-    if (!formData.assignedTeam.includes(member._id)) {
-      setFormData(prev => ({
-        ...prev,
-        assignedTeam: [...prev.assignedTeam, member._id]
-      }));
-    }
-  };
 
-  const handleRemoveMember = (userId) => {
-    setFormData(prev => ({
-      ...prev,
-      assignedTeam: prev.assignedTeam.filter(id => id !== userId)
-    }));
-  };
+
 
   const validateForm = () => {
     const newErrors = [];
@@ -108,12 +103,20 @@ const AddVersionForm = ({ theme, onSave, onCancel, projectId }) => {
         startDate: formData.startDate,
         releaseDate: formData.releaseDate || null,
         progress: formData.progress,
-        assignedTeam: formData.assignedTeam,
         projectId,
-        userStories: [] // Vacío, hasta que se elijan desde épicas
+        userStories: formData.userStories // Vacío, hasta que se elijan desde épicas
       };
 
       const version = await VersionsService.createVersion(newVersionPayload);
+
+      for (const storyId of formData.userStories) {
+        try {
+          await UserStoriesService.updateUserStory(storyId, { versionId: version._id });
+        } catch (err) {
+          console.warn(`No se pudo actualizar la historia ${storyId}:`, err);
+        }
+      }
+      
 
       if (!version || !version._id) {
         throw new Error('La versión creada no tiene un ID válido');
@@ -211,44 +214,28 @@ const AddVersionForm = ({ theme, onSave, onCancel, projectId }) => {
 
           <div className="mt-6">
             <h3 className="font-semibold mb-2">Miembros asignados</h3>
-            <div className="flex flex-wrap gap-2 mb-2">
-              {availableMembers.map((member) => (
-                <button
-                  key={member._id}
-                  type="button"
-                  onClick={() => handleAddMember(member)}
-                  className={`px-3 py-1 rounded text-sm ${
-                    formData.assignedTeam.includes(member._id)
-                      ? 'bg-gray-300 cursor-not-allowed'
-                      : 'bg-green-100 hover:bg-green-200 text-black'
-                  }`}
-                  disabled={formData.assignedTeam.includes(member._id)}
-                >
-                  {member.name}
-                </button>
-              ))}
-            </div>
-            <div className="text-sm text-gray-500 dark:text-gray-300">
-              Seleccionados:{' '}
-              {formData.assignedTeam.length === 0 ? (
-                <span className="italic">Ninguno</span>
-              ) : (
-                formData.assignedTeam.map((id) => {
-                  const member = availableMembers.find((m) => m._id === id);
-                  return (
-                    <span key={id} className="inline-block mr-2 bg-zinc-800/30 px-2 py-1 rounded">
-                      {member?.name || 'Miembro'}{' '}
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveMember(id)}
-                        className="text-red-400 hover:text-red-600 ml-1"
-                      >
-                        ✕
-                      </button>
-                    </span>
-                  );
-                })
-              )}
+            
+            
+            <div className="mt-6">
+              <h3 className="font-semibold mb-2">Historias de Usuario</h3>
+              <select
+                multiple
+                name="userStories"
+                value={formData.userStories}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    userStories: Array.from(e.target.selectedOptions, (opt) => opt.value),
+                  }))
+                }
+                className={inputClass + ' h-40'}
+              >
+                {projectUserStories.map((story) => (
+                  <option key={story._id} value={story._id}>
+                    {story.name}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 
