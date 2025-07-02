@@ -285,7 +285,7 @@ const Dashboard = () => {
 
   if (loading && statsData.length === 0) {
     return (
-      <div className="p-4 md:p-6 space-y-6 bg-gray-50 dark:bg-gray-900 min-h-screen">
+      <div className="p-4 md:p-6 space-y-6 bg-gray-50 dark:bg-black-900 min-h-screen">
         <div className="flex justify-center items-center h-64">
           <div className="flex items-center space-x-2">
             <RefreshCw className="animate-spin" size={24} />
@@ -299,7 +299,7 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="p-4 md:p-6 space-y-6 bg-gray-50 dark:bg-gray-900 min-h-screen">
+    <div className="p-4 md:p-6 space-y-6 bg-gray-50 dark:bg-black min-h-screen">
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
@@ -338,7 +338,7 @@ const Dashboard = () => {
         {statsData.map((stat, idx) => (
           <div 
             key={idx} 
-            className={`p-6 rounded-xl shadow-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow duration-200 ${loading ? 'animate-pulse' : ''}`}
+            className={`p-6 rounded-xl shadow-sm bg-white dark:bg-zinc-900 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow duration-200 ${loading ? 'animate-pulse' : ''}`}
           >
             <div className={`inline-flex p-3 rounded-lg ${stat.bgColor} mb-4`}>
               <span className={stat.color}>{stat.icon}</span>
@@ -361,7 +361,7 @@ const Dashboard = () => {
       {/* Charts Section */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         {/* Project Status Distribution */}
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+        <div className="bg-white dark:bg-zinc-900 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
           <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">
             Estado de Proyectos
           </h3>
@@ -398,7 +398,7 @@ const Dashboard = () => {
         </div>
 
         {/* Epic Status Pie Chart */}
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+        <div className="bg-white dark:bg-zinc-900 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
           <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">
             Estado de Épicas
           </h3>
@@ -438,7 +438,7 @@ const Dashboard = () => {
       {/* Additional Charts */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         {/* Priority Distribution */}
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+        <div className="bg-white dark:bg-zinc-900 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
           <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">
             Distribución por Prioridad (MoSCoW)
           </h3>

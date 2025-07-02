@@ -18,8 +18,8 @@ module.exports = async function seedProjects() {
                 name: 'Migración de Base de Datos',
                 description: 'Migración completa de la base de datos de la empresa a un nuevo sistema.',
                 startDate: new Date('2025-01-01'),
-                endDate: new Date('2025-06-30'),
-                dueDate: new Date('2025-06-30'),
+                endDate: new Date('2025-12-30'),
+                dueDate: new Date('2025-12-30'),
                 status: 'En Progreso',
                 members: [
                     { userId: users[0]._id, role: 'Líder de Proyecto',joinedAt: new Date() },
