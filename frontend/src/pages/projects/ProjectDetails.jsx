@@ -244,6 +244,7 @@ const ProjectDetails = () => {
 
   // Configuración de pestañas
   const tabs = [
+
     { id: 'performance', label: 'Rendimiento' },
     { id: 'documents', label: 'Documentos' }
   ];
@@ -389,11 +390,7 @@ const ProjectDetails = () => {
         </div>
 
         <div className="mt-4">
-          {activeTab === 'details' && (
-            <div className="w-full">
-              <ProjectMetrics project={project} theme={theme} />
-            </div>
-          )}
+
 
           {activeTab === 'performance' && (
             <div className="w-full h-[600px]">
