@@ -51,105 +51,89 @@
 ```bash
 git clone https://github.com/tu_usuario/gestiapro.git
 cd gestiapro
+
 2. Instalar dependencias del backend
-bash
-Copiar
-Editar
-cd backend
-npm install
+
+    cd backend
+    npm install
+    
 3. Instalar dependencias del frontend
-bash
-Copiar
-Editar
-cd ../frontend
-npm install
+
+    cd frontend
+    npm install
+
 ⚙️ Variables de Entorno
 Crear un archivo .env en ambas carpetas (/backend y /frontend) con las siguientes variables:
 
-Backend (/backend/.env)
-env
-Copiar
-Editar
-PORT=5000
-MONGODB_URI=tu_cadena_de_conexion
-JWT_SECRET=tu_secreto_jwt
-OPENAI_API_KEY=tu_api_key_ia
-CORS_ORIGIN=http://localhost:5173
-Frontend (/frontend/.env)
-env
-Copiar
-Editar
-VITE_API_URL=http://localhost:5000
-▶️ Ejecución
-Iniciar backend
-bash
-Copiar
-Editar
-cd backend
-npm run dev
-Iniciar frontend
-bash
-Copiar
-Editar
-cd ../frontend
-npm run dev
-La aplicación estará disponible en:
-📍 http://localhost:5173
+    Backend (/backend/.env)
+
+    Crear un archivo .env dentro de la carpeta backend con las siguientes variables:
+
+    PORT=5000
+    MONGODB_URI=tu_cadena_de_conexion
+    JWT_SECRET=tu_secreto_jwt
+    OPENAI_API_KEY=tu_api_key_ia
+    CORS_ORIGIN=http://localhost:5173
+
+    Frontend (/frontend/.env)
+    
+    Crear un archivo .env dentro de la carpeta frontend con la siguiente variable:
+    
+    VITE_API_URL=http://localhost:5000
+
+    ▶️ Ejecución
+
+    Iniciar backend
+        cd backend
+        npm run dev
+
+    Iniciar frontend
+        cd frontend
+        npm run dev
+
+    La aplicación estará disponible en:
+    📍 http://localhost:5173
 
 🧪 Pruebas
 Puedes ejecutar pruebas utilizando:
 
-bash
-Copiar
-Editar
-npm test
-Soporte para:
+    npm test
+    Tipos de pruebas soportadas:
 
-Pruebas unitarias
-
-Pruebas de integración
-
-Pruebas de interfaz (E2E)
+        Pruebas unitarias
+        Pruebas de integración
+        Pruebas de interfaz (E2E)
 
 📘 Documentación
-La documentación técnica completa se encuentra en la carpeta /docs e incluye:
+    La documentación técnica completa se encuentra en la carpeta /docs e incluye:
 
-Diagramas de clases
-
-Arquitectura del sistema
-
-Diagramas de flujo
-
-Informe final del proyecto
+        Diagramas de clases
+        Arquitectura del sistema
+        Diagramas de flujo
+        Informe final del proyecto
 
 📈 Despliegue
-GestIAPro fue desplegado usando Railway, conectando repositorios de GitHub para frontend y backend. MongoDB se aloja como servicio en la misma plataforma.
+    GestIAPro fue desplegado usando Railway, conectando repositorios de GitHub para frontend y backend. MongoDB se aloja como servicio en la misma plataforma.
 
-Accesos automáticos
-Frontend: https://<subdominio>.up.railway.app
-Backend: https://<subdominio>.up.railway.app/api
+    Accesos automáticos    
+    Frontend: https://<subdominio>.up.railway.app    
+    Backend: https://<subdominio>.up.railway.app/api    
 
 📞 Soporte y Contacto
-Para reportar errores o sugerencias:
-
-Abrir un issue en GitHub
-
-Contactar al equipo de desarrollo vía correo institucional
+    Para reportar errores o sugerencias:
+    Abrir un issue en GitHub    
+    Contactar al equipo de desarrollo vía correo institucional        
 
 🧾 Licencia
-Este proyecto está bajo la licencia MIT.
+    Este proyecto está bajo la licencia MIT.    
 
 🏫 Créditos
-Desarrollado por estudiantes de Universidad Continental
-Curso: Taller de Proyectos 2 – Ingeniería de Sistemas e Informática
+    Desarrollado por estudiantes de Universidad Continental    
+    Curso: Taller de Proyectos 2 – Ingeniería de Sistemas e Informática    
 
 ✅ Recomendaciones
-Estabilizar el despliegue en Railway revisando configuraciones
-
-Ampliar cobertura de pruebas automatizadas
-
-Considerar el uso de Docker para entornos portables
-
-Evaluar rendimiento de modelos IA integrados
-
-Mejorar la documentación técnica de API y uso
+    Estabilizar el despliegue en Railway revisando configuraciones    
+    Ampliar cobertura de pruebas automatizadas    
+    Considerar el uso de Docker para entornos portables    
+    Evaluar rendimiento de modelos IA integrados    
+    Mejorar la documentación técnica de API y uso
