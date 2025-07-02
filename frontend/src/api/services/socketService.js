@@ -9,7 +9,7 @@ class SocketService {
     this.connectionListeners = new Set();
     this.reconnectAttempts = 0;
     this.maxReconnectAttempts = 5;
-    this.SOCKET_URL = "http://localhost:4000";
+    this.SOCKET_URL = import.meta.env.VITE_BACKEND_WEBSOCKET_URL || "http://localhost:4000";
   }
 
   getAccessToken() {
