@@ -1,261 +1,270 @@
 const API_KEY = import.meta.env.VITE_DEEPSEEK_API_KEY;
 const API_URL = import.meta.env.VITE_DEEPSEEK_API_URL || "https://openrouter.ai/api/v1/chat/completions";
 
+// Prompt optimizado y más conciso para HUs
 const initialPromptHU = `
-PROMPT FLEXIBLE PARA GENERACIÓN DE HUs en JSON (Proyecto Agnóstico)
-
-Genera un JSON con 4 a 8 historias de usuario (HUs) para un proyecto ágil, basado en el contexto proporcionado.  
-Sigue estrictamente estas reglas:  
-
-1. Formato de salida:  
-   - Solo un JSON válido, sin texto adicional, explicaciones o markdown.  
-   - Estructura exacta:  
-     {
-       "historias_usuario_IA": [
-         {
-           "hu_name": "string (máx. 8 palabras, estilo título)",
-           "hu_description": "string (formato estricto: 'Como [rol], quiero [acción], para [beneficio]')",
-           "moscow_priority": "number (1-4)"
-         }
-       ]
-     }
-
-2. Reglas para las HUs:  
-   - hu_name:  
-     - Breve, en tiempo presente (ej: "Implementar autenticación JWT").  
-     - Sin artículos (evitar "La", "El").  
-   - hu_description:  
-     - Formato obligatorio:  
-       "Como [rol claro], quiero [acción específica], para [beneficio medible]."  
-     - Ejemplo válido:  
-       "Como administrador, quiero validar los datos migrados automáticamente, para evitar errores en producción."  
-     - Prohibido:  
-       - Usar más de una oración.  
-       - Frases pasivas o genéricas (ej: "para mejorar el rendimiento").  
-   - moscow_priority:  
-     - Basarse en impacto técnico/business (1 = crítico, 4 = descartado).  
-
-3. Ejemplo de salida esperada:
+Genera JSON con 4-8 historias de usuario en formato:
 {
   "historias_usuario_IA": [
     {
-      "hu_name": "Migrar datos de clientes",
-      "hu_description": "Como equipo de datos, quiero transferir registros de MySQL a MongoDB, para garantizar consistencia en la migración.",
-      "moscow_priority": 1
+      "hu_name": "string (máx. 8 palabras)",
+      "hu_description": "Como [rol], quiero [acción], para [beneficio].",
+      "moscow_priority": "number (1-4)"
     }
   ]
 }
 
-4. Prohibido:
-   - Agregar campos extra (ej: tiempo, owner).
-   - Prioridades MOSCOW fuera de 1-4.
-   - HU no accionables (ej: "Investigar tecnologías").
+Reglas:
+- hu_name: breve, sin artículos
+- hu_description: formato exacto obligatorio
+- moscow_priority: 1=crítico, 4=descartado
+- Solo JSON válido, sin texto extra
 `;
 
-/*
- (ES↔EN)
- (ES o EN)
-*/
+// Prompt de traducción simplificado
 const initialTranslationPrompt = `
-Sistema de Traducción Automática Bilingüe
-
-Instrucciones:
-1. Identifica automáticamente el idioma de origen
-2. Traduce al idioma opuesto manteniendo:
-   - Términos técnicos sin traducir (ej: "backend", "API")
-   - Estructura gramatical correcta
-   - Contexto profesional (gestión ágil/tecnológica)
-3. Devuelve SOLO el texto traducido, sin comentarios adicionales
-
-Ejemplos:
-Entrada (ES): "Como desarrollador, quiero implementar JWT"
-Salida (EN): "As a developer, I want to implement JWT"
-
-Entrada (EN): "The product owner needs the dashboard"
-Salida (ES): "El product owner necesita el dashboard"
+Traduce automáticamente al idioma opuesto (ES↔EN). Mantén términos técnicos. Solo devuelve el texto traducido.
 `;
 
-const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+// Configuración optimizada para requests
+const OPTIMIZED_CONFIG = {
+  HU_GENERATION: {
+    temperature: 0.05, // Reducido para más determinismo
+    max_tokens: 800,   // Reducido significativamente
+    top_p: 0.8,        // Control adicional de variabilidad
+    frequency_penalty: 0.1
+  },
+  TRANSLATION: {
+    temperature: 0.01, // Muy bajo para traducciones precisas
+    max_tokens: 400,   // Reducido para respuestas más rápidas
+    top_p: 0.9
+  }
+};
+
+// Pool de conexiones simulado con AbortController para timeouts
+const createRequestConfig = (timeoutMs = 8000) => {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  
+  return {
+    signal: controller.signal,
+    cleanup: () => clearTimeout(timeoutId)
+  };
+};
+
+// Función de delay optimizada con jitter para evitar thundering herd
+const delay = (ms) => {
+  const jitter = Math.random() * 200; // 0-200ms de variabilidad
+  return new Promise(resolve => setTimeout(resolve, ms + jitter));
+};
+
+// Optimización de mensajes de entrada
+const optimizeUserMessage = (proyecto, descripcion_proyecto, epica, descripcion_epica) => {
+  // Límites más agresivos para reducir tokens de entrada
+  const truncate = (text, maxLength) => text?.substring(0, maxLength) || "";
+  
+  return `Proyecto: ${truncate(proyecto, 100)}
+Descripción: ${truncate(descripcion_proyecto, 300)}
+Épica: ${truncate(epica, 100)}
+Detalles: ${truncate(descripcion_epica, 200)}`;
+};
 
 export const fetchIAWithHUPrompt = async (proyecto = "", descripcion_proyecto = "", epica = "", descripcion_epica = "") => {
   let attempt = 0;
-  const maxAttempts = 3;
+  const maxAttempts = 2; // Reducido de 3 a 2 intentos
   
   while (attempt < maxAttempts) {
+    const requestConfig = createRequestConfig(6000); // Timeout reducido a 6s
+    
     try {
-      const userMessage = `Genera historias de usuario para:
-        - Proyecto: ${proyecto}
-        - Descripción: ${descripcion_proyecto}
-        - Épica: ${epica}
-        - Descripción épica: ${descripcion_epica}`;
+      const userMessage = optimizeUserMessage(proyecto, descripcion_proyecto, epica, descripcion_epica);
 
+      const requestBody = {
+        model: "deepseek/deepseek-chat",
+        messages: [
+          {
+            role: "system",
+            content: initialPromptHU
+          },
+          {
+            role: "user",
+            content: userMessage
+          }
+        ],
+        ...OPTIMIZED_CONFIG.HU_GENERATION,
+        response_format: { type: "json_object" },
+        stream: false // Asegurar que no sea streaming
+      };
+
+      console.time(`HU_Request_Attempt_${attempt + 1}`);
+      
       const response = await fetch(API_URL, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${API_KEY}`,
           "Content-Type": "application/json",
           "HTTP-Referer": window.location.origin,
-          "X-Title": "User Stories Generator"
+          "X-Title": "User Stories Generator",
+          "Connection": "keep-alive", // Reutilizar conexión
+          "Cache-Control": "no-cache"
         },
-        body: JSON.stringify({
-          model: "deepseek/deepseek-chat",
-          messages: [
-            {
-              role: "system",
-              content: initialPromptHU
-            },
-            {
-              role: "user",
-              content: userMessage.substring(0, 8000)
-            }
-          ],
-          temperature: 0.1,
-          max_tokens: 1000,
-          response_format: { type: "json_object" }
-        })
+        body: JSON.stringify(requestBody),
+        signal: requestConfig.signal
       });
 
-      // Manejo de errores HTTP
+      console.timeEnd(`HU_Request_Attempt_${attempt + 1}`);
+      requestConfig.cleanup();
+
+      // Manejo optimizado de errores HTTP
       if (response.status === 429) {
-        const retryAfter = response.headers.get('Retry-After') || (Math.pow(2, attempt) * 1000);
-        console.log(`Rate limit (429). Reintentando en ${retryAfter}ms...`);
-        await delay(parseInt(retryAfter));
+        const retryAfter = Math.min(
+          parseInt(response.headers.get('Retry-After')) || 1000,
+          3000 // Máximo 3 segundos de espera
+        );
+        console.log(`Rate limit. Reintentando en ${retryAfter}ms...`);
+        await delay(retryAfter);
         attempt++;
         continue;
       }
 
       if (response.status === 401) {
-        throw new Error('API Key inválida o expirada');
+        throw new Error('API Key inválida');
       }
 
       if (response.status === 402) {
-        throw new Error('Cuota de API agotada. Verifica tu saldo.');
+        throw new Error('Cuota agotada');
       }
 
-      if (response.status === 503) {
-        console.log('Servicio temporalmente no disponible. Reintentando...');
-        await delay(Math.pow(2, attempt) * 1000);
+      if (response.status >= 500) {
+        console.log('Error de servidor. Reintentando...');
+        await delay(500 + attempt * 500); // Backoff más agresivo
         attempt++;
         continue;
       }
 
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(`HTTP ${response.status}: ${errorText}`);
+        throw new Error(`HTTP ${response.status}: ${errorText.substring(0, 100)}`);
       }
 
       const data = await response.json();
-      console.log('Respuesta exitosa de DeepSeek:', data);
       
-      // Verificar errores en la respuesta
+      // Verificación rápida de errores
       if (data.error) {
         if (data.error.code === 'rate_limit_exceeded') {
-          console.log('Rate limit en respuesta. Reintentando...');
-          await delay(Math.pow(2, attempt) * 2000);
+          await delay(1000);
           attempt++;
           continue;
         }
         throw new Error(`API Error: ${data.error.message}`);
       }
 
-      // Verificar estructura de respuesta
-      if (!data.choices || !data.choices[0] || !data.choices[0].message) {
-        throw new Error('Estructura de respuesta inválida');
+      // Validación optimizada de respuesta
+      const content = data.choices?.[0]?.message?.content;
+      if (!content) {
+        throw new Error('Respuesta vacía');
       }
 
-      const content = data.choices[0].message.content;
-      
-      // Parsear JSON
+      // Parsing JSON optimizado
       try {
         const parsedContent = JSON.parse(content);
-        console.log('JSON parseado exitosamente:', parsedContent);
+        console.log('HU generadas exitosamente');
         return parsedContent;
       } catch (parseError) {
-        console.error('Error al parsear JSON:', parseError);
-        
-        // Intentar extraer JSON del texto
-        const jsonMatch = content.match(/\{[\s\S]*\}/);
+        // Extracción rápida de JSON
+        const jsonMatch = content.match(/\{[\s\S]*?\}/);
         if (jsonMatch) {
           try {
-            const extractedJson = JSON.parse(jsonMatch[0]);
-            console.log('JSON extraído exitosamente:', extractedJson);
-            return extractedJson;
+            return JSON.parse(jsonMatch[0]);
           } catch (extractError) {
-            console.error('Error al extraer JSON:', extractError);
+            console.error('Error extrayendo JSON');
           }
         }
-        
-        throw new Error('No se pudo extraer JSON válido de la respuesta');
+        throw new Error('JSON inválido');
       }
+
     } catch (error) {
-      console.error(`Intento ${attempt + 1} fallido:`, error);
+      requestConfig.cleanup();
+      
+      if (error.name === 'AbortError') {
+        console.error('Request timeout');
+      } else {
+        console.error(`Intento ${attempt + 1} falló:`, error.message);
+      }
+      
       attempt++;
       if (attempt >= maxAttempts) {
-        throw error;
+        throw new Error(`Falló después de ${maxAttempts} intentos: ${error.message}`);
       }
-      await delay(Math.pow(2, attempt) * 1000);
+      
+      await delay(300 + attempt * 200); // Delay más corto entre reintentos
     }
   }
-  
-  throw new Error('No se pudo completar la solicitud después de varios intentos');
 };
 
 export const fetchIAWithTranslationPrompt = async (text) => {
-  if (!text || typeof text !== 'string') return text;
+  if (!text || typeof text !== 'string' || text.length < 3) return text;
 
-  let attempt = 0;
-  const maxAttempts = 3;
+  const requestConfig = createRequestConfig(4000); // Timeout más agresivo para traducción
+  
+  try {
+    // Truncar texto para reducir tokens
+    const truncatedText = text.substring(0, 2000);
+    
+    console.time('Translation_Request');
+    
+    const response = await fetch(API_URL, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${API_KEY}`,
+        "Content-Type": "application/json",
+        "HTTP-Referer": window.location.origin,
+        "X-Title": "Translation Service",
+        "Connection": "keep-alive"
+      },
+      body: JSON.stringify({
+        model: "deepseek/deepseek-chat",
+        messages: [
+          {
+            role: "system",
+            content: initialTranslationPrompt
+          },
+          {
+            role: "user",
+            content: truncatedText
+          }
+        ],
+        ...OPTIMIZED_CONFIG.TRANSLATION
+      }),
+      signal: requestConfig.signal
+    });
 
-  while (attempt < maxAttempts) {
-    try {
-      const response = await fetch(API_URL, {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${API_KEY}`,
-          "Content-Type": "application/json",
-          "HTTP-Referer": window.location.origin,
-          "X-Title": "Translation Service"
-        },
-        body: JSON.stringify({
-          model: "deepseek/deepseek-chat",
-          messages: [
-            {
-              role: "system",
-              content: initialTranslationPrompt
-            },
-            {
-              role: "user",
-              content: text.substring(0, 5000) // Limitar tamaño
-            }
-          ],
-          temperature: 0.1,
-          max_tokens: 1500
-        })
-      });
+    console.timeEnd('Translation_Request');
+    requestConfig.cleanup();
 
-      // Manejo de errores
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error?.message || `HTTP ${response.status}`);
-      }
-
-      const data = await response.json();
-      const translatedText = data.choices?.[0]?.message?.content?.trim();
-
-      if (!translatedText) {
-        throw new Error("Empty translation response");
-      }
-
-      return translatedText;
-
-    } catch (error) {
-      console.error(`Translation attempt ${attempt + 1} failed:`, error);
-      attempt++;
-      if (attempt >= maxAttempts) {
-        console.warn("Returning original text after failed translations");
-        return text; // Devuelve el texto original si falla
-      }
-      await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
     }
+
+    const data = await response.json();
+    const translatedText = data.choices?.[0]?.message?.content?.trim();
+
+    if (!translatedText) {
+      throw new Error("Respuesta de traducción vacía");
+    }
+
+    console.log('Traducción exitosa');
+    return translatedText;
+
+  } catch (error) {
+    requestConfig.cleanup();
+    
+    if (error.name === 'AbortError') {
+      console.warn('Translation timeout - devolviendo texto original');
+    } else {
+      console.error('Translation error:', error.message);
+    }
+    
+    return text; // Fallback al texto original
   }
 };
