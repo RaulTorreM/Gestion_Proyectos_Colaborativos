@@ -6,7 +6,7 @@ const Epic = require('../models/Epic');
 const router = Router();
 
 const { getUserStories, getUserStory, createUserStory, createUserStoriesBulk, 
-		updateUserStory, deleteUserStory, getUserStoryByEpic, getUnassignedUserStoriesByProject } = require('../controllers/userStories.controller');
+		updateUserStory, deleteUserStory, getUserStoryByEpic, getUnassignedUserStoriesByProject, getUserStoriesByProject } = require('../controllers/userStories.controller');
 
 router.route('/')
 	.get(getUserStories)
@@ -23,6 +23,9 @@ router.route('/epic/:id')
 	.get(getUserStoryByEpic);
 
 router.post('/create/bulk', createUserStoriesBulk);
+
+router.get('/by-project/:projectId', getUserStoriesByProject);
+
 
 router.get('/project/:projectId/unassigned', getUnassignedUserStoriesByProject); 
 

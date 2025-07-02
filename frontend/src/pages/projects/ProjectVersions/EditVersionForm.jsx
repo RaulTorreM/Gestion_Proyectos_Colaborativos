@@ -14,45 +14,21 @@ const EditVersionForm = ({ theme, version, onSave, onCancel, projectMembers }) =
   };
 
   const [editedVersion, setEditedVersion] = useState({
-    name: version.name || version.version || '',
+    name: version.name || '',
     status: version.status || 'Planeado',
-    startDate: version.startDate || '',
-    releaseDate: version.releaseDate || version.endDate || '',
+    startDate: version.startDate?.substring(0, 10) || '',
+    releaseDate: version.releaseDate?.substring(0, 10) || '',
     description: version.description || '',
-    userStories: version.userStories || [],
-    assignedTeam: version.assignedTeam || version.assignedMembers?.map(m => m.userId || m._id) || [],
+    userStories: (version.userStories || []).map(story => story._id || story), 
     ...calculateInitialProgress(version)
   });
 
   const [versionError, setVersionError] = useState('');
-  const [allUsers, setAllUsers] = useState([]);
-  const [availableMembers, setAvailableMembers] = useState([]);
   const [errors, setErrors] = useState([]);
-  const [loadingUsers, setLoadingUsers] = useState(true);
 
-  useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        setLoadingUsers(true);
-        const users = await UsersService.getAllUsers();
-        setAllUsers(users);
-      } catch (error) {
-        console.error('Error al cargar usuarios:', error);
-        setErrors([{ msg: 'Error al cargar los usuarios del sistema' }]);
-      } finally {
-        setLoadingUsers(false);
-      }
-    };
 
-    fetchUsers();
-  }, []);
 
-  useEffect(() => {
-    const currentAssignedIds = editedVersion.assignedTeam || [];
-    setAvailableMembers(
-      allUsers.filter(user => !currentAssignedIds.includes(user._id || user.userId))
-    );
-  }, [allUsers, editedVersion.assignedTeam]);
+
 
   useEffect(() => {
     const totalStories = editedVersion.userStories.length;
@@ -109,22 +85,9 @@ const EditVersionForm = ({ theme, version, onSave, onCancel, projectMembers }) =
     setEditedVersion(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleAddMember = (user) => {
-    const userId = user._id || user.userId;
-    if (!editedVersion.assignedTeam.includes(userId)) {
-      setEditedVersion(prev => ({
-        ...prev,
-        assignedTeam: [...prev.assignedTeam, userId]
-      }));
-    }
-  };
 
-  const handleRemoveMember = (userId) => {
-    setEditedVersion(prev => ({
-      ...prev,
-      assignedTeam: prev.assignedTeam.filter(id => id !== userId)
-    }));
-  };
+
+
 
   const handleProgressChange = (e) => {
     const progress = parseInt(e.target.value) || 0;
@@ -162,25 +125,21 @@ const EditVersionForm = ({ theme, version, onSave, onCancel, projectMembers }) =
     }
 
     const versionData = {
-      name: editedVersion.name,
+      name: editedVersion.name.trim(),
       status: editedVersion.status,
-      description: editedVersion.description,
-      startDate: editedVersion.startDate,
-      releaseDate: editedVersion.releaseDate || null,
+      description: editedVersion.description.trim(),
+      startDate: new Date(editedVersion.startDate),
+      releaseDate: editedVersion.releaseDate ? new Date(editedVersion.releaseDate) : null,
       progress: editedVersion.progress,
-      assignedTeam: editedVersion.assignedTeam,
-      userStories: editedVersion.userStories,
+      userStories: editedVersion.userStories, // solo IDs
       completedStories: editedVersion.completedStories
     };
+    
 
     onSave(versionData);
   };
 
-  const getAssignedUsers = () => {
-    return editedVersion.assignedTeam.map(userId => {
-      return allUsers.find(user => (user._id || user.userId) === userId);
-    }).filter(Boolean);
-  };
+
 
   const inputClass = `w-full px-3 py-2 border rounded-lg ${
     theme === 'dark' ? 'bg-zinc-800 text-white border-zinc-700' : 'bg-white text-gray-800 border-gray-300'
@@ -329,55 +288,6 @@ const EditVersionForm = ({ theme, version, onSave, onCancel, projectMembers }) =
                 </div>
               </div>
 
-              {/* USUARIOS ASIGNADOS */}
-              <div>
-                <label className={`block text-sm font-medium mb-1 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
-                  Usuarios asignados
-                </label>
-                {loadingUsers ? (
-                  <div className="text-sm text-gray-500 dark:text-gray-300 mb-2">Cargando usuarios...</div>
-                ) : (
-                  <>
-                    <div className="text-sm text-gray-500 dark:text-gray-300 mb-2">
-                      Seleccionados:{' '}
-                      {editedVersion.assignedTeam.length === 0 ? (
-                        <span className="italic">Ninguno</span>
-                      ) : (
-                        getAssignedUsers().map(user => (
-                          <span key={user._id || user.userId} className="inline-block mr-2 bg-zinc-800/30 px-2 py-1 rounded">
-                            {user.name || user.username}
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveMember(user._id || user.userId)}
-                              className="text-red-400 hover:text-red-600 ml-1"
-                            >
-                              ✕
-                            </button>
-                          </span>
-                        ))
-                      )}
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {availableMembers.length === 0 ? (
-                        <span className="text-sm text-gray-500 italic">
-                          {allUsers.length === 0 ? 'No hay usuarios disponibles' : 'Todos los usuarios están asignados'}
-                        </span>
-                      ) : (
-                        availableMembers.map(user => (
-                          <button
-                            key={user._id || user.userId}
-                            type="button"
-                            onClick={() => handleAddMember(user)}
-                            className="px-3 py-1 rounded text-sm bg-green-100 hover:bg-green-200 text-black"
-                          >
-                            {user.name || user.username}
-                          </button>
-                        ))
-                      )}
-                    </div>
-                  </>
-                )}
-              </div>
             </div>
           </div>
 
@@ -392,10 +302,10 @@ const EditVersionForm = ({ theme, version, onSave, onCancel, projectMembers }) =
             </button>
             <button
               onClick={handleSubmit}
-              disabled={versionError || errors.length > 0 || loadingUsers}
+              disabled={versionError || errors.length > 0 }
               className={`px-4 py-2 rounded-lg ${
                 theme === 'dark' ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-blue-500 hover:bg-blue-600 text-white'
-              } ${(versionError || errors.length > 0 || loadingUsers) ? 'opacity-50 cursor-not-allowed' : ''}`}
+              } ${(versionError || errors.length > 0 ) ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               Guardar Cambios
             </button>

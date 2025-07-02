@@ -14,14 +14,7 @@ const ProjectVersions = () => {
   const navigate = useNavigate();
   const { theme } = useTheme();
 
-  const allMembers = [
-    { userId: 1, name: "Ana López", role: "Diseñador UX/UI" },
-    { userId: 2, name: "Carlos Ruiz", role: "Desarrollador Backend" },
-    { userId: 3, name: "María García", role: "Desarrollador Frontend" },
-    { userId: 4, name: "Pedro Sánchez", role: "QA Tester" },
-    { userId: 5, name: "Laura Martínez", role: "Project Manager" },
-    { userId: 6, name: "Javier Moreno", role: "Desarrollador Full Stack" }
-  ];
+
 
   const [projectVersions, setProjectVersions] = useState([]);
   const [selectedVersion, setSelectedVersion] = useState(null);
@@ -31,7 +24,6 @@ const ProjectVersions = () => {
   const [projectName, setProjectName] = useState(`Proyecto ${id}`);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [allUsers, setAllUsers] = useState([]);
 
   // Obtener proyecto y versiones al cargar
   useEffect(() => {
@@ -58,13 +50,7 @@ const ProjectVersions = () => {
     if (id) fetchData();
   }, [id]);
 
-  useEffect(() => {
-    const loadAllUsers = async () => {
-      const users = await UsersService.getAllUsers();
-      setAllUsers(users);
-    };
-    loadAllUsers();
-  }, []);
+
 
   const handleAddVersion = (newVersion) => {
     try {
@@ -159,8 +145,6 @@ const ProjectVersions = () => {
             theme={theme}
             onSave={handleAddVersion}
             onCancel={() => setShowAddVersionForm(false)}
-            projectMembers={allMembers}
-            allMembers={allMembers}
             projectId={id}
           />
         )}
@@ -181,7 +165,6 @@ const ProjectVersions = () => {
               <VersionDetails
                 version={selectedVersion}
                 theme={theme}
-                projectMembers={allUsers}
                 onEdit={() => setEditingVersion(selectedVersion)}
                 versions={projectVersions}
                 onVersionChange={setSelectedVersion}
@@ -201,8 +184,6 @@ const ProjectVersions = () => {
             version={editingVersion}
             onSave={handleEditVersion}
             onCancel={() => setEditingVersion(null)}
-            projectMembers={allMembers}
-            allMembers={allMembers}
           />
         )}
       </div>
