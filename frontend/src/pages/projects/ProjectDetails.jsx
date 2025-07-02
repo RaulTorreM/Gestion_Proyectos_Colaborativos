@@ -244,7 +244,6 @@ const ProjectDetails = () => {
 
   // Configuración de pestañas
   const tabs = [
-    { id: 'details', label: 'Detalles' },
     { id: 'performance', label: 'Rendimiento' },
     { id: 'documents', label: 'Documentos' }
   ];

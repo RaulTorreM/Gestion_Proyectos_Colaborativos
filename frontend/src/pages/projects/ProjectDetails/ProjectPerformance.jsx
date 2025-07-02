@@ -176,13 +176,7 @@ const ProjectPerformance = ({ project, theme }) => {
         </div>
       </div>
       
-      {error && (
-        <div className={`mb-4 p-3 rounded-lg ${
-          theme === 'dark' ? 'bg-yellow-900/20 text-yellow-200' : 'bg-yellow-100 text-yellow-800'}`}>
-          <p>{error}</p>
-          <p className="text-sm mt-1">Mostrando datos de ejemplo</p>
-        </div>
-      )}
+      
       
       <div className="relative h-96 w-full">
         <Radar 
