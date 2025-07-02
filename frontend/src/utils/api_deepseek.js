@@ -52,8 +52,12 @@ Sigue estrictamente estas reglas:
    - HU no accionables (ej: "Investigar tecnologías").
 `;
 
+/*
+ (ES↔EN)
+ (ES o EN)
+*/
 const initialTranslationPrompt = `
-Sistema de Traducción Automática Multilingüe
+Sistema de Traducción Automática Bilingüe
 
 Instrucciones:
 1. Identifica automáticamente el idioma de origen
@@ -106,7 +110,7 @@ export const fetchIAWithHUPrompt = async (proyecto = "", descripcion_proyecto = 
             }
           ],
           temperature: 0.1,
-          max_tokens: 1500,
+          max_tokens: 1000,
           response_format: { type: "json_object" }
         })
       });
