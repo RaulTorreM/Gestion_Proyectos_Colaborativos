@@ -33,6 +33,62 @@ module.exports = async function seedEpics() {
         // Crear épicas de ejemplo
         const epics = [
             {
+                projectId: projects[0]._id,
+                name: 'Implementación del sistema de autenticación',
+                description: 'Desarrollar e integrar el sistema de autenticación con JWT y OAuth para mejorar la seguridad.',
+                startDate: new Date('2025-01-10'),
+                endDate: new Date('2025-03-15'),
+                dueDate: new Date('2025-03-20'),
+                priorityId: priorities[4], // Alta
+                status: 'En Progreso',
+                authorUserId: users[1]._id,
+            },
+            {
+                projectId: projects[0]._id,
+                name: 'Optimización del rendimiento del backend',
+                description: 'Mejorar la eficiencia de las consultas y reducir el tiempo de respuesta del servidor.',
+                startDate: new Date('2025-02-20'),
+                endDate: new Date('2025-04-15'),
+                dueDate: new Date('2025-04-20'),
+                priorityId: priorities[5], // Media
+                status: 'Pendiente',
+                authorUserId: users[0]._id,
+            },
+            {
+                projectId: projects[0]._id,
+                name: 'Pruebas automatizadas e integración continua',
+                description: 'Configurar pruebas unitarias, de integración y un pipeline de CI con GitHub Actions.',
+                startDate: new Date('2025-01-25'),
+                endDate: new Date('2025-04-01'),
+                dueDate: new Date('2025-04-05'),
+                priorityId: priorities[6], // Baja
+                status: 'Pendiente',
+                authorUserId: users[1]._id,
+            },
+            {
+                projectId: projects[0]._id,
+                name: 'Despliegue en producción',
+                description: 'Configurar el entorno de producción con Docker y desplegar en servidor cloud (AWS o DigitalOcean).',
+                startDate: new Date('2025-03-01'),
+                endDate: new Date('2025-05-15'),
+                dueDate: new Date('2025-05-20'),
+                priorityId: priorities[4], // Alta
+                status: 'Pendiente',
+                authorUserId: users[0]._id,
+            },
+            {
+                projectId: projects[0]._id,
+                name: 'Módulo de gestión de usuarios',
+                description: 'Desarrollar el módulo para registrar, editar, eliminar y listar usuarios del sistema.',
+                startDate: new Date('2025-01-18'),
+                endDate: new Date('2025-03-30'),
+                dueDate: new Date('2025-04-01'),
+                priorityId: priorities[5], // Media
+                status: 'En Progreso',
+                authorUserId: users[1]._id,
+            },
+            
+            {
                 projectId: projects[0]._id, // Relacionar con el primer proyecto
                 name: 'Migración de la base de datos',
                 description: 'Migrar la base de datos de MySQL a MongoDB.',
