@@ -23,7 +23,14 @@ Reglas:
 
 // Prompt de traducción simplificado
 const initialTranslationPrompt = `
-Traduce automáticamente al idioma opuesto (ES↔EN). Mantén términos técnicos. Solo devuelve el texto traducido.
+Sistema de Traducción Automática Multilingüe
+
+Instrucciones:
+1. Identifica automáticamente el idioma de origen
+2. Traduce al idioma opuesto manteniendo:
+   - Términos técnicos sin traducir (ej: "backend", "API")
+   - Estructura gramatical correcta
+3. Devuelve SOLO el texto traducido, sin comentarios adicionales
 `;
 
 // Configuración optimizada para requests
