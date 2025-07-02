@@ -6,8 +6,9 @@ import UserStoriesService from '../../../api/services/userStoriesService';
 import PrioritiesService from '../../../api/services/prioritiesService';
 import EpicsService from '../../../api/services/epicsService';
 import { toast } from 'react-toastify';
+import { useCallback } from 'react';
 
-const EpicDetail = ({ epic, onClose, onSave, onDelete, theme }) => {
+const EpicDetail = ({ epic, onClose, onSave, onDelete, theme , onUpdateUserStories}) => {
   const [editing, setEditing] = useState(false);
 
   // Estado para la épica editada
@@ -21,26 +22,40 @@ const EpicDetail = ({ epic, onClose, onSave, onDelete, theme }) => {
 
   const [editedEpic, setEditedEpic] = useState({
     ...epic,
-    startDate: parseDate(epic.startDate),
-    dueDate: parseDate(epic.dueDate),
-    endDate: parseDate(epic.endDate),
-    priorityId: epic.priorityId?._id || epic.priorityId || null,
-    userStories: epic.userStories || []
+    userStories: epic.userStories || [],
+    priorityId: epic.priorityId?._id || epic.priorityId || ''
   });
 
-  // Estado para prioridades MOSCOW
-  const [moscowPriorities, setMoscowPriorities] = useState([]);
+  const refreshEpic = async () => {
+    try {
+      const fresh = await EpicsService.getEpicById(editedEpic._id);
+      const filteredUserStories = await UserStoriesService.getUserStoriesByEpic(editedEpic._id);
+      setEditedEpic({
+        ...fresh,
+        userStories: filteredUserStories,
+        priorityId: fresh.priorityId?._id || fresh.priorityId || ''
+      });
+    } catch (err) {
+      console.error('Error refrescando épica:', err);
+      toast.error('No se pudo recargar la épica');
+    }
+  };
+
+
+
+
+  const [noMoscowPriorities, setNoMoscowPriorities] = useState([]);
   const [isLoadingPriorities, setIsLoadingPriorities] = useState(false);
 
   useEffect(() => {
-    // Cargar prioridades MOSCOW al montar
     const fetchPriorities = async () => {
       setIsLoadingPriorities(true);
       try {
-        const prios = await PrioritiesService.getMoscowPriorities();
-        setMoscowPriorities(prios || []);
+        // Obtener prioridades NO MOSCOW
+        const prios = await PrioritiesService.getNoMoscowPriorities();
+        setNoMoscowPriorities(prios || []);
       } catch (err) {
-        console.error('Error cargando prioridades MOSCOW:', err);
+        console.error('Error cargando prioridades:', err);
         toast.error('No se pudieron cargar prioridades');
       } finally {
         setIsLoadingPriorities(false);
@@ -49,115 +64,132 @@ const EpicDetail = ({ epic, onClose, onSave, onDelete, theme }) => {
     fetchPriorities();
   }, []);
 
+  useEffect(() => {
+    const loadFromServer = async () => {
+      try {
+        const fresh = await EpicsService.getEpicById(epic._id);
+        const filteredUserStories = await UserStoriesService.getUserStoriesByEpic(epic._id);
+  
+        setEditedEpic({
+          ...fresh,
+          userStories: filteredUserStories,
+          priorityId: fresh.priorityId?._id || fresh.priorityId || ''
+        });
+      } catch (err) {
+        console.error('Error cargando épica:', err);
+        toast.error('No se pudo cargar la épica');
+      }
+    };
+  
+    loadFromServer();
+  }, [epic]);
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setEditedEpic(prev => ({ ...prev, [name]: value }));
   };
 
   const handlePriorityChange = (selectedPriorityId) => {
-    const isValid = moscowPriorities.some(p => p._id === selectedPriorityId);
+    const isValid = noMoscowPriorities.some(p => p._id === selectedPriorityId);
     setEditedEpic(prev => ({
       ...prev,
       priorityId: isValid ? selectedPriorityId : prev.priorityId
     }));
   };
 
-  const handleSave = () => {
-    // Preparar payload de la épica
-    const {
-      __v, createdAt, updatedAt, deletedAt, authorUserId, id, title,
-      userStories, // no lo incluimos aquí; se gestiona en updateUserStories
-      ...epicToSave
-    } = editedEpic;
-
-    const payload = {
-      ...epicToSave,
-      _id: editedEpic._id,
-      startDate: epicToSave.startDate ? new Date(epicToSave.startDate).toISOString() : null,
-      dueDate: epicToSave.dueDate ? new Date(epicToSave.dueDate).toISOString() : null,
-      endDate: epicToSave.endDate ? new Date(epicToSave.endDate).toISOString() : null,
-      // priorityId: ya viene como ID o null
-    };
-
-    onSave(payload);
-    setEditing(false);
+  const handleSave = async  () => {
+    try {
+      const epicToSave = {
+        name:        editedEpic.name,
+        description: editedEpic.description,
+        startDate:   editedEpic.startDate,
+        dueDate:     editedEpic.dueDate,
+        priorityId:  editedEpic.priorityId,
+        status:      editedEpic.status,
+        userStories: editedEpic.userStories.map(us => us._id),
+      };
+      
+      const success = await onSave({ _id: editedEpic._id, ...epicToSave });
+      if (!success) {
+        // Si el padre devolvió false o error, sólo salgo y muestro toast
+        return;
+      }
+      onClose();
+      toast.success('Épica actualizada correctamente');
+        
+    } catch (error) {
+      console.error('Error guardando épica:', error);
+      toast.error('Error guardando épica');
+    }
   };
 
   const refreshEpicFromServer = async () => {
     try {
-      console.log('refreshEpicFromServer: solicitando épica...');
       const freshEpic = await EpicsService.getEpicById(epic._id);
-      console.log('refreshEpicFromServer: freshEpic.userStories:', freshEpic.userStories);
-      setEditedEpic({
+      const filteredUserStories = await UserStoriesService.getUserStoriesByEpic(epic._id);
+      
+      const updatedEpic = {
         ...freshEpic,
-        startDate: parseDate(freshEpic.startDate),
-        dueDate: parseDate(freshEpic.dueDate),
-        endDate: parseDate(freshEpic.endDate),
-        priorityId: freshEpic.priorityId?._id || freshEpic.priorityId || null,
-        userStories: freshEpic.userStories || []
-      });
-      console.log('refreshEpicFromServer: estado editedEpic.userStories actualizado');
+        startDate: freshEpic.startDate ? parseDate(freshEpic.startDate) : null,
+        dueDate: freshEpic.dueDate ? parseDate(freshEpic.dueDate) : null,
+        endDate: freshEpic.endDate ? parseDate(freshEpic.endDate) : null,
+        priorityId: freshEpic.priorityId?._id || freshEpic.priorityId || '',
+        userStories: filteredUserStories,
+      };
+      
+      setEditedEpic(updatedEpic);
+      return updatedEpic;
+      
     } catch (err) {
       console.error('Error refrescando épica:', err);
-      toast.error('No se pudo recargar épica tras cambio de HU');
+      toast.error('No se pudo recargar la épica');
+      throw err;
     }
   };
   
-  
-  
-
-  // Función para actualizar historias de usuario (la tuya ya existente)
-  const updateUserStories = async (updatedStories) => {
-    // Si vienen historias sin prefijo 'us-' o isModified, pero en el flujo manual llegan ya completas
-    // Por simplicidad, detecta si todas las historias ya tienen _id real (no empiezan con 'us-') y
-    // no tienen isModified: en ese caso, solo actualizar el estado local sin llamar API de nuevo.
-    const needsApi = updatedStories.some(story => story._id?.startsWith('us-') || story.isModified);
-    if (!needsApi) {
-      setEditedEpic(prev => ({ ...prev, userStories: updatedStories }));
-
-      return;
-    }
-    // Si hay items nuevos (prefijo us-) o isModified, proceder con la lógica batch:
-    try {
-      const updatePromises = updatedStories
-        .filter(story => story._id?.startsWith('us-') || story.isModified)
-        .map(async (story) => {
-          if (story._id?.startsWith('us-')) {
-            const { _id, ...cleanStory } = story;
-            const createdStory = await UserStoriesService.createUserStory({
-              ...cleanStory,
-              epicId: epic._id
-            });
-            return createdStory;
-          } else {
-            return await UserStoriesService.updateUserStory(story._id, story);
-          }
-        });
-      const savedStories = await Promise.all(updatePromises);
-      // Fusionar con historias existentes sin prefijo
-      setEditedEpic(prev => {
-        const existingStories = (prev.userStories || []).filter(s => !s._id?.startsWith('us-'));
-        const newStories = savedStories.filter(s => !existingStories.some(es => es._id === s._id));
-        const merged = [...existingStories, ...newStories].map(story => {
-          const updated = savedStories.find(s => s._id === story._id);
-          return updated || story;
-        });
-        return { ...prev, userStories: merged };
-      });
-    } catch (error) {
-      console.error('Error updating user stories:', error);
-      toast.error('Error al actualizar historias');
-    }
+  const handleSaveEpic = async () => {
+    const success = await onSave({
+      ...localEpic,
+      userStories: userStories // Pasar HU actualizadas
+    });
+    
+    if (success) onClose();
   };
+
+  const updateUserStories = useCallback((stories) => {
+    setEditedEpic(prev => ({ ...prev, userStories: stories }));
+    // además informo al Kanban padre
+    onUpdateUserStories?.(stories);
+  }, [onUpdateUserStories]);
+
+  
+
   
 
   // Helper para mostrar nombre de prioridad en vista no-edit
   const getEpicPriorityName = () => {
-    const pid = editedEpic.priorityId || epic.priorityId?._id || epic.priorityId;
-    if (!pid) return null;
-    const p = moscowPriorities.find(pr => pr._id === pid);
-    return p?.name || null;
+    if (!editedEpic.priorityId) return 'No definida';
+    
+    const priority = noMoscowPriorities.find(
+      p => p._id === editedEpic.priorityId
+    );
+    
+    return priority?.name || 'Desconocida';
   };
+
+  const handleUserStoryUpdate = useCallback(async (newStories) => {
+    // primero actualizo localmente
+    updateUserStories(newStories);
+
+    // luego re-fetch para asegurarme de leer los datos que quedaron realmente en BD
+    try {
+      const refreshed = await UserStoriesService.getUserStoriesByEpic(editedEpic._id);
+      updateUserStories(refreshed);
+    } catch (err) {
+      console.error('Error recargando HUs completas:', err);
+      toast.error('No se pudieron refrescar las historias');
+    }
+  }, [editedEpic._id, updateUserStories]);
 
   return (
     <div className={`rounded-xl p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-lg ${
@@ -265,12 +297,15 @@ const EpicDetail = ({ epic, onClose, onSave, onDelete, theme }) => {
                     : 'bg-white border-gray-300'
                 }`}
                 value={editedEpic.priorityId || ''}
-                onChange={(e) => handlePriorityChange(e.target.value)}
+                onChange={(e) => setEditedEpic(prev => ({
+                  ...prev,
+                  priorityId: e.target.value
+                }))}
               >
                 <option value="">Seleccionar prioridad</option>
                 {isLoadingPriorities
                   ? <option disabled>Cargando...</option>
-                  : moscowPriorities.map(priority => (
+                  : noMoscowPriorities.map(priority => (
                     <option key={priority._id} value={priority._id}>
                       {priority.name}
                     </option>
@@ -302,19 +337,19 @@ const EpicDetail = ({ epic, onClose, onSave, onDelete, theme }) => {
       ) : (
         <div className="space-y-4">
           <h3 className={`text-lg font-semibold ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>
-            {epic.name}
+            {editedEpic.name}
           </h3>
           <p className={`${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
-            {epic.description || 'Sin descripción'}
+            {editedEpic.description || 'Sin descripción'}
           </p>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
               <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
-                <span className="font-medium">Fecha Inicio:</span> {formatDateToUserTimezone(epic.startDate)}
+                <span className="font-medium">Fecha Inicio:</span> {formatDateToUserTimezone(editedEpic.startDate)}
               </p>
               <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
-                <span className="font-medium">Fecha Fin:</span> {formatDateToUserTimezone(epic.dueDate)}
+                <span className="font-medium">Fecha Fin:</span> {formatDateToUserTimezone(editedEpic.dueDate)}
               </p>
             </div>
             <div>
@@ -322,7 +357,7 @@ const EpicDetail = ({ epic, onClose, onSave, onDelete, theme }) => {
                 <span className="font-medium">Prioridad:</span> { getEpicPriorityName() || 'No definida' }
               </p>
               <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
-                <span className="font-medium">Estado:</span> {epic.status || 'Pendiente'}
+                <span className="font-medium">Estado:</span> {editedEpic.status || 'Pendiente'}
               </p>
             </div>
           </div>
@@ -331,14 +366,12 @@ const EpicDetail = ({ epic, onClose, onSave, onDelete, theme }) => {
 
       <div className="mt-6">
         <UserStoryList
-          userStories={editedEpic.userStories || []}
+          userStories={editedEpic.userStories}
           epicToEdit={editedEpic}
           editing={editing}
-          onUpdate={updateUserStories}
-          onSavedOneStory={refreshEpicFromServer}
           theme={theme}
           epicId={epic._id}
-          priorities={moscowPriorities}
+          onSavedOneStory={handleUserStoryUpdate}
         />
 
 

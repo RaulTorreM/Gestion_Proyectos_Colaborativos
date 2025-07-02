@@ -1,60 +1,70 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
+const AddEpicModal = ({ onClose, onSave, theme, priorities, projectStartDate, projectDueDate }) => {
+  // Estado para manejar errores específicos
+  const [priorityError, setPriorityError] = useState('');
 
-const AddEpicModal = ({ onClose, onSave, theme, priorities, projectDueDate  }) => {
+  // Asegurar que siempre haya un priorityId válido
+  const initialPriorityId = priorities.length > 0 ? priorities[0]._id : '';
+  
+  // console.log('projectStartDate', projectStartDate);
+  // console.log('projectDueDate', projectDueDate);
+  
   const [newEpic, setNewEpic] = useState({
     name: '',
     description: '',
     startDate: '',
     dueDate: '',
-    priorityId: priorities.length > 0 ? priorities[0]._id : ''
+    priorityId: initialPriorityId
   });
 
-  
-    // Helper para formatear ISO string a "YYYY-MM-DD"
-  const formatToYYYYMMDD = (dateIsoString) => {
-      if (!dateIsoString) return '';
-      return new Date(dateIsoString).toISOString().split('T')[0];
-    };
-  
-  // Calculamos la cadena a usar en max del input de dueDate
-  const projectDueDateString = formatToYYYYMMDD(projectDueDate);
-
+  // Actualizar el estado cuando las prioridades cambien
+  useEffect(() => {
+    if (priorities.length > 0 && !priorities.some(p => p._id === newEpic.priorityId)) {
+      setNewEpic(prev => ({
+        ...prev,
+        priorityId: priorities[0]._id
+      }));
+    }
+  }, [priorities]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setNewEpic(prev => ({ ...prev, [name]: value }));
+    setPriorityError(''); // Limpiar error al cambiar
   };
 
   const handleSubmit = (e) => {
-
-    
     e.preventDefault();
 
+    // Validación de fechas
     if (new Date(newEpic.dueDate) < new Date(newEpic.startDate)) {
       alert('La fecha límite no puede ser anterior a la fecha de inicio');
       return;
     }
 
+    // Validación de nombre
     if (!newEpic.name.trim()) {
       alert('El nombre es requerido');
       return;
     }
 
+    // Validación de prioridad
     const selectedPriority = priorities.find(priority => priority._id === newEpic.priorityId);
-    const priorityColor = selectedPriority ? selectedPriority.color : ''; // Si no se encuentra, se asigna un string vacío.
+    if (!selectedPriority) {
+      setPriorityError('Seleccione una prioridad válida');
+      return;
+    }
 
+    // Solo pasar datos necesarios al backend
     onSave({
       name: newEpic.name,
       description: newEpic.description,
       startDate: newEpic.startDate,
       dueDate: newEpic.dueDate,
-      priorityId: newEpic.priorityId,
-      priorityColor: priorityColor, // Se pasa el color de la prioridad encontrada
+      priorityId: newEpic.priorityId, // Solo el ID, no el objeto completo
     });
   };
-  
-
 
   return (
     <div className={`rounded-xl p-6 w-full max-w-md ${theme === 'dark' ? 'bg-zinc-800' : 'bg-white'}`}>
@@ -65,6 +75,7 @@ const AddEpicModal = ({ onClose, onSave, theme, priorities, projectDueDate  }) =
         <button
           onClick={onClose}
           className={`p-2 rounded-full ${theme === 'dark' ? 'hover:bg-zinc-700' : 'hover:bg-gray-200'}`}
+          aria-label="Cerrar"
         >
           ✕
         </button>
@@ -102,7 +113,8 @@ const AddEpicModal = ({ onClose, onSave, theme, priorities, projectDueDate  }) =
               name="startDate"
               value={newEpic.startDate}
               onChange={handleInputChange}
-              max={projectDueDateString}
+              min={projectStartDate}
+              max={projectDueDate}
               className={`w-full p-2 rounded border ${theme === 'dark' ? 'bg-zinc-700 border-zinc-600 text-white' : 'bg-white border-gray-300'}`}
               required
             />
@@ -114,8 +126,8 @@ const AddEpicModal = ({ onClose, onSave, theme, priorities, projectDueDate  }) =
               name="dueDate"
               value={newEpic.dueDate}
               onChange={handleInputChange}
-              min={newEpic.startDate}
-              max={projectDueDateString}
+              min={newEpic.startDate || projectStartDate}
+              max={projectDueDate}
               className={`w-full p-2 rounded border ${theme === 'dark' ? 'bg-zinc-700 border-zinc-600 text-white' : 'bg-white border-gray-300'}`}
               required
             />
@@ -137,6 +149,9 @@ const AddEpicModal = ({ onClose, onSave, theme, priorities, projectDueDate  }) =
               </option>
             ))}
           </select>
+          {priorityError && (
+            <p className="text-red-500 text-sm mt-1">{priorityError}</p>
+          )}
         </div>
 
         <div className="flex justify-end space-x-3 pt-4">

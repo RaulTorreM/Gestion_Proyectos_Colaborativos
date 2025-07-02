@@ -16,7 +16,12 @@ const ProjectKanban = () => {
   const [priorities, setPriorities] = useState([]);
   const { id: projectId } = useParams();
   const [project, setProject] = useState(null);
-  const [epics, setEpics] = useState([]);
+  const [rawEpics, setRawEpics] = useState([]);
+
+  const epics = Array.isArray(rawEpics)
+    ? rawEpics.filter(e => e && typeof e._id === 'string')
+    : [];
+
   const navigate = useNavigate();
   const { theme } = useTheme();
   const [selectedEpic, setselectedEpic] = useState(null);
@@ -24,79 +29,115 @@ const ProjectKanban = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  const safeEpics = Array.isArray(epics)
+  ? epics.filter(e => e && typeof e._id === 'string')
+  : [];
+
+  const loadData = async () => {
+    try {
+      setIsLoading(true);
+      
+      const [loggedUserRes, prioritiesRes, projectRes, epicsData] = await Promise.all([
+        AuthService.getLoggedUser(),
+        PrioritiesService.getNoMoscowPriorities(),
+        ProjectsService.getProjectById(projectId),
+        EpicsService.getEpicsByProjectId(projectId) // Obtenemos epics con sus HUs ya incluidas
+      ]);
+
+      if (!loggedUserRes) throw new Error('No se pudo obtener el usuario logeado');
+      if (!prioritiesRes) throw new Error('Error al obtener prioridades');
+      if (!projectRes) throw new Error('Proyecto no encontrado');
+      if (!epicsData) throw new Error('Error al obtener épicas');
+
+      
+      // Obtener HU para cada épica
+      const epicsWithStories = await Promise.all(epicsData.map(async epic => {
+        const stories = await UserStoriesService.getUserStoriesByEpic(epic._id);
+        return { ...epic, userStories: stories };
+      }));
+
+      setLoggedUser(loggedUserRes);
+      setPriorities(prioritiesRes);
+      setProject(projectRes);
+      setRawEpics(epicsData);
+
+    } catch (err) {
+      console.error('Error al cargar datos:', err);
+      setError(err.message || 'Error al cargar datos');
+      toast.error(err.message || 'Error al cargar datos');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => { loadData() }, [projectId]);
+
   const columns = useMemo(() => {
     const cols = {
-      pending: { id: 'pending', title: 'Pendiente', epics: [] },
+      pending:    { id: 'pending',    title: 'Pendiente',    epics: [] },
       inProgress: { id: 'inProgress', title: 'En progreso', epics: [] },
-      completed: { id: 'completed', title: 'Completado', epics: [] }
+      completed:  { id: 'completed',  title: 'Completado', epics: [] }
     };
 
     epics.forEach(epic => {
-
-      const status = epic.status?.toLowerCase() || 'pendiente';
-      const columnId = 
-        status.includes('completado') ? 'completed' :
-        status.includes('progreso') ? 'inProgress' : 'pending';
-      
+      const status = (epic.status || '').toLowerCase();
+      const columnId = status.includes('completado')
+        ? 'completed'
+        : status.includes('progreso')
+          ? 'inProgress'
+          : 'pending';
+  
       cols[columnId].epics.push({
         ...epic,
         id: epic._id,
         title: epic.name,
-        userStories: epic.userStories || [] 
+        userStories: epic.userStories || []
       });
     });
 
     return cols;
-  }, [epics]);
+    }, [epics]);
 
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        setIsLoading(true);
-        
-        const [loggedUserRes, prioritiesRes, projectRes, epicsData] = await Promise.all([
-          AuthService.getLoggedUser(),
-          PrioritiesService.getNoMoscowPriorities(),
-          ProjectsService.getProjectById(projectId),
-          EpicsService.getEpicsByProjectId(projectId) // Obtenemos epics con sus HUs ya incluidas
-        ]);
-
-        if (!loggedUserRes) throw new Error('No se pudo obtener el usuario logeado');
-        if (!prioritiesRes) throw new Error('Error al obtener prioridades');
-        if (!projectRes) throw new Error('Proyecto no encontrado');
-        if (!epicsData) throw new Error('Error al obtener épicas');
-
-        setLoggedUser(loggedUserRes);
-        setPriorities(prioritiesRes);
-        setProject(projectRes);
-        setEpics(epicsData); // Ya incluyen las userStories pobladas
-
-      } catch (err) {
-        console.error('Error al cargar datos:', err);
-        setError(err.message || 'Error al cargar datos');
-        toast.error(err.message || 'Error al cargar datos');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadData();
-  }, [projectId]);
 
   const openEpicDetail = (epic) => setselectedEpic(epic);
   const closeEpicDetail = () => setselectedEpic(null);
 
   const handleUpdateEpic = async (updatedEpic) => {
     try {
-      const savedEpic = await EpicsService.updateEpic(updatedEpic._id, updatedEpic);
+      const payload = {
+        name:        updatedEpic.name,
+        description: updatedEpic.description,
+        startDate:   updatedEpic.startDate,
+        dueDate:     updatedEpic.dueDate,
+        priorityId:  updatedEpic.priorityId,
+        status:      updatedEpic.status,
+        userStories: updatedEpic.userStories.map(us => us._id),
+      };
+      await EpicsService.updateEpic(updatedEpic._id, payload);
       
-      setEpics(prev => prev.map(e => e._id === savedEpic._id ? savedEpic : e));
-      closeEpicDetail();
-      toast.success('Épica actualizada correctamente');
+
+      await loadData();
+      // si además tienes el modal de detalle abierto, ciérralo
+      setselectedEpic(null);
+      return true;
+      
     } catch (error) {
-      console.error('Error al actualizar:', error);
+      console.error('Error al actualizar:', error.response?.data || error);
       toast.error('Error al actualizar la épica');
+      return false;
     }
+  };
+
+  const formatDateForInput = (dateString) => {
+    const d = new Date(dateString);
+    return d.toISOString().split('T')[0]; 
+  };
+  
+
+  const handleUpdateEpicUserStories = (epicId, userStories) => {
+    setRawEpics(prev => prev.map(epic => 
+      epic._id === epicId ? { ...epic, userStories } : epic
+    ));
   };
 
   const handleDeleteEpic = async (epicId) => {
@@ -104,9 +145,10 @@ const ProjectKanban = () => {
     
     try {
       await EpicsService.deleteEpic(epicId);
-      setEpics(prev => prev.filter(e => e._id !== epicId));
+      setRawEpics(prev => prev.filter(e => e._id !== epicId));
       closeEpicDetail();
       toast.success('Épica eliminada correctamente');
+      await loadData();
     } catch (error) {
       console.error('Error al eliminar épica:', error);
       toast.error('Error al eliminar la épica');
@@ -125,7 +167,7 @@ const ProjectKanban = () => {
 
     try {
       await EpicsService.updateEpic(taskId, { status: newStatus });
-      setEpics(prev => prev.map(epic => 
+      setRawEpics(prev => prev.map(epic => 
         epic._id === taskId ? { ...epic, status: newStatus } : epic
       ));
     } catch (error) {
@@ -134,20 +176,33 @@ const ProjectKanban = () => {
     }
   };
 
-  const handleAddEpic = async (newEpicData) => {
+  const handleAddEpic = async (newEpic) => {
     try {
-      const payload = { ...newEpicData, projectId: project._id, status: 'Pendiente' };
-      const response = await EpicsService.createEpic(payload);
-      if (!response) throw new Error('No se recibió respuesta del servidor');
-      // Luego:
-      const updatedEpics = await EpicsService.getEpicsByProjectId(project._id);
-      setEpics(updatedEpics);
-      setShowAddEpicModal(false);
+      // Solo pasar los campos necesarios al backend
+      const savedEpic = await EpicsService.createEpic({
+        name: newEpic.name,
+        description: newEpic.description,
+        startDate: newEpic.startDate,
+        dueDate: newEpic.dueDate,
+        priorityId: newEpic.priorityId, // Solo el ID
+        projectId: project._id,
+        status: 'Pendiente'
+      });
+      
       toast.success('Épica creada correctamente');
+      setShowAddEpicModal(false);
+      await loadData();
+
     } catch (error) {
-      console.error('Error en handleAddEpic:', error);
+      console.error('Error detallado:', error);
       toast.error(error.response?.data?.message || 'Error al crear la épica');
     }
+  };
+
+  const updateEpicUserStories = (epicId, userStories) => {
+    setEpics(prev => prev.map(epic => 
+      epic._id === epicId ? { ...epic, userStories } : epic
+    ));
   };
   
     
@@ -240,7 +295,8 @@ const ProjectKanban = () => {
             theme={theme}
             priorities={priorities}
             projectId={projectId}
-            projectDueDate={project.dueDate}
+            projectDueDate={formatDateForInput(project.dueDate)}
+            projectStartDate={formatDateForInput(project.startDate)}
           />
         </div>
       )}
@@ -254,6 +310,9 @@ const ProjectKanban = () => {
             onDelete={handleDeleteEpic} 
             theme={theme}
             priorities={priorities}
+            onUpdateUserStories={(stories) => 
+              handleUpdateEpicUserStories(selectedEpic._id, stories)
+            }
           />
         </div>
       )}

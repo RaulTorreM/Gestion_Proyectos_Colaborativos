@@ -1,15 +1,23 @@
 // UserStoryList.jsx
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import UserStoryManualForm from './UserStoryManualForm';
 import UserStoryBulkForm from './UserStoryBulkForm';
 import UserStoriesService from '../../../api/services/userStoriesService';
+import PrioritiesService from '../../../api/services/prioritiesService';
 import { toast } from 'react-toastify';
 
 
-const UserStoryList = ({ userStories = [], epicToEdit, editing, onUpdate, onSavedOneStory, theme, epicId, priorities = [] }) => {
+const UserStoryList = ({ userStories = [], epicToEdit, editing, onUpdate, onSavedOneStory, theme, epicId }) => {
   const [showManualForm, setShowManualForm] = useState(false);
   const [storyToEdit, setStoryToEdit] = useState(null);
   const [showBulkForm, setShowBulkForm] = useState(false);
+  const [moscowPriorities, setMoscowPriorities] = useState([]);
+  // const [refreshKey, setRefreshKey] = useState(0);
+
+  const [userStoriesList, setUserStoriesList] = useState(userStories);
+
+
+
 
   const handleAddStory = () => {
     setStoryToEdit(null);
@@ -20,89 +28,133 @@ const UserStoryList = ({ userStories = [], epicToEdit, editing, onUpdate, onSave
     setShowManualForm(true);
   };
 
-  // Antes:
-// const handleManualSave = (payload, isEditing) => { ... }
+  // useEffect(() => {
+  //   const loadUserStories = async () => {
+  //     if (epicId) {
+  //       try {
+  //         const updatedStories = await UserStoriesService.getUserStoriesByEpic(epicId);
+  //         onUpdate(updatedStories);
+  //       } catch (error) {
+  //         console.error('Error cargando HUs:', error);
+  //       }
+  //     }
+  //   };
+    
+  //   loadUserStories();
+  // }, [refreshKey, epicId, onUpdate]);
 
-// Después:
-const handleManualSave = async (payload, isEditing) => {
+
+  const handleManualSave = async (payload, isEditing) => {
     try {
-      console.log('handleManualSave payload:', payload, 'isEditing:', isEditing);
-      let updatedStories;
-      if (isEditing) {
-        const updatedStory = await UserStoriesService.updateUserStory(payload._id, payload);
-        console.log('API returned updatedStory:', updatedStory);
-        updatedStories = userStories.map(us =>
-          us._id === updatedStory._id ? updatedStory : us
-        );
-      } else {
-        const createdStory = await UserStoriesService.createUserStory(payload);
-        console.log('API returned createdStory:', createdStory);
-        updatedStories = [...userStories, createdStory];
-      }
-      // Actualizar la lista en el padre
-      onUpdate(updatedStories);
+      let savedStory = isEditing
+        ? await UserStoriesService.updateUserStory(payload._id, payload)
+        : await UserStoriesService.createUserStory(payload);
+  
+      // Construyo el nuevo array
+      const updated = isEditing
+        ? userStories.map(us => us._id === savedStory._id ? savedStory : us)
+        : [...userStories, savedStory];
 
-      // Intentar refrescar la épica completa si se pasó callback
-      if (typeof onSavedOneStory === 'function') {
-        console.log('Invocando onSavedOneStory para recargar épica');
-        await onSavedOneStory();
-      } else {
-        console.log('No hay onSavedOneStory, no se recarga épica');
-      }
 
-      // Finalmente, cerrar el form
+      onSavedOneStory?.(updated);
+
+
+      // Cerrar el formulario
       setShowManualForm(false);
       setStoryToEdit(null);
+  
+      toast.success('Historia guardada correctamente');
+  
     } catch (error) {
       console.error('Error guardando historia:', error);
       toast.error(error.response?.data?.message || 'Error al guardar la historia');
-      // NO cerramos el form para que el usuario corrija
     }
   };
 
 
-
-  const handleBulkSave = (storiesArray) => {
-    // storiesArray: cada item sin _id
-    const newStories = storiesArray.map(hu => {
-      const tempId = `us-${Date.now()}-${Math.random().toString(36).substr(2,5)}`;
-      return { ...hu, _id: tempId };
-    });
-    const updatedStories = [...userStories, ...newStories];
-    onUpdate(updatedStories);
-    setShowBulkForm(false);
-  };
-
-  const handleDeleteStory = (story) => {
-    const updatedStories = userStories.filter(us => us._id !== story._id);
-    onUpdate(updatedStories);
-    // Si story._id real, llamar API delete
-    if (!story._id.startsWith('us-')) {
-      import('../../../api/services/userStoriesService').then(mod => {
-        mod.default.deleteUserStory(story._id).catch(err => {
-          console.error('Error eliminando HU:', err);
-        });
-      });
+  const handleSaveBulk = async (huArray) => {
+    try {
+      await UserStoriesService.createUserStoriesBulk(huArray);
+      toast.success("Historias guardadas correctamente");
+      // Recargar historias desde el backend
+      await fetchUserStories(); // <-- importante volver a cargar
+      setShowBulkForm(false); // <-- esto cierra el formulario
+    } catch (error) {
+      console.error("Error al guardar HUs:", error);
+      toast.error("Error al guardar historias");
     }
   };
+
+  const fetchUserStories = async () => {
+    const data = await UserStoriesService.getUserStoriesByEpic(epicToEdit._id);
+    setUserStoriesList(data);
+  };
+  
+  useEffect(() => {
+    setUserStoriesList(userStories);
+  }, [userStories]);
+  
+
+
+
+  const handleDeleteStory = async (story) => {
+    try {
+      if (!story._id.startsWith('us-')) {
+        await UserStoriesService.deleteUserStory(story._id);
+      }
+      await fetchUserStories(); 
+      toast.success('Historia eliminada correctamente');
+    } catch (error) {
+      console.error('Error al eliminar historia:', error);
+      toast.error('No se pudo eliminar la historia');
+    }
+  };
+  
+  
+
+
+  // Cargar prioridades MOSCOW
+  useEffect(() => {
+    const loadPriorities = async () => {
+      try {
+        const prios = await PrioritiesService.getMoscowPriorities();
+        setMoscowPriorities(prios || []);
+      } catch (error) {
+        console.error('Error cargando prioridades MOSCOW:', error);
+        toast.error('Error cargando prioridades');
+      }
+    };
+    loadPriorities();
+  }, []);
 
   const getPriorityName = (story) => {
-    const id = typeof story.priorityId === 'object' ? story.priorityId._id : story.priorityId;
-    const p = priorities.find(pr => pr._id === id);
-    return p?.name;
+    if (!story.priorityId) return 'Sin prioridad';
+    
+    // Buscar en moscowPriorities
+    const id = typeof story.priorityId === 'object' 
+      ? story.priorityId._id 
+      : story.priorityId;
+    
+    const p = moscowPriorities.find(pr => pr._id === id);
+    return p?.name || 'Sin prioridad';
   };
   
   const getPriorityColor = (story) => {
-    const name = getPriorityName(story) || story.priorityName;
+    const name = getPriorityName(story);
     if (!name) return theme === 'dark' ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-800';
-    switch (name) {
-      case 'Debe tener': return theme === 'dark' ? 'bg-red-700 text-red-0' : 'bg-red-100 text-red-800';
-      case 'Debería incluir': return theme === 'dark' ? 'bg-yellow-900 text-yellow-200' : 'bg-yellow-100 text-yellow-800';
-      case 'Podría incluir': return theme === 'dark' ? 'bg-blue-900 text-blue-200' : 'bg-blue-100 text-blue-800';
-      case 'No se va a hacer': return theme === 'dark' ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-800';
-      default: return theme === 'dark' ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-800';
-    }
     
+    switch (name) {
+      case 'Debe tener': 
+        return theme === 'dark' ? 'bg-red-700 text-white' : 'bg-red-100 text-red-800';
+      case 'Debería incluir': 
+        return theme === 'dark' ? 'bg-yellow-700 text-white' : 'bg-yellow-100 text-yellow-800';
+      case 'Podría incluir': 
+        return theme === 'dark' ? 'bg-blue-700 text-white' : 'bg-blue-100 text-blue-800';
+      case 'No se va a hacer': 
+        return theme === 'dark' ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-800';
+      default: 
+        return theme === 'dark' ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-800';
+    }
   };
 
   
@@ -111,7 +163,7 @@ const handleManualSave = async (payload, isEditing) => {
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h3 className={`text-lg font-semibold ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>
-          Historias de Usuario ({userStories.length})
+          Historias de Usuario ({userStoriesList.length})
         </h3>
         {editing && (
           <div className="flex gap-2">
@@ -146,20 +198,21 @@ const handleManualSave = async (payload, isEditing) => {
           epicToEdit={epicToEdit}
           onCancel={() => setShowBulkForm(false)}
           theme={theme}
-          onSaveBulk={handleBulkSave}
+          onSaveBulk={handleSaveBulk}
+          onUserStoriesUpdated={fetchUserStories}
         />
       )}
 
       {!showManualForm && !showBulkForm && (
         <>
-          {userStories.length === 0 ? (
+          {userStoriesList.length === 0 ? (
             <p className={`text-sm italic ${theme === 'dark' ? 'text-gray-500' : 'text-gray-400'}`}>
               No hay historias de usuario registradas
             </p>
           ) : (
             <div className={`rounded-lg overflow-hidden ${theme === 'dark' ? 'bg-zinc-800' : 'bg-white'}`}>
               <ul className="divide-y">
-                {userStories.map((story, idx) => (
+                {userStoriesList.map((story, idx) => (
                   <li key={story._id || `us-${idx}`} className={`p-4 ${theme==='dark'?'divide-zinc-700':'divide-gray-200'}`}>
                     <div className="flex justify-between">
                       <div className="space-y-2">

@@ -40,18 +40,18 @@ const EpicsService = {
 
   updateEpic: async (epicId, epicData) => {
     try {
-      // Eliminar campos no actualizables usando destructuring
-      const {
-        _id, 
-        __v, 
-        createdAt, 
-        authorUserId,
-        projectId,
-        ...cleanData
-      } = epicData;
+      // Campos permitidos
+      const allowedFields = ['name', 'description', 'startDate', 'dueDate', 'priorityId', 'status'];
+      const filteredData = {};
+      
+      Object.keys(epicData).forEach(key => {
+        if (allowedFields.includes(key)) {
+          filteredData[key] = epicData[key];
+        }
+      });
   
-      const response = await api.put(`/epics/${epicId}`, cleanData);
-      return response;
+      const response = await api.put(`/epics/${epicId}`, filteredData);
+      return response.data;
     } catch (error) {
       console.error('Error updating epic:', error);
       throw error;

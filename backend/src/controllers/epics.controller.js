@@ -134,25 +134,42 @@ epicsController.updateEpic = async (req, res) => {
 		return res.status(400).json({ error: "ID inválido" });
 	  }
   
+	  // Campos permitidos para actualización
+	  const allowedUpdates = [
+		'name', 
+		'description', 
+		'startDate', 
+		'dueDate', 
+		'priorityId', 
+		'status',
+		'userStories'
+	  ];
+	  
+	  // Filtrar solo campos permitidos
+	  const filteredData = {};
+	  Object.keys(req.body).forEach(key => {
+		if (allowedUpdates.includes(key)) {
+		  filteredData[key] = req.body[key];
+		}
+	  });
+  
 	  // Validar projectId si está presente
-	  if (req.body.projectId) {
-		const project = await Project.findById(req.body.projectId);
+	  if (filteredData.projectId) {
+		const project = await Project.findById(filteredData.projectId);
 		if (!project) {
 		  return res.status(400).json({ error: "Proyecto no válido" });
 		}
 	  }
   
 	  // Validar priorityId
-	  if (req.body.priorityId && !mongoose.Types.ObjectId.isValid(req.body.priorityId)) {
+	  if (filteredData.priorityId && !mongoose.Types.ObjectId.isValid(filteredData.priorityId)) {
 		return res.status(400).json({ error: "ID de prioridad inválido" });
 	  }
-  
-	  const updateData = { ...req.body };
   
 	  // Actualizar
 	  const epicUpdated = await Epic.findByIdAndUpdate(
 		req.params.id,
-		updateData,
+		filteredData,  // Usar datos filtrados
 		{ new: true, runValidators: true }
 	  ).populate('priorityId');
   

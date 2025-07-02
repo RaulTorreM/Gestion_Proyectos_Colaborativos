@@ -79,6 +79,11 @@ const UserStoryManualForm = ({ story, epicId, epicStartDate, epicDueDate, onCanc
     }
   };
 
+  const formatToISO = (dateString) => {
+    if (!dateString) return null;
+    return new Date(dateString).toISOString();
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     // Validaciones básicas
@@ -130,10 +135,10 @@ const UserStoryManualForm = ({ story, epicId, epicStartDate, epicDueDate, onCanc
       epicId,
       status: formData.status,
       assignedTo: formData.assignedTo,
-      startDate: formData.startDate ? new Date(formData.startDate).toISOString() : undefined,
-      dueDate: formData.dueDate ? new Date(formData.dueDate).toISOString() : undefined,
-      endDate: (formData.status === 'Completado' && formData.endDate)
-        ? new Date(formData.endDate).toISOString()
+      startDate: formatToISO(formData.startDate),
+      dueDate: formatToISO(formData.dueDate),
+      endDate: formData.status === 'Completado' && formData.endDate
+        ? formatToISO(formData.endDate)
         : undefined
     };
     onSave(payload, isEditing);

@@ -12,7 +12,7 @@ const formatToYYYYMMDD = (dateIsoOrDate) => {
   return date.toISOString().split('T')[0];
 };
 
-const UserStoryBulkForm = ({ epicId, epicToEdit, onCancel, theme, onSaveBulk }) => {
+const UserStoryBulkForm = ({ epicId, epicToEdit, onCancel, theme, onSaveBulk, onUserStoriesUpdated  }) => {
   const [proyectoContexto, setProyectoContexto] = useState({
     proyecto: '',
     descripcion_proyecto: '',
@@ -183,8 +183,21 @@ const UserStoryBulkForm = ({ epicId, epicToEdit, onCancel, theme, onSaveBulk }) 
         ? new Date(hu.endDate).toISOString()
         : undefined
     }));
-    onSaveBulk(arr);
-  };
+    onSaveBulk(arr).then(async () => {
+        // ✅ Nuevo paso: actualizar la lista real
+        if (onUserStoriesUpdated) {
+          try {
+            await onUserStoriesUpdated();  // puede usar handleUserStoryUpdate dentro
+          } catch (err) {
+            console.error('Error actualizando HU luego de guardar:', err);
+          }
+        }
+    
+        // ✅ Opcional: cerrar modal después de guardar
+        onCancel();
+      });
+    };
+  
 
   if (isLoading) {
     return (

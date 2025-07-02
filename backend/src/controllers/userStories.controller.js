@@ -40,13 +40,12 @@ userStoriesController.getUserStory = async (req, res) => {
 
 userStoriesController.getUserStoryByEpic = async (req, res) => {
   try {
-    const userStory = await UserStory.find({ epicId: req.params.id, deletedAt: null });
+    const userStories = await UserStory.find({
+      epicId: req.params.id,
+      deletedAt: null, 
+    });
 
-    if (!userStory) {
-      return res.json({ userStories: [] });
-    }
-
-    res.json(userStory);
+    res.json(userStories);
   } catch (error) {
     console.error(error.message);
     res.status(500).json({ error: 'Server Error: ' + error.message });
