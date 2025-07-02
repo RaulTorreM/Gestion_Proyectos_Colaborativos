@@ -1,11 +1,9 @@
 import React, { useState } from 'react';
-import { Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const Login = () => {
   const [email, setEmail] = useState('josue@example.com');
   const [password, setPassword] = useState('josue123');
-  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const auth = useAuth();
 
@@ -22,8 +20,8 @@ const Login = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-100 via-blue-200 to-blue-300 dark:from-zinc-900 dark:to-zinc-800 flex items-center justify-center px-4">
       <div className="w-full max-w-6xl grid md:grid-cols-2 items-center gap-12 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md shadow-2xl rounded-2xl p-10 border border-gray-200 dark:border-zinc-700">
-
-        {/* Panel izquierdo */}
+        
+        {/* Panel izquierdo: branding + descripción */}
         <div className="space-y-6">
           <div className="flex items-center space-x-4">
             <img src="/main_icon.ico" alt="Logo GestIAPro" className="w-14 h-14" />
@@ -43,13 +41,12 @@ const Login = () => {
           </footer>
         </div>
 
-        {/* Panel derecho */}
+        {/* Panel derecho: formulario de login */}
         <div className="bg-white dark:bg-zinc-800 rounded-xl shadow-md p-8 w-full max-w-md mx-auto">
           <h2 className="text-2xl font-bold mb-6 text-center text-zinc-800 dark:text-white">Iniciar Sesión</h2>
           {error && <p className="text-red-500 text-sm mb-4 text-center">{error}</p>}
 
           <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Email */}
             <div>
               <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-200 mb-1">Correo electrónico</label>
               <input
@@ -61,28 +58,17 @@ const Login = () => {
               />
             </div>
 
-            {/* Contraseña con toggle */}
             <div>
               <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-200 mb-1">Contraseña</label>
-              <div className="relative">
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-zinc-600 dark:bg-zinc-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition pr-12"
-                  required
-                />
-                <span
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-3 text-zinc-500 dark:text-zinc-300 cursor-pointer"
-                  title={showPassword ? 'Ocultar contraseña' : 'Ver contraseña'}
-                >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                </span>
-              </div>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-zinc-600 dark:bg-zinc-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition"
+                required
+              />
             </div>
 
-            {/* Botón */}
             <button
               type="submit"
               className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition duration-300 dark:bg-blue-500 dark:hover:bg-blue-600"
