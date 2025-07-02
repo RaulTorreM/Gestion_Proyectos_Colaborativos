@@ -52,12 +52,8 @@ Sigue estrictamente estas reglas:
    - HU no accionables (ej: "Investigar tecnologías").
 `;
 
-/*
- (ES↔EN)
- (ES o EN)
-*/
 const initialTranslationPrompt = `
-Sistema de Traducción Automática Bilingüe
+Sistema de Traducción Automática Multilingüe
 
 Instrucciones:
 1. Identifica automáticamente el idioma de origen
